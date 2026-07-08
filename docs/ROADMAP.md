@@ -14,14 +14,9 @@
 | 7.5 | Documentation and prompt framework | `docs/` | none | documentation only |
 | 8 | Apply approved organization plans | `cli.py`, `executor.py` | `--apply-organization-plan`, `--apply-refined-organization-plan`, `--confirm` | explicit approval required |
 | 8.5 | Stabilization, manual testing, and release notes | `docs/` | none | documentation only |
+| 9 | Read-only scheduled-compatible report mode | `reports.py`, `cli.py` | `--report`, `--report-output` | report file only |
 
 ## Future Stages
-
-### Stage 9: Overnight Scheduled Report Mode
-
-Goal: generate unattended reports under a configured policy.
-
-Non-goals: no moving without an explicit configured approval policy, no GUI.
 
 ### Stage 10: UI Or Richer Review Interface
 

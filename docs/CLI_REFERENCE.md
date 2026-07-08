@@ -53,6 +53,21 @@ python -m organizer.cli <folder> --plan-review-candidates
 - `--review-candidates`: read-only; prints heuristic candidates for review.
 - `--plan-review-candidates`: dry-run; prints a review candidate plan.
 
+## Reports
+
+```bash
+python -m organizer.cli <folder> --report
+python -m organizer.cli <folder> --report --max-depth 2
+python -m organizer.cli <folder> --report --report-output <path-under-folder>
+python -m organizer.cli <folder> --report --refine-groups --llm-provider ollama --llm-model qwen2.5:7b
+```
+
+- `--report`: read-only; writes a JSON report and prints the report path.
+- `--report-output <path>`: read-only; writes the report to a specific path under the scan root.
+- `--refine-groups`: optional local LLM-assisted report section when combined with `--report`, `--llm-provider ollama`, and `--llm-model <model>`.
+
+Report mode is single-purpose. It rejects display, planning, apply, undo, and confirmation flags to avoid ambiguous output. It writes a report file only; it does not move scanned files.
+
 ## Grouping
 
 ```bash

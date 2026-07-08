@@ -17,7 +17,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 8.5 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, and release notes.
+Stages 1 through 9 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, and read-only JSON reports.
 
 ## Reuse Before Create
 
@@ -31,6 +31,7 @@ Stages 1 through 8.5 are complete. Current code supports scanning, duplicate det
 - `review.py` owns heuristic review candidates.
 - `grouping.py` owns deterministic project grouping.
 - `llm_refinement.py` owns prompt, payload, and validation for LLM group refinement.
+- `reports.py` owns read-only report assembly and JSON report writing.
 - `executor.py` owns moving and undo.
 
 ## Do Not Skip Ahead
@@ -64,7 +65,8 @@ Answer these before editing:
 - Stage 8 reuses `executor.py` for approved organization apply behavior.
 - Do not create a second mover for organization changes.
 - Do not bypass `MovePlanItem`.
-- Stage 9 should not move files without an explicit configured approval policy.
+- Stage 9 report mode writes report files only and must not move scanned files.
+- Stage 10 remains future work.
 
 ## Testing And Git Hygiene
 

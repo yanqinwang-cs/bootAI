@@ -18,8 +18,9 @@ Stages 1 through 8 are implemented. The tool can currently:
 - Optionally refine organization suggestions with local Ollama.
 - Apply approved organization plans with undo logs.
 - Undo logged move operations.
+- Generate read-only JSON reports for manual review or external scheduler runs.
 
-Stage 8.5 is a stabilization and documentation pass. Stage 9 scheduled reporting, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 9 adds scheduler-compatible report generation. Built-in scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -37,6 +38,7 @@ Run commands with `PYTHONPATH=src` from the repository root:
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --duplicates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-organization
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report
 ```
 
 Apply commands require exact confirmation:
@@ -62,6 +64,8 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-candidates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --project-groups
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-review-candidates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-duplicates
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report --report-output /path/to/folder/AI_Review/reports/manual_report.json
 ```
 
 Approved move commands:
@@ -85,6 +89,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Inspect dry-run output before using exact confirmation.
 - Keep operation logs when testing undo.
 - Do not run apply commands on important folders while testing.
+- Report mode writes a JSON report file but does not move scanned files.
 - `executor.py` is the only module that performs real movement.
 - Review, grouping, and LLM modules produce facts or suggestions; they do not execute moves.
 

@@ -1,12 +1,12 @@
 # Local File Organizer Documentation
 
-This project is a cautious local file organizer. It scans a chosen folder, reports metadata, detects exact duplicates, proposes dry-run review and organization plans, and can apply approved duplicate and organization moves with operation logs.
+This project is a cautious local file organizer. It scans a chosen folder, reports metadata, detects exact duplicates, proposes dry-run review and organization plans, writes read-only JSON reports, and can apply approved duplicate and organization moves with operation logs.
 
 Deterministic Python is the source of truth for facts. LLM output is advisory only and stored separately as `LLMRefinement`. `executor.py` is the only module allowed to move files.
 
 ## Current Status
 
-Stages 1 through 8 are implemented. Stage 8.5 is a stabilization and documentation pass with manual testing guidance and release notes. Stage 9 scheduled reporting and Stage 10 UI work remain future work.
+Stages 1 through 9 are implemented. Stage 9 adds read-only JSON report generation for manual review or external scheduler runs. Built-in scheduler daemons and Stage 10 UI work remain future work.
 
 ## Quick Navigation
 
