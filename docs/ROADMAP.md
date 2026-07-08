@@ -15,6 +15,7 @@
 | 8 | Apply approved organization plans | `cli.py`, `executor.py` | `--apply-organization-plan`, `--apply-refined-organization-plan`, `--confirm` | explicit approval required |
 | 8.5 | Stabilization, manual testing, and release notes | `docs/` | none | documentation only |
 | 9 | Read-only scheduled-compatible report mode | `reports.py`, `cli.py` | `--report`, `--report-output` | report file only |
+| 9.5 | Report format stabilization and examples | `docs/`, `tests/test_reports.py` | none | documentation/sample/schema only |
 
 ## Future Stages
 

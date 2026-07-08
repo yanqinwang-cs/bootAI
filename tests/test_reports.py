@@ -9,6 +9,21 @@ from unittest import mock
 
 from organizer.reports import build_scan_report, write_report
 
+REPORT_TOP_LEVEL_KEYS = {
+    "schema_version",
+    "generated_at",
+    "scan_root",
+    "summary",
+    "duplicates",
+    "duplicate_review_plan",
+    "review_candidates",
+    "review_candidate_plan",
+    "project_groups",
+    "organization_suggestions",
+    "refined_organization_suggestions",
+    "warnings",
+}
+
 
 class ReportGenerationTests(unittest.TestCase):
     def test_report_generation_is_read_only_except_report_file_creation(self) -> None:
@@ -296,6 +311,37 @@ class ReportLlmTests(unittest.TestCase):
             self.assertTrue(report["warnings"])
 
 
+class ReportDocumentationTests(unittest.TestCase):
+    def test_sample_report_is_valid_json_with_expected_top_level_keys(self) -> None:
+        sample_path = repository_root() / "docs" / "examples" / "sample_report.json"
+
+        sample = json.loads(sample_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(set(sample), REPORT_TOP_LEVEL_KEYS)
+        self.assertEqual(sample["schema_version"], 1)
+        self.assertEqual(sample["scan_root"], ".")
+
+    def test_sample_report_uses_relative_paths(self) -> None:
+        sample_path = repository_root() / "docs" / "examples" / "sample_report.json"
+        sample = json.loads(sample_path.read_text(encoding="utf-8"))
+
+        paths = collect_report_paths(sample)
+
+        self.assertTrue(paths)
+        for path in paths:
+            self.assertFalse(Path(path).is_absolute(), path)
+            self.assertNotIn("/Users/", path)
+
+    def test_report_schema_reference_is_valid_json(self) -> None:
+        schema_path = repository_root() / "docs" / "schemas" / "report.schema.json"
+
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(schema["properties"]["schema_version"]["const"], 1)
+        self.assertEqual(set(schema["required"]), REPORT_TOP_LEVEL_KEYS)
+        self.assertIn("documentation-only", schema["description"].lower())
+
+
 class FakeClient:
     def __init__(self, response_text: str | None = None):
         self.response_text = response_text
@@ -333,7 +379,7 @@ def run_cli(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-m", "organizer.cli", str(root), *args],
         check=False,
-        cwd=Path(__file__).resolve().parents[1],
+        cwd=repository_root(),
         env=env,
         capture_output=True,
         text=True,
@@ -347,6 +393,26 @@ def extract_report_path(output: str) -> Path:
         if line.startswith("Report written with warnings: "):
             return Path(line.removeprefix("Report written with warnings: "))
     raise AssertionError("report path not found in CLI output")
+
+
+def repository_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def collect_report_paths(value) -> list[str]:
+    paths: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in {"path", "source", "destination", "suggested_root"} and isinstance(child, str):
+                paths.append(child)
+            elif key == "files" and isinstance(child, list):
+                paths.extend(item for item in child if isinstance(item, str))
+            else:
+                paths.extend(collect_report_paths(child))
+    elif isinstance(value, list):
+        for child in value:
+            paths.extend(collect_report_paths(child))
+    return paths
 
 
 if __name__ == "__main__":

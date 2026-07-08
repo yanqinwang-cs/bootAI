@@ -1,0 +1,93 @@
+{
+  "duplicate_review_plan": [
+    {
+      "confidence": 100,
+      "destination": "AI_Review/duplicates/downloads/report copy.pdf",
+      "operation": "dry-run move",
+      "overwrite_risk": false,
+      "reason": "exact duplicate of downloads/report.pdf",
+      "source": "downloads/report copy.pdf"
+    }
+  ],
+  "duplicates": [
+    {
+      "files": [
+        "downloads/report.pdf",
+        "downloads/report copy.pdf"
+      ],
+      "sha256": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+      "size_bytes": 2048
+    }
+  ],
+  "generated_at": "2026-07-09T12:00:00+00:00",
+  "organization_suggestions": [
+    {
+      "group_name": "CS2103",
+      "plan_items": [
+        {
+          "confidence": 90,
+          "destination": "Organized/CS2103/notes/project_notes.md",
+          "operation": "dry-run move",
+          "overwrite_risk": false,
+          "reason": "files share course/module code CS2103; suggested subfolder notes",
+          "source": "CS2103/project_notes.md"
+        },
+        {
+          "confidence": 90,
+          "destination": "Organized/CS2103/notes/report.md",
+          "operation": "dry-run move",
+          "overwrite_risk": false,
+          "reason": "files share course/module code CS2103; suggested subfolder notes",
+          "source": "CS2103/report.md"
+        }
+      ],
+      "suggested_root": "Organized"
+    }
+  ],
+  "project_groups": [
+    {
+      "confidence": 90,
+      "files": [
+        "CS2103/project_notes.md",
+        "CS2103/report.md"
+      ],
+      "group_name": "CS2103",
+      "reason": "files share course/module code CS2103"
+    }
+  ],
+  "refined_organization_suggestions": [],
+  "review_candidate_plan": [
+    {
+      "confidence": 70,
+      "destination": "AI_Review/backup_or_copy/downloads/report copy.pdf",
+      "operation": "dry-run move",
+      "overwrite_risk": false,
+      "reason": "filename contains a backup/copy/version marker",
+      "source": "downloads/report copy.pdf"
+    }
+  ],
+  "review_candidates": [
+    {
+      "category": "backup_or_copy",
+      "confidence": 70,
+      "path": "downloads/report copy.pdf",
+      "reason": "filename contains a backup/copy/version marker"
+    }
+  ],
+  "scan_root": ".",
+  "schema_version": 1,
+  "summary": {
+    "duplicate_candidate_count": 1,
+    "duplicate_group_count": 1,
+    "file_count": 5,
+    "organization_suggestion_count": 2,
+    "project_group_count": 1,
+    "refinement_status": "not_requested",
+    "review_candidate_count": 1,
+    "review_candidate_counts_by_category": {
+      "backup_or_copy": 1
+    },
+    "total_bytes": 9728
+  },
+  "warnings": []
+}

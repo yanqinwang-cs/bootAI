@@ -6,7 +6,7 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 9 are implemented. Stage 9 adds read-only JSON report generation for manual review or external scheduler runs. Built-in scheduler daemons and Stage 10 UI work remain future work.
+Stages 1 through 9.5 are implemented. Stage 9.5 adds report format documentation, a sample report, and a documentation-only schema reference. Built-in scheduler daemons and Stage 10 UI work remain future work.
 
 ## Quick Navigation
 
@@ -14,11 +14,13 @@ Stages 1 through 9 are implemented. Stage 9 adds read-only JSON report generatio
 - [ARCHITECTURE](ARCHITECTURE.md)
 - [SAFETY](SAFETY.md)
 - [CLI_REFERENCE](CLI_REFERENCE.md)
+- [REPORT_FORMAT](REPORT_FORMAT.md)
 - [MANUAL_TESTING](MANUAL_TESTING.md)
 - [RELEASE_NOTES](RELEASE_NOTES.md)
 - [DESIGN_DECISIONS](DESIGN_DECISIONS.md)
 - [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md)
 - [CODEX_INSTRUCTIONS](CODEX_INSTRUCTIONS.md)
+- [Sample Report](examples/sample_report.json)
 - [Prompt Framework](prompts/README.md)
 - [Research Notes](research/README.md)
 

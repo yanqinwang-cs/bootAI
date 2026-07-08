@@ -218,6 +218,38 @@ Open the report JSON and confirm it contains:
 
 Expected outcome: the report contains facts and suggested dry-run plan items only; it does not approve or apply moves.
 
+## Stage 9.5 Report Format Review
+
+Use a disposable folder and run:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --report
+```
+
+Open the generated JSON report and check:
+
+- `schema_version` is present and equals `1`.
+- `generated_at` is present.
+- `scan_root` is `"."`.
+- `summary` contains the expected counts for the disposable folder.
+- `duplicates` and `duplicate_review_plan` use relative paths.
+- `review_candidates` and `review_candidate_plan` use relative paths.
+- `project_groups` and `organization_suggestions` use relative paths.
+- `refined_organization_suggestions` is present, even when empty.
+- `warnings` is present, even when empty.
+- No full file contents or previews are present.
+- No scanned files move.
+
+Also confirm:
+
+- The default report path is under `AI_Review/reports/`.
+- `--report-output` works for a new path under the scan root.
+- `--report-output` refuses a path outside the scan root.
+- Reusing the same `--report-output` path refuses to overwrite the first report.
+- Apply commands still require exact confirmation and remain separate from reports.
+
+Reference: [REPORT_FORMAT](REPORT_FORMAT.md) and [sample_report.json](examples/sample_report.json).
+
 ## Final Git Hygiene Check
 
 From the repository root:

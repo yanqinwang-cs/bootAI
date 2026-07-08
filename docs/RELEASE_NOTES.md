@@ -1,8 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 9
+## Current Status Through Stage 9.5
 
-Stage 9 adds read-only JSON report generation for manual review or external scheduler runs. It does not add a built-in scheduler daemon or any new movement behavior.
+Stage 9.5 stabilizes the report format documentation with a sample report and documentation-only schema reference. It does not add a built-in scheduler daemon or any new movement behavior.
 
 ## Stage Summary
 
@@ -18,6 +18,7 @@ Stage 9 adds read-only JSON report generation for manual review or external sche
 - Stage 8: approved deterministic and refined organization moves through `executor.py`.
 - Stage 8.5: stabilization docs, manual testing guide, and release notes.
 - Stage 9: read-only scheduled-compatible report generation.
+- Stage 9.5: report format documentation, sample report, and documentation-only schema reference.
 
 ## Safety Model
 
@@ -60,4 +61,4 @@ Apply commands require one of:
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 9 and Stage 10 remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10 remains future work.

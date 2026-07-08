@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/bootai/report.schema.json",
+  "title": "bootAI Stage 9 Report",
+  "description": "Documentation-only schema reference for Stage 9 JSON reports. Runtime code does not import or enforce this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "scan_root",
+    "summary",
+    "duplicates",
+    "duplicate_review_plan",
+    "review_candidates",
+    "review_candidate_plan",
+    "project_groups",
+    "organization_suggestions",
+    "refined_organization_suggestions",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "scan_root": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file_count",
+        "total_bytes",
+        "duplicate_group_count",
+        "duplicate_candidate_count",
+        "review_candidate_count",
+        "review_candidate_counts_by_category",
+        "project_group_count",
+        "organization_suggestion_count",
+        "refinement_status"
+      ],
+      "properties": {
+        "file_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate_group_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate_candidate_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "review_candidate_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "review_candidate_counts_by_category": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "project_group_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "organization_suggestion_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "refinement_status": {
+          "enum": [
+            "not_requested",
+            "completed",
+            "failed"
+          ]
+        }
+      }
+    },
+    "duplicates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/duplicate_group"
+      }
+    },
+    "duplicate_review_plan": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/plan_item"
+      }
+    },
+    "review_candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/review_candidate"
+      }
+    },
+    "review_candidate_plan": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/plan_item"
+      }
+    },
+    "project_groups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/project_group"
+      }
+    },
+    "organization_suggestions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/organization_suggestion"
+      }
+    },
+    "refined_organization_suggestions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/organization_suggestion"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "duplicate_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "size_bytes",
+        "files"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "review_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "category",
+        "reason",
+        "confidence"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "project_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group_name",
+        "reason",
+        "confidence",
+        "files"
+      ],
+      "properties": {
+        "group_name": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "organization_suggestion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group_name",
+        "suggested_root",
+        "plan_items"
+      ],
+      "properties": {
+        "group_name": {
+          "type": "string"
+        },
+        "suggested_root": {
+          "type": "string"
+        },
+        "plan_items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/plan_item"
+          }
+        }
+      }
+    },
+    "plan_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "destination",
+        "reason",
+        "confidence",
+        "operation",
+        "overwrite_risk"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "operation": {
+          "type": "string"
+        },
+        "overwrite_risk": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
