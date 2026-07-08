@@ -18,6 +18,7 @@ from organizer.models import (
 )
 from organizer.ollama_client import OllamaClient
 from organizer.planner import build_duplicate_review_plan
+from organizer.reports import build_scan_report, write_report
 from organizer.review import build_review_candidate_plan, detect_review_candidates
 from organizer.scanner import scan_directory
 
@@ -35,6 +36,8 @@ def main() -> int:
     parser.add_argument("--apply-duplicate-plan", action="store_true")
     parser.add_argument("--apply-organization-plan", action="store_true")
     parser.add_argument("--apply-refined-organization-plan", action="store_true")
+    parser.add_argument("--report", action="store_true")
+    parser.add_argument("--report-output", type=Path, default=None)
     parser.add_argument("--confirm", default=None)
     parser.add_argument("--undo-log", type=Path, default=None)
     parser.add_argument("--review-candidates", action="store_true")
@@ -47,6 +50,12 @@ def main() -> int:
     parser.add_argument("--llm-model", default=None)
     parser.add_argument("--ollama-host", default="http://localhost:11434")
     args = parser.parse_args()
+
+    if args.report_output is not None and not args.report:
+        parser.error("--report-output requires --report")
+
+    if args.report:
+        return _handle_report(parser, args)
 
     if args.undo_log is not None:
         if (
@@ -217,6 +226,55 @@ def _validate_llm_args(
         parser.error("--llm-provider ollama is required for LLM refinement")
     if not llm_model:
         parser.error("--llm-model is required for LLM refinement")
+
+
+def _handle_report(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.confirm is not None
+        or args.undo_log is not None
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.plan_refined_organization
+    ):
+        parser.error("--report cannot be combined with display, planning, apply, undo, or confirmation flags")
+
+    if args.refine_groups:
+        _validate_llm_args(parser, args.llm_provider, args.llm_model)
+        client = OllamaClient(
+            model=args.llm_model,
+            host=args.ollama_host,
+        )
+    else:
+        if args.llm_provider is not None or args.llm_model is not None:
+            parser.error("--llm-provider and --llm-model require --refine-groups in report mode")
+        client = None
+
+    try:
+        report = build_scan_report(
+            args.folder,
+            max_depth=args.max_depth,
+            refine_groups=args.refine_groups,
+            llm_client=client,
+        )
+        report_path = write_report(report, args.folder, args.report_output)
+    except ValueError as error:
+        parser.error(str(error))
+
+    if report["warnings"]:
+        print(f"Report written with warnings: {report_path}")
+    else:
+        print(f"Report written: {report_path}")
+    return 0
 
 
 def _print_duplicate_review_plan(plan_items: list[MovePlanItem]) -> None:

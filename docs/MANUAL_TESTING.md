@@ -172,6 +172,52 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --plan-organization
 
 Expected outcome: files already under `AI_Review/` are not included in organization plans.
 
+## Read-Only Report
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --report
+```
+
+Expected outcome: a JSON report file appears under `AI_Review/reports/`, the command prints the report path, and no scanned files move.
+
+## Report Output Inside Root
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --report --report-output /path/to/temp-folder/AI_Review/reports/manual_report.json
+```
+
+Expected outcome: the custom report file is created under the scan root.
+
+## Report Output Outside Root Refusal
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --report --report-output /path/to/outside_report.json
+```
+
+Expected outcome: the command refuses the path and no report is written outside the scan root.
+
+## Report Overwrite Refusal
+
+Run the same `--report-output` command twice with the same output path.
+
+Expected outcome: the second command refuses to overwrite the existing report.
+
+## Report JSON Review
+
+Open the report JSON and confirm it contains:
+
+- `schema_version`
+- `generated_at`
+- `scan_root`
+- `summary`
+- `duplicates`
+- `review_candidates`
+- `project_groups`
+- `organization_suggestions`
+- `warnings`
+
+Expected outcome: the report contains facts and suggested dry-run plan items only; it does not approve or apply moves.
+
 ## Final Git Hygiene Check
 
 From the repository root:

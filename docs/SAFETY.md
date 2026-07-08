@@ -16,6 +16,7 @@
 - LLM output is advisory only.
 - Full file contents are not sent to the LLM by default.
 - Planner, review, grouping, and LLM modules must not move files.
+- Report generation must not move files and may only create a new report file.
 - `executor.py` is the only movement module.
 - Approved duplicate and organization moves both use `executor.py`.
 - Organization apply requires exact confirmation and keeps dry-run planning as the default.

@@ -12,6 +12,8 @@ Filesystem
      -> review.py
      -> grouping.py
      -> llm_refinement.py
+  -> reports
+     -> reports.py
   -> approved moves
      -> explicit MovePlanItem values
   -> execution
@@ -33,6 +35,7 @@ Filesystem
 | `grouping.py` | deterministic project grouping and organization suggestions |
 | `llm_refinement.py` | advisory LLM prompt, payload, validation, refined suggestions |
 | `ollama_client.py` | local Ollama client only |
+| `reports.py` | read-only report assembly and JSON report writing |
 | `executor.py` | approved move execution and undo logs |
 | `cli.py` | command-line orchestration |
 
@@ -41,6 +44,8 @@ Filesystem
 Facts come from deterministic Python: paths, sizes, hashes, extensions, and inferred deterministic groups. `scanner.py`, `duplicates.py`, `review.py`, and `grouping.py` produce facts or suggestions.
 
 Suggestions are represented as `MovePlanItem` objects and printed as dry-run plans. `llm_refinement.py` produces advisory suggestions only and stores them separately from deterministic `ProjectGroup` data.
+
+Reports serialize facts and suggestions into JSON for manual review or external scheduler runs. `reports.py` may write a new report file under the scan root, but it does not execute moves or approve actions.
 
 Approved moves are explicit `MovePlanItem` values accepted by a user-facing flow. Execution is isolated in `executor.py`, which validates and applies approved duplicate and organization moves only. Undo is driven by operation logs written by `executor.py`.
 

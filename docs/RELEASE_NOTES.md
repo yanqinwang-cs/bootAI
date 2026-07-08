@@ -1,8 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 8.5
+## Current Status Through Stage 9
 
-Stage 8.5 is a stabilization, manual testing, and release-readiness stage. It adds documentation for safe use and verification. It does not add new runtime behavior.
+Stage 9 adds read-only JSON report generation for manual review or external scheduler runs. It does not add a built-in scheduler daemon or any new movement behavior.
 
 ## Stage Summary
 
@@ -17,6 +17,7 @@ Stage 8.5 is a stabilization, manual testing, and release-readiness stage. It ad
 - Stage 7.6: documentation audit and pre-Stage-8 safety gate.
 - Stage 8: approved deterministic and refined organization moves through `executor.py`.
 - Stage 8.5: stabilization docs, manual testing guide, and release notes.
+- Stage 9: read-only scheduled-compatible report generation.
 
 ## Safety Model
 
@@ -30,6 +31,7 @@ Stage 8.5 is a stabilization, manual testing, and release-readiness stage. It ad
 - Direct symlink sources and unsafe symlink destination parents are rejected.
 - Deterministic Python remains the source of truth for facts.
 - LLM output is advisory and separately validated.
+- Report generation may create a new report file but does not move scanned files.
 
 ## Current CLI Capabilities
 
@@ -38,6 +40,7 @@ Stage 8.5 is a stabilization, manual testing, and release-readiness stage. It ad
 - Review candidates: `--review-candidates`, `--plan-review-candidates`.
 - Project grouping: `--project-groups`, `--plan-organization`, `--apply-organization-plan`.
 - Local LLM refinement: `--refine-groups`, `--plan-refined-organization`, `--apply-refined-organization-plan`.
+- Reports: `--report`, `--report-output <path>`.
 - Undo: `--undo-log <path>`.
 
 Apply commands require one of:
@@ -48,7 +51,7 @@ Apply commands require one of:
 
 ## Known Limitations
 
-- No scheduled report mode yet.
+- No built-in scheduler daemon or background service.
 - No GUI yet.
 - No cloud LLM APIs.
 - Ollama refinement requires a local Ollama service and model.
