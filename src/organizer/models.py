@@ -50,3 +50,18 @@ class ReviewCandidate:
     category: str
     reason: str
     confidence: int
+
+
+@dataclass(frozen=True)
+class ProjectGroup:
+    group_name: str
+    files: list[FileMetadata]
+    reason: str
+    confidence: int
+
+
+@dataclass(frozen=True)
+class OrganizationSuggestion:
+    group: ProjectGroup
+    suggested_root: Path
+    plan_items: list[MovePlanItem]

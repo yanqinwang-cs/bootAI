@@ -3,7 +3,14 @@ from pathlib import Path
 
 from organizer.duplicates import find_exact_duplicates
 from organizer.executor import apply_move_plan, undo_operation_log
-from organizer.models import MovePlanItem, OperationLog
+from organizer.grouping import build_organization_suggestions, find_project_groups
+from organizer.models import (
+    MovePlanItem,
+    OperationLog,
+    OrganizationSuggestion,
+    ProjectGroup,
+    ReviewCandidate,
+)
 from organizer.planner import build_duplicate_review_plan
 from organizer.review import build_review_candidate_plan, detect_review_candidates
 from organizer.scanner import scan_directory
@@ -22,6 +29,8 @@ def main() -> None:
     parser.add_argument("--undo-log", type=Path, default=None)
     parser.add_argument("--review-candidates", action="store_true")
     parser.add_argument("--plan-review-candidates", action="store_true")
+    parser.add_argument("--project-groups", action="store_true")
+    parser.add_argument("--plan-organization", action="store_true")
     args = parser.parse_args()
 
     if args.undo_log is not None:
@@ -32,6 +41,8 @@ def main() -> None:
             or args.confirm is not None
             or args.review_candidates
             or args.plan_review_candidates
+            or args.project_groups
+            or args.plan_organization
         ):
             parser.error("--undo-log cannot be combined with planning or review flags")
         operation_log = undo_operation_log(args.undo_log, args.folder)
@@ -107,6 +118,18 @@ def main() -> None:
         )
         _print_review_candidate_plan(review_plan_items)
 
+    project_groups = None
+
+    if args.project_groups:
+        project_groups = find_project_groups(metadata_items)
+        _print_project_groups(project_groups)
+
+    if args.plan_organization:
+        if project_groups is None:
+            project_groups = find_project_groups(metadata_items)
+        suggestions = build_organization_suggestions(project_groups, args.folder)
+        _print_organization_suggestions(suggestions)
+
 
 def _print_duplicate_review_plan(plan_items: list[MovePlanItem]) -> None:
     print("")
@@ -125,7 +148,7 @@ def _print_duplicate_review_plan(plan_items: list[MovePlanItem]) -> None:
         print(f"  overwrite_risk: {item.overwrite_risk}")
 
 
-def _print_review_candidates(candidates) -> None:
+def _print_review_candidates(candidates: list[ReviewCandidate]) -> None:
     print("")
     print("Review candidates")
     if not candidates:
@@ -154,6 +177,44 @@ def _print_review_candidate_plan(plan_items: list[MovePlanItem]) -> None:
         print(f"  reason: {item.reason}")
         print(f"  confidence: {item.confidence}")
         print(f"  overwrite_risk: {item.overwrite_risk}")
+
+
+def _print_project_groups(groups: list[ProjectGroup]) -> None:
+    print("")
+    print("Project group suggestions")
+    if not groups:
+        print("No suggested groups found.")
+        return
+
+    for index, group in enumerate(groups, start=1):
+        print(f"Suggested group {index}: {group.group_name}")
+        print(f"  confidence: {group.confidence}")
+        print(f"  reason: {group.reason}")
+        print("  files:")
+        for file in group.files:
+            print(f"    - {file.relative_path.as_posix()}")
+
+
+def _print_organization_suggestions(
+    suggestions: list[OrganizationSuggestion],
+) -> None:
+    print("")
+    print("Dry-run organization plan")
+    print("Dry-run only: no files will be moved by this command.")
+    if not suggestions:
+        print("No candidate organization plan items found.")
+        return
+
+    for suggestion in suggestions:
+        print(f"Candidate organization: {suggestion.group.group_name}")
+        print(f"  suggested_root: {suggestion.suggested_root}")
+        for index, item in enumerate(suggestion.plan_items, start=1):
+            print(f"  Planned action {index}: {item.operation}")
+            print(f"    source: {item.source}")
+            print(f"    destination: {item.destination}")
+            print(f"    reason: {item.reason}")
+            print(f"    confidence: {item.confidence}")
+            print(f"    overwrite_risk: {item.overwrite_risk}")
 
 
 def _print_operation_log(operation_log: OperationLog) -> None:
