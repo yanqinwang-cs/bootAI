@@ -11,3 +11,10 @@ class FileMetadata:
     size_bytes: int
     modified_time: float
     is_dir: bool
+
+
+@dataclass(frozen=True)
+class DuplicateGroup:
+    sha256: str
+    size_bytes: int
+    files: list[FileMetadata]
