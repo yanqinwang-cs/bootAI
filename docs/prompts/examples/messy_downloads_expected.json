@@ -1,0 +1,14 @@
+{
+  "folder_name": "Grant",
+  "confidence": 76,
+  "reason": "suggested project folder based on grant-related filenames",
+  "subfolders": {
+    "Downloads/grant_budget.xlsx": "datasets",
+    "Downloads/grant_notes.txt": "notes",
+    "Downloads/grant_slides.pptx": "slides",
+    "Downloads/grant_summary.pdf": "documents"
+  },
+  "warnings": [
+    "review the summary PDF subfolder if it is a paper rather than a document"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "folder_name": "CS2103_Software_Engineering",
+  "confidence": 88,
+  "reason": "suggested course folder based on the shared CS2103 code",
+  "subfolders": {
+    "cs2103/CS2103_diagram.png": "images",
+    "cs2103/CS2103_notes.md": "notes",
+    "cs2103/CS2103_report.docx": "documents"
+  },
+  "warnings": []
+}

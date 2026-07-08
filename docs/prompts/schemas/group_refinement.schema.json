@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GroupRefinementResponse",
+  "description": "Documentation-only schema matching the Stage 7 Python validator.",
+  "type": "object",
+  "required": ["folder_name", "confidence", "reason", "subfolders", "warnings"],
+  "additionalProperties": true,
+  "properties": {
+    "folder_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Non-empty folder name. Python also rejects path separators and dot-only parent/current directory names."
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subfolders": {
+      "type": "object",
+      "description": "Keys must exactly match every input relative_path. Values must be allowed subfolders.",
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "papers",
+          "notes",
+          "code",
+          "datasets",
+          "results",
+          "slides",
+          "images",
+          "archives",
+          "documents",
+          "other"
+        ]
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "group_name": "CS2103",
+  "reason": "files share course/module code CS2103",
+  "confidence": 90,
+  "files": [
+    {
+      "relative_path": "cs2103/CS2103_diagram.png",
+      "name": "CS2103_diagram.png",
+      "extension": ".png",
+      "deterministic_subfolder": "images"
+    },
+    {
+      "relative_path": "cs2103/CS2103_notes.md",
+      "name": "CS2103_notes.md",
+      "extension": ".md",
+      "deterministic_subfolder": "notes"
+    },
+    {
+      "relative_path": "cs2103/CS2103_report.docx",
+      "name": "CS2103_report.docx",
+      "extension": ".docx",
+      "deterministic_subfolder": "documents"
+    }
+  ]
+}

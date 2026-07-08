@@ -1,0 +1,31 @@
+{
+  "group_name": "Evosim",
+  "reason": "files share filename token evosim",
+  "confidence": 70,
+  "files": [
+    {
+      "relative_path": "evosim/analysis_notes.md",
+      "name": "analysis_notes.md",
+      "extension": ".md",
+      "deterministic_subfolder": "notes"
+    },
+    {
+      "relative_path": "evosim/predator_prey_results.csv",
+      "name": "predator_prey_results.csv",
+      "extension": ".csv",
+      "deterministic_subfolder": "datasets"
+    },
+    {
+      "relative_path": "evosim/frontend_demo.png",
+      "name": "frontend_demo.png",
+      "extension": ".png",
+      "deterministic_subfolder": "images"
+    },
+    {
+      "relative_path": "evosim/research_paper.pdf",
+      "name": "research_paper.pdf",
+      "extension": ".pdf",
+      "deterministic_subfolder": "papers"
+    }
+  ]
+}
