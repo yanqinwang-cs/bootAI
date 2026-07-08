@@ -31,7 +31,7 @@ python -m organizer.cli <folder> --apply-duplicate-plan --confirm APPLY_DUPLICAT
 - `--apply-duplicate-plan`: apply; prints the plan and refuses to apply without exact confirmation.
 - `--confirm APPLY_DUPLICATE_PLAN`: apply; required for the current approved duplicate move command.
 
-Only `--apply-duplicate-plan --confirm APPLY_DUPLICATE_PLAN` can move files today.
+Duplicate review moves require `--apply-duplicate-plan --confirm APPLY_DUPLICATE_PLAN`. Organization moves have separate exact confirmation strings below.
 
 ## Undo
 

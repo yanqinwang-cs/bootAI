@@ -13,6 +13,7 @@
 | 7 | Optional Ollama LLM group refinement | `llm_refinement.py`, `ollama_client.py` | `--refine-groups`, `--plan-refined-organization` | advisory and dry-run only |
 | 7.5 | Documentation and prompt framework | `docs/` | none | documentation only |
 | 8 | Apply approved organization plans | `cli.py`, `executor.py` | `--apply-organization-plan`, `--apply-refined-organization-plan`, `--confirm` | explicit approval required |
+| 8.5 | Stabilization, manual testing, and release notes | `docs/` | none | documentation only |
 
 ## Future Stages
 

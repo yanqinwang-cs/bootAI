@@ -40,6 +40,10 @@ The model must return JSON. Python validates every field and rejects invalid out
 
 Prompts are engineering artifacts. They are documented, versioned, and evaluated separately from runtime code.
 
-## Stage 8 Is Separate
+## Organization Apply Reuses `executor.py`
 
-Applying organization plans requires a new safety review. Stage 7.5 documents the system; it does not expand execution behavior.
+Stage 8 added approved organization moves without adding another movement subsystem. The CLI flattens reviewed `MovePlanItem` values from organization suggestions and sends them through `executor.py`, preserving root validation, overwrite refusal, operation logs, and undo.
+
+## Stage 8.5 Stabilizes Before Stage 9
+
+Stage 8.5 improves release-readiness with manual testing guidance and release notes. It does not add scheduled mode, GUI behavior, cloud APIs, or new movement behavior.
