@@ -1,8 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.2
+## Current Status Through Stage 10.2.1
 
-Stage 10.2 adds review-candidate rows to batch review. Duplicate, organization, and review-candidate move candidates can now be reviewed together with `D`, `O`, and `R` IDs; approved moves still apply through `executor.py` only after exact confirmation.
+Stage 10.2.1 adds reviewed-plan conflict detection. Batch review now reports source and destination conflicts and blocks apply until each conflicted path has only one approved move.
 
 ## Stage Summary
 
@@ -22,6 +22,7 @@ Stage 10.2 adds review-candidate rows to batch review. Duplicate, organization, 
 - Stage 10.0: batch CLI review and confirmed bulk apply for approved reviewed-plan items.
 - Stage 10.1: apply saved reviewed-plan JSON files after validation and exact confirmation.
 - Stage 10.2: review-candidate rows in batch review.
+- Stage 10.2.1: reviewed-plan source and destination conflict detection.
 
 ## Safety Model
 
@@ -38,6 +39,7 @@ Stage 10.2 adds review-candidate rows to batch review. Duplicate, organization, 
 - Report generation may create a new report file but does not move scanned files.
 - Batch review approve/reject/save commands do not move files.
 - Review-candidate rows are candidates for review and use `R` IDs in batch review.
+- Reviewed-plan apply is blocked when approved rows conflict on source or destination.
 - Reviewed-plan JSON files are review records, not operation logs.
 - Saved reviewed-plan JSON files are untrusted input and are validated before use.
 

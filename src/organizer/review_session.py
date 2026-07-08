@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 import json
 import os
@@ -22,6 +22,15 @@ CATEGORY_DUPLICATE = "duplicate"
 CATEGORY_ORGANIZATION = "organization"
 CATEGORY_REVIEW_CANDIDATE = "review_candidate"
 REVIEW_CANDIDATE_CATEGORIES = {"empty", "temporary", "backup_or_copy"}
+CONFLICT_SOURCE = "source"
+CONFLICT_DESTINATION = "destination"
+
+
+@dataclass(frozen=True)
+class ReviewedPlanConflict:
+    conflict_type: str
+    relative_path: str
+    items: list[ReviewedPlanItem]
 
 
 def build_review_session_items(
@@ -91,7 +100,10 @@ def get_item(
     raise ValueError(f"unknown review item ID: {item_id}")
 
 
-def summarize_review_items(items: list[ReviewedPlanItem]) -> dict[str, int]:
+def summarize_review_items(
+    items: list[ReviewedPlanItem],
+    root: Path | None = None,
+) -> dict[str, int]:
     duplicate_approved = _count(items, CATEGORY_DUPLICATE, DECISION_APPROVED)
     duplicate_rejected = _count(items, CATEGORY_DUPLICATE, DECISION_REJECTED)
     organization_approved = _count(items, CATEGORY_ORGANIZATION, DECISION_APPROVED)
@@ -106,6 +118,17 @@ def summarize_review_items(items: list[ReviewedPlanItem]) -> dict[str, int]:
         CATEGORY_REVIEW_CANDIDATE,
         DECISION_REJECTED,
     )
+    conflicts = find_approved_move_conflicts(items, root) if root is not None else []
+    source_conflicts = [
+        conflict
+        for conflict in conflicts
+        if conflict.conflict_type == CONFLICT_SOURCE
+    ]
+    destination_conflicts = [
+        conflict
+        for conflict in conflicts
+        if conflict.conflict_type == CONFLICT_DESTINATION
+    ]
     return {
         "approved_move_count": (
             duplicate_approved
@@ -123,6 +146,9 @@ def summarize_review_items(items: list[ReviewedPlanItem]) -> dict[str, int]:
         "organization_rejected_move_count": organization_rejected,
         "review_candidate_approved_move_count": review_candidate_approved,
         "review_candidate_rejected_move_count": review_candidate_rejected,
+        "approved_source_conflict_count": len(source_conflicts),
+        "approved_destination_conflict_count": len(destination_conflicts),
+        "approved_move_conflict_count": len(conflicts),
     }
 
 
@@ -132,6 +158,52 @@ def approved_plan_items(items: list[ReviewedPlanItem]) -> list[MovePlanItem]:
         for item in items
         if item.decision == DECISION_APPROVED
     ]
+
+
+def find_approved_move_conflicts(
+    items: list[ReviewedPlanItem],
+    root: Path,
+) -> list[ReviewedPlanConflict]:
+    source_groups = _approved_items_by_path(items, root, CONFLICT_SOURCE)
+    destination_groups = _approved_items_by_path(items, root, CONFLICT_DESTINATION)
+
+    conflicts = [
+        ReviewedPlanConflict(
+            conflict_type=CONFLICT_SOURCE,
+            relative_path=relative_path,
+            items=_sort_review_items(conflict_items),
+        )
+        for relative_path, conflict_items in source_groups.items()
+        if len(conflict_items) > 1
+    ]
+    conflicts.extend(
+        ReviewedPlanConflict(
+            conflict_type=CONFLICT_DESTINATION,
+            relative_path=relative_path,
+            items=_sort_review_items(conflict_items),
+        )
+        for relative_path, conflict_items in destination_groups.items()
+        if len(conflict_items) > 1
+    )
+    return sorted(
+        conflicts,
+        key=lambda conflict: (
+            0 if conflict.conflict_type == CONFLICT_SOURCE else 1,
+            conflict.relative_path,
+        ),
+    )
+
+
+def validate_no_approved_move_conflicts(
+    items: list[ReviewedPlanItem],
+    root: Path,
+) -> None:
+    conflicts = find_approved_move_conflicts(items, root)
+    if conflicts:
+        raise ValueError(
+            "reviewed plan has approved move conflicts; reject conflicting "
+            "approved moves before applying"
+        )
 
 
 def load_reviewed_plan_move_items(
@@ -165,7 +237,7 @@ def reviewed_plan_data_to_move_items(
     if not isinstance(items, list):
         raise ValueError("reviewed plan items must be a list")
 
-    move_items: list[MovePlanItem] = []
+    reviewed_items: list[ReviewedPlanItem] = []
     for index, item in enumerate(items, start=1):
         if not isinstance(item, dict):
             raise ValueError(f"reviewed plan item {index} must be an object")
@@ -180,20 +252,27 @@ def reviewed_plan_data_to_move_items(
         validate_under_root(source_path.resolve(strict=False), root)
         validate_under_root(destination_path.resolve(strict=False), root)
 
-        move_items.append(
-            MovePlanItem(
-                source=source_path,
-                destination=destination_path,
-                reason=_optional_string(item.get("reason"), "Approved reviewed plan item."),
-                confidence=_optional_confidence(item.get("confidence")),
-                operation=_optional_string(item.get("operation"), "dry-run move"),
-                overwrite_risk=_optional_bool(
-                    item.get("overwrite_risk"),
-                    destination_path.exists(),
+        reviewed_items.append(
+            ReviewedPlanItem(
+                id=item["id"].strip().upper(),
+                category=item["category"],
+                decision=DECISION_APPROVED,
+                review_category=_optional_review_category(item),
+                plan_item=MovePlanItem(
+                    source=source_path,
+                    destination=destination_path,
+                    reason=_optional_string(item.get("reason"), "Approved reviewed plan item."),
+                    confidence=_optional_confidence(item.get("confidence")),
+                    operation=_optional_string(item.get("operation"), "dry-run move"),
+                    overwrite_risk=_optional_bool(
+                        item.get("overwrite_risk"),
+                        destination_path.exists(),
+                    ),
                 ),
             )
         )
-    return move_items
+    validate_no_approved_move_conflicts(reviewed_items, root)
+    return approved_plan_items(reviewed_items)
 
 
 def reviewed_plan_to_json_data(
@@ -206,7 +285,7 @@ def reviewed_plan_to_json_data(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "scan_root": ".",
         "plan_type": REVIEW_PLAN_TYPE,
-        "summary": summarize_review_items(items),
+        "summary": summarize_review_items(items, resolved_root),
         "items": [
             _item_to_json(item, resolved_root)
             for item in sorted(items, key=lambda item: item.id)
@@ -296,6 +375,36 @@ def _set_decision(
     ]
 
 
+def _approved_items_by_path(
+    items: list[ReviewedPlanItem],
+    root: Path,
+    conflict_type: str,
+) -> dict[str, list[ReviewedPlanItem]]:
+    grouped: dict[str, list[ReviewedPlanItem]] = {}
+    for item in items:
+        if item.decision != DECISION_APPROVED:
+            continue
+        path = (
+            item.plan_item.source
+            if conflict_type == CONFLICT_SOURCE
+            else item.plan_item.destination
+        )
+        relative_path = _normalized_relative_path(path, root)
+        grouped.setdefault(relative_path, []).append(item)
+    return grouped
+
+
+def _normalized_relative_path(path: Path, root: Path) -> str:
+    resolved_root = root.resolve()
+    resolved_path = path.resolve(strict=False)
+    validate_under_root(resolved_path, resolved_root)
+    return resolved_path.relative_to(resolved_root).as_posix()
+
+
+def _sort_review_items(items: list[ReviewedPlanItem]) -> list[ReviewedPlanItem]:
+    return sorted(items, key=lambda item: item.id)
+
+
 def _validate_existing_reviewed_plan_path(path: Path, root: Path) -> Path:
     candidate = path if path.is_absolute() else root / path
     resolved_path = validate_under_root(candidate.resolve(strict=False), root)
@@ -359,6 +468,12 @@ def _optional_bool(value: object, fallback: bool) -> bool:
     if isinstance(value, bool):
         return value
     return fallback
+
+
+def _optional_review_category(item: dict[str, Any]) -> str | None:
+    if item.get("category") == CATEGORY_REVIEW_CANDIDATE:
+        return item["review_category"]
+    return None
 
 
 def _count(

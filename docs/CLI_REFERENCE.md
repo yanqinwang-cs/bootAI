@@ -126,6 +126,7 @@ Inside the review session:
 - `show organization`: show organization suggested moves.
 - `show review-candidates`: show review-candidate suggested moves with `R` IDs.
 - `summary`: show approved and rejected move counts.
+- `conflicts`: show approved source and destination conflicts.
 - `reject <IDs...>`: mark suggested moves as rejected.
 - `approve <IDs...>`: mark rejected moves as approved again.
 - `details <ID>`: show full details for one item.
@@ -133,6 +134,6 @@ Inside the review session:
 - `apply`: save the current reviewed plan if needed, then require exact `APPLY_REVIEWED_PLAN` confirmation before applying approved moves.
 - `quit`: exit without applying.
 
-Approve, reject, and save commands do not move files. Review-candidate rows are candidates for review, use `R` IDs, and keep `category = "review_candidate"` separate from the review candidate category such as `temporary`, `empty`, or `backup_or_copy`. Only `apply` with exact `APPLY_REVIEWED_PLAN` confirmation can move approved files, and movement still goes through `executor.py`. Reviewed-plan JSON files are review records, not operation logs. Undo uses the operation log printed after a real apply.
+Approve, reject, and save commands do not move files. Review-candidate rows are candidates for review, use `R` IDs, and keep `category = "review_candidate"` separate from the review candidate category such as `temporary`, `empty`, or `backup_or_copy`. If one source or destination path has multiple approved moves, `summary` reports the conflict count and `apply` is blocked until the conflict is resolved. Resolve a source conflict by rejecting all but one approved move for that source. Resolve a destination conflict by rejecting all but one approved move targeting that destination. Only `apply` with exact `APPLY_REVIEWED_PLAN` confirmation can move approved files, and movement still goes through `executor.py`. Reviewed-plan JSON files are review records, not operation logs. Undo uses the operation log printed after a real apply.
 
-Saved reviewed plans are untrusted input. `--apply-reviewed-plan` validates the plan path under the scan root, checks the JSON shape, rejects absolute paths and path traversal, ignores rejected items, and converts only approved items back into `MovePlanItem` values. It does not resume or edit review sessions.
+Saved reviewed plans are untrusted input. `--apply-reviewed-plan` validates the plan path under the scan root, checks the JSON shape, rejects absolute paths and path traversal, ignores rejected items, blocks approved move conflicts, and converts only approved items back into `MovePlanItem` values. It does not resume or edit review sessions.

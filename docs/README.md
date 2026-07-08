@@ -6,7 +6,7 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.2 are implemented. Stage 10.2 adds review-candidate rows to batch review. Built-in scheduler daemons, saved review-session resume/editing, filtering/sorting/pagination, and GUI work remain future work.
+Stages 1 through 10.2.1 are implemented. Stage 10.2.1 adds reviewed-plan conflict detection before batch apply. Built-in scheduler daemons, saved review-session resume/editing, filtering/sorting/pagination, and GUI work remain future work.
 
 ## Quick Navigation
 

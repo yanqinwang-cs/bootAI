@@ -9,11 +9,12 @@ import unittest
 from unittest import mock
 
 from organizer.executor import apply_move_plan
-from organizer.models import MoveResult, OperationLog
+from organizer.models import MovePlanItem, MoveResult, OperationLog, ReviewedPlanItem
 from organizer.review_session import (
     approve_items,
     approved_plan_items,
     build_review_session_items,
+    find_approved_move_conflicts,
     get_item,
     load_reviewed_plan_move_items,
     reject_items,
@@ -209,6 +210,166 @@ class ReviewSessionDecisionTests(unittest.TestCase):
             self.assertEqual(get_item(items, "R1").decision, "approved")
 
 
+class ReviewSessionConflictTests(unittest.TestCase):
+    def test_duplicate_and_organization_source_conflict_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            items = [
+                make_reviewed_item(root, "D1", "duplicate", "shared.txt", "AI_Review/duplicates/shared.txt"),
+                make_reviewed_item(root, "O1", "organization", "shared.txt", "Organized/Shared/notes/shared.txt"),
+            ]
+
+            conflicts = find_approved_move_conflicts(items, root)
+
+            self.assertEqual(len(conflicts), 1)
+            self.assertEqual(conflicts[0].conflict_type, "source")
+            self.assertEqual(conflicts[0].relative_path, "shared.txt")
+            self.assertEqual([item.id for item in conflicts[0].items], ["D1", "O1"])
+
+    def test_duplicate_and_review_candidate_source_conflict_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            items = [
+                make_reviewed_item(root, "D1", "duplicate", "file.tmp", "AI_Review/duplicates/file.tmp"),
+                make_reviewed_item(
+                    root,
+                    "R1",
+                    "review_candidate",
+                    "file.tmp",
+                    "AI_Review/temporary/file.tmp",
+                    review_category="temporary",
+                ),
+            ]
+
+            conflicts = find_approved_move_conflicts(items, root)
+
+            self.assertEqual(len(conflicts), 1)
+            self.assertEqual(conflicts[0].conflict_type, "source")
+            self.assertEqual([item.id for item in conflicts[0].items], ["D1", "R1"])
+
+    def test_organization_and_review_candidate_source_conflict_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            items = [
+                make_reviewed_item(root, "O1", "organization", "file.tmp", "Organized/File/other/file.tmp"),
+                make_reviewed_item(
+                    root,
+                    "R1",
+                    "review_candidate",
+                    "file.tmp",
+                    "AI_Review/temporary/file.tmp",
+                    review_category="temporary",
+                ),
+            ]
+
+            conflicts = find_approved_move_conflicts(items, root)
+
+            self.assertEqual(len(conflicts), 1)
+            self.assertEqual(conflicts[0].conflict_type, "source")
+            self.assertEqual([item.id for item in conflicts[0].items], ["O1", "R1"])
+
+    def test_same_source_approved_in_three_rows_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            items = [
+                make_reviewed_item(root, "D1", "duplicate", "file.tmp", "AI_Review/duplicates/file.tmp"),
+                make_reviewed_item(root, "O1", "organization", "file.tmp", "Organized/File/other/file.tmp"),
+                make_reviewed_item(
+                    root,
+                    "R1",
+                    "review_candidate",
+                    "file.tmp",
+                    "AI_Review/temporary/file.tmp",
+                    review_category="temporary",
+                ),
+            ]
+
+            conflicts = find_approved_move_conflicts(items, root)
+
+            self.assertEqual(len(conflicts), 1)
+            self.assertEqual([item.id for item in conflicts[0].items], ["D1", "O1", "R1"])
+
+    def test_rejected_rows_resolve_source_conflicts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            items = [
+                make_reviewed_item(root, "D1", "duplicate", "file.tmp", "AI_Review/duplicates/file.tmp"),
+                make_reviewed_item(root, "O1", "organization", "file.tmp", "Organized/File/other/file.tmp"),
+                make_reviewed_item(
+                    root,
+                    "R1",
+                    "review_candidate",
+                    "file.tmp",
+                    "AI_Review/temporary/file.tmp",
+                    review_category="temporary",
+                ),
+            ]
+
+            resolved = reject_items(items, ["D1", "O1"])
+            conflicts = find_approved_move_conflicts(resolved, root)
+
+            self.assertEqual(conflicts, [])
+
+    def test_same_destination_from_two_sources_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            items = [
+                make_reviewed_item(root, "O1", "organization", "a.txt", "Organized/Shared/notes/file.txt"),
+                make_reviewed_item(root, "O2", "organization", "b.txt", "Organized/Shared/notes/file.txt"),
+            ]
+
+            conflicts = find_approved_move_conflicts(items, root)
+
+            self.assertEqual(len(conflicts), 1)
+            self.assertEqual(conflicts[0].conflict_type, "destination")
+            self.assertEqual(conflicts[0].relative_path, "Organized/Shared/notes/file.txt")
+            self.assertEqual([item.id for item in conflicts[0].items], ["O1", "O2"])
+
+    def test_summary_includes_conflict_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            items = [
+                make_reviewed_item(root, "D1", "duplicate", "file.tmp", "AI_Review/duplicates/file.tmp"),
+                make_reviewed_item(
+                    root,
+                    "R1",
+                    "review_candidate",
+                    "file.tmp",
+                    "AI_Review/temporary/file.tmp",
+                    review_category="temporary",
+                ),
+                make_reviewed_item(root, "O1", "organization", "a.txt", "Organized/Shared/notes/file.txt"),
+                make_reviewed_item(root, "O2", "organization", "b.txt", "Organized/Shared/notes/file.txt"),
+            ]
+
+            summary = summarize_review_items(items, root)
+
+            self.assertEqual(summary["approved_source_conflict_count"], 1)
+            self.assertEqual(summary["approved_destination_conflict_count"], 1)
+            self.assertEqual(summary["approved_move_conflict_count"], 2)
+
+    def test_conflict_output_includes_destination_guidance(self) -> None:
+        from organizer import cli as cli_module
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            items = [
+                make_reviewed_item(root, "O1", "organization", "a.txt", "Organized/Shared/notes/file.txt"),
+                make_reviewed_item(root, "O2", "organization", "b.txt", "Organized/Shared/notes/file.txt"),
+            ]
+            stdout = io.StringIO()
+
+            with mock.patch("sys.stdout", stdout):
+                cli_module._print_review_session_conflicts(items, root)
+
+            output = stdout.getvalue()
+            self.assertIn("Destination conflict: Organized/Shared/notes/file.txt", output)
+            self.assertIn(
+                "Reject all but one approved move targeting the same destination.",
+                output,
+            )
+
+
 class ReviewSessionSaveTests(unittest.TestCase):
     def test_save_writes_reviewed_plan_json_under_review_sessions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -279,6 +440,20 @@ class ReviewSessionSaveTests(unittest.TestCase):
             self.assertIn("rejected", {item["decision"] for item in review_items})
             self.assertTrue((root / "file.tmp").exists())
 
+    def test_save_includes_conflict_counts_without_moving_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+            items = build_review_session_items(scan_directory(root), root)
+
+            path = save_reviewed_plan(items, root)
+            data = json.loads(path.read_text(encoding="utf-8"))
+
+            self.assertGreaterEqual(data["summary"]["approved_source_conflict_count"], 1)
+            self.assertGreaterEqual(data["summary"]["approved_move_conflict_count"], 1)
+            self.assertTrue((root / "empty.txt").exists())
+            self.assertFalse((root / "AI_Review" / "empty").exists())
+
 
 class ReviewSessionCliTests(unittest.TestCase):
     def test_review_plans_rejects_incompatible_flags(self) -> None:
@@ -329,6 +504,37 @@ class ReviewSessionCliTests(unittest.TestCase):
             self.assertIn("R1 [approved]", result.stdout)
             self.assertIn("review candidate approved moves", result.stdout)
 
+    def test_conflicts_command_prints_source_and_destination_conflicts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+
+            result = run_cli(
+                root,
+                "--review-plans",
+                input_text="conflicts\nquit\n",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Approved move conflicts", result.stdout)
+            self.assertIn("Source conflict: empty.txt", result.stdout)
+            self.assertIn("Reject all but one approved move for the same source.", result.stdout)
+
+    def test_summary_reports_conflicts_and_apply_blocking(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+
+            result = run_cli(
+                root,
+                "--review-plans",
+                input_text="summary\nquit\n",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("approved source conflicts:", result.stdout)
+            self.assertIn("final apply is blocked until conflicts are resolved", result.stdout)
+
     def test_review_plans_can_reject_review_candidate_and_save(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -351,6 +557,24 @@ class ReviewSessionCliTests(unittest.TestCase):
                 if item["category"] == "review_candidate"
             ]
             self.assertEqual(review_items[0]["decision"], "rejected")
+            self.assertTrue((root / "empty.txt").exists())
+
+    def test_apply_is_blocked_when_conflicts_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+
+            exit_code, output = run_cli_main(
+                root,
+                "--review-plans",
+                input_text="apply\nquit\n",
+                apply_side_effect=AssertionError("executor should not be called"),
+            )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Apply blocked", output)
+            self.assertIn("Source conflict: empty.txt", output)
+            self.assertFalse((root / "AI_Review" / "review_sessions").exists())
             self.assertTrue((root / "empty.txt").exists())
 
     def test_wrong_apply_confirmation_does_not_move_files(self) -> None:
@@ -637,6 +861,37 @@ class SavedReviewedPlanValidationTests(unittest.TestCase):
         self.assertEqual(plan_items[0].source, root / "file.tmp")
         self.assertEqual(plan_items[0].destination, root / "AI_Review" / "temporary" / "file.tmp")
 
+    def test_saved_plan_source_conflict_is_rejected_before_move_items_return(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"].append(
+            {
+                "id": "R1",
+                "category": "review_candidate",
+                "review_category": "temporary",
+                "decision": "approved",
+                "source": "a.txt",
+                "destination": "AI_Review/temporary/a.txt",
+            }
+        )
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+    def test_saved_plan_destination_conflict_is_rejected_before_move_items_return(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"].append(
+            {
+                "id": "O1",
+                "category": "organization",
+                "decision": "approved",
+                "source": "b.txt",
+                "destination": "AI_Review/duplicates/a.txt",
+            }
+        )
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
     def test_saved_review_candidate_requires_valid_review_category(self) -> None:
         data = valid_saved_plan_data()
         data["items"][0]["category"] = "review_candidate"
@@ -816,6 +1071,35 @@ class SavedReviewedPlanCliTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertIn("No approved moves to apply.", output)
 
+    def test_apply_reviewed_plan_blocks_conflicted_saved_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_duplicate_only_fixture(root)
+            data = valid_saved_plan_data()
+            data["items"].append(
+                {
+                    "id": "R1",
+                    "category": "review_candidate",
+                    "review_category": "temporary",
+                    "decision": "approved",
+                    "source": "a.txt",
+                    "destination": "AI_Review/temporary/a.txt",
+                }
+            )
+            plan_path = write_reviewed_plan(root, data)
+
+            result = run_cli(
+                root,
+                "--apply-reviewed-plan",
+                str(plan_path),
+                "--confirm",
+                "APPLY_REVIEWED_PLAN",
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("reviewed plan has approved move conflicts", result.stderr)
+            self.assertTrue((root / "a.txt").exists())
+
     def test_apply_reviewed_plan_rejects_incompatible_flags(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -863,6 +1147,31 @@ def create_full_review_session_fixture(root: Path) -> None:
 def create_duplicate_only_fixture(root: Path) -> None:
     (root / "a.txt").write_text("same", encoding="utf-8")
     (root / "b.txt").write_text("same", encoding="utf-8")
+
+
+def make_reviewed_item(
+    root: Path,
+    item_id: str,
+    category: str,
+    source: str,
+    destination: str,
+    decision: str = "approved",
+    review_category: str | None = None,
+) -> ReviewedPlanItem:
+    return ReviewedPlanItem(
+        id=item_id,
+        category=category,
+        decision=decision,
+        review_category=review_category,
+        plan_item=MovePlanItem(
+            source=root / source,
+            destination=root / destination,
+            reason="test reviewed plan item",
+            confidence=100,
+            operation="dry-run move",
+            overwrite_risk=False,
+        ),
+    )
 
 
 def valid_saved_plan_data():

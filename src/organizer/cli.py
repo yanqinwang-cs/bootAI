@@ -25,6 +25,7 @@ from organizer.review_session import (
     approve_items,
     approved_plan_items,
     build_review_session_items,
+    find_approved_move_conflicts,
     get_item,
     load_reviewed_plan_move_items,
     reject_items,
@@ -288,7 +289,7 @@ def _handle_review_plans(
     print("Batch review session")
     print("Approve/reject commands update review decisions only; they do not move files.")
     _print_review_session_help()
-    _print_review_session_summary(items)
+    _print_review_session_summary(items, args.folder)
     saved_current_plan_path: Path | None = None
 
     while True:
@@ -315,7 +316,9 @@ def _handle_review_plans(
             elif action == "show" and len(command) == 2 and command[1].lower() == "review-candidates":
                 _print_review_session_rows(items, "review_candidate", args.folder)
             elif action == "summary" and len(command) == 1:
-                _print_review_session_summary(items)
+                _print_review_session_summary(items, args.folder)
+            elif action == "conflicts" and len(command) == 1:
+                _print_review_session_conflicts(items, args.folder)
             elif action == "reject" and len(command) > 1:
                 items = reject_items(items, command[1:])
                 saved_current_plan_path = None
@@ -330,10 +333,18 @@ def _handle_review_plans(
                 saved_current_plan_path = save_reviewed_plan(items, args.folder)
                 print(f"Reviewed plan saved: {saved_current_plan_path}")
             elif action == "apply" and len(command) == 1:
-                _print_review_session_summary(items)
+                _print_review_session_summary(items, args.folder)
                 plan_items = approved_plan_items(items)
                 if not plan_items:
                     print("No approved moves to apply.")
+                    continue
+                conflicts = find_approved_move_conflicts(items, args.folder)
+                if conflicts:
+                    print(
+                        "Apply blocked: one or more source or destination paths "
+                        "have multiple approved moves."
+                    )
+                    _print_review_session_conflicts(items, args.folder)
                     continue
                 if saved_current_plan_path is None:
                     saved_current_plan_path = save_reviewed_plan(items, args.folder)
@@ -402,8 +413,9 @@ def _handle_apply_reviewed_plan(
 
 def _print_review_session_help() -> None:
     print(
-        "Commands: help, show duplicates, show organization, show review-candidates, summary, "
-        "reject <IDs...>, approve <IDs...>, details <ID>, save, apply, quit"
+        "Commands: help, show duplicates, show organization, show review-candidates, "
+        "summary, conflicts, reject <IDs...>, approve <IDs...>, details <ID>, "
+        "save, apply, quit"
     )
 
 
@@ -459,8 +471,11 @@ def _print_review_session_item(
     print(f"  overwrite_risk: {plan_item.overwrite_risk}")
 
 
-def _print_review_session_summary(items: list[ReviewedPlanItem]) -> None:
-    summary = summarize_review_items(items)
+def _print_review_session_summary(
+    items: list[ReviewedPlanItem],
+    root: Path,
+) -> None:
+    summary = summarize_review_items(items, root)
     print("")
     print("Review summary")
     print(f"  duplicate approved moves: {summary['duplicate_approved_move_count']}")
@@ -477,6 +492,39 @@ def _print_review_session_summary(items: list[ReviewedPlanItem]) -> None:
     )
     print(f"  total approved moves: {summary['approved_move_count']}")
     print(f"  total rejected moves: {summary['rejected_move_count']}")
+    print(f"  approved source conflicts: {summary['approved_source_conflict_count']}")
+    print(f"  approved destination conflicts: {summary['approved_destination_conflict_count']}")
+    print(f"  approved move conflicts: {summary['approved_move_conflict_count']}")
+    if summary["approved_move_conflict_count"]:
+        print("  final apply is blocked until conflicts are resolved")
+
+
+def _print_review_session_conflicts(
+    items: list[ReviewedPlanItem],
+    root: Path,
+) -> None:
+    conflicts = find_approved_move_conflicts(items, root)
+    print("")
+    print("Approved move conflicts")
+    if not conflicts:
+        print("No approved move conflicts found.")
+        return
+
+    for conflict in conflicts:
+        if conflict.conflict_type == "source":
+            print(f"Source conflict: {conflict.relative_path}")
+            guidance = "Reject all but one approved move for the same source."
+        else:
+            print(f"Destination conflict: {conflict.relative_path}")
+            guidance = "Reject all but one approved move targeting the same destination."
+        for item in conflict.items:
+            plan_item = item.plan_item
+            print(
+                f"  {item.id} "
+                f"{_relative_to_root(plan_item.source, root)} -> "
+                f"{_relative_to_root(plan_item.destination, root)}"
+            )
+        print(guidance)
 
 
 def _relative_to_root(path: Path, root: Path) -> str:
