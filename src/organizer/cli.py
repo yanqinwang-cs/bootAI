@@ -282,7 +282,7 @@ def _handle_review_plans(
     metadata_items = scan_directory(args.folder, max_depth=args.max_depth)
     items = build_review_session_items(metadata_items, args.folder)
     if not items:
-        print("No duplicate or organization move candidates found for review.")
+        print("No duplicate, organization, or review-candidate move candidates found for review.")
         return 0
 
     print("Batch review session")
@@ -312,6 +312,8 @@ def _handle_review_plans(
                 _print_review_session_rows(items, "duplicate", args.folder)
             elif action == "show" and len(command) == 2 and command[1].lower() == "organization":
                 _print_review_session_rows(items, "organization", args.folder)
+            elif action == "show" and len(command) == 2 and command[1].lower() == "review-candidates":
+                _print_review_session_rows(items, "review_candidate", args.folder)
             elif action == "summary" and len(command) == 1:
                 _print_review_session_summary(items)
             elif action == "reject" and len(command) > 1:
@@ -400,7 +402,7 @@ def _handle_apply_reviewed_plan(
 
 def _print_review_session_help() -> None:
     print(
-        "Commands: help, show duplicates, show organization, summary, "
+        "Commands: help, show duplicates, show organization, show review-candidates, summary, "
         "reject <IDs...>, approve <IDs...>, details <ID>, save, apply, quit"
     )
 
@@ -415,6 +417,8 @@ def _print_review_session_rows(
         "Duplicate move candidates"
         if category == "duplicate"
         else "Organization move candidates"
+        if category == "organization"
+        else "Review-candidate suggested moves"
     )
     print("")
     print(title)
@@ -444,6 +448,8 @@ def _print_review_session_item(
     plan_item = item.plan_item
     print(f"{item.id}")
     print(f"  category: {item.category}")
+    if item.review_category is not None:
+        print(f"  review_category: {item.review_category}")
     print(f"  decision: {item.decision}")
     print(f"  source: {_relative_to_root(plan_item.source, root)}")
     print(f"  destination: {_relative_to_root(plan_item.destination, root)}")
@@ -461,6 +467,14 @@ def _print_review_session_summary(items: list[ReviewedPlanItem]) -> None:
     print(f"  duplicate rejected moves: {summary['duplicate_rejected_move_count']}")
     print(f"  organization approved moves: {summary['organization_approved_move_count']}")
     print(f"  organization rejected moves: {summary['organization_rejected_move_count']}")
+    print(
+        "  review candidate approved moves: "
+        f"{summary['review_candidate_approved_move_count']}"
+    )
+    print(
+        "  review candidate rejected moves: "
+        f"{summary['review_candidate_rejected_move_count']}"
+    )
     print(f"  total approved moves: {summary['approved_move_count']}")
     print(f"  total rejected moves: {summary['rejected_move_count']}")
 

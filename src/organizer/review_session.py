@@ -11,6 +11,7 @@ from organizer.duplicates import find_exact_duplicates
 from organizer.grouping import build_organization_suggestions, find_project_groups
 from organizer.models import FileMetadata, MovePlanItem, OrganizationSuggestion, ReviewedPlanItem
 from organizer.planner import build_duplicate_review_plan
+from organizer.review import build_review_candidate_plan, detect_review_candidates
 from organizer.safety import validate_under_root
 
 REVIEW_SESSION_SCHEMA_VERSION = 1
@@ -19,6 +20,8 @@ DECISION_APPROVED = "approved"
 DECISION_REJECTED = "rejected"
 CATEGORY_DUPLICATE = "duplicate"
 CATEGORY_ORGANIZATION = "organization"
+CATEGORY_REVIEW_CANDIDATE = "review_candidate"
+REVIEW_CANDIDATE_CATEGORIES = {"empty", "temporary", "backup_or_copy"}
 
 
 def build_review_session_items(
@@ -33,6 +36,11 @@ def build_review_session_items(
         resolved_root,
     )
     organization_plan_items = _flatten_plan_items(organization_suggestions)
+    review_candidates = detect_review_candidates(files)
+    review_candidate_plan_items = build_review_candidate_plan(
+        review_candidates,
+        resolved_root,
+    )
 
     items: list[ReviewedPlanItem] = []
     items.extend(
@@ -47,6 +55,12 @@ def build_review_session_items(
             organization_plan_items,
             CATEGORY_ORGANIZATION,
             "O",
+        )
+    )
+    items.extend(
+        _items_for_review_candidate_plan(
+            review_candidate_plan_items,
+            [candidate.category for candidate in review_candidates],
         )
     )
     return items
@@ -82,13 +96,33 @@ def summarize_review_items(items: list[ReviewedPlanItem]) -> dict[str, int]:
     duplicate_rejected = _count(items, CATEGORY_DUPLICATE, DECISION_REJECTED)
     organization_approved = _count(items, CATEGORY_ORGANIZATION, DECISION_APPROVED)
     organization_rejected = _count(items, CATEGORY_ORGANIZATION, DECISION_REJECTED)
+    review_candidate_approved = _count(
+        items,
+        CATEGORY_REVIEW_CANDIDATE,
+        DECISION_APPROVED,
+    )
+    review_candidate_rejected = _count(
+        items,
+        CATEGORY_REVIEW_CANDIDATE,
+        DECISION_REJECTED,
+    )
     return {
-        "approved_move_count": duplicate_approved + organization_approved,
-        "rejected_move_count": duplicate_rejected + organization_rejected,
+        "approved_move_count": (
+            duplicate_approved
+            + organization_approved
+            + review_candidate_approved
+        ),
+        "rejected_move_count": (
+            duplicate_rejected
+            + organization_rejected
+            + review_candidate_rejected
+        ),
         "duplicate_approved_move_count": duplicate_approved,
         "duplicate_rejected_move_count": duplicate_rejected,
         "organization_approved_move_count": organization_approved,
         "organization_rejected_move_count": organization_rejected,
+        "review_candidate_approved_move_count": review_candidate_approved,
+        "review_candidate_rejected_move_count": review_candidate_rejected,
     }
 
 
@@ -213,6 +247,25 @@ def _items_for_plan(
     ]
 
 
+def _items_for_review_candidate_plan(
+    plan_items: list[MovePlanItem],
+    review_categories: list[str],
+) -> list[ReviewedPlanItem]:
+    return [
+        ReviewedPlanItem(
+            id=f"R{index}",
+            category=CATEGORY_REVIEW_CANDIDATE,
+            plan_item=plan_item,
+            decision=DECISION_APPROVED,
+            review_category=review_category,
+        )
+        for index, (plan_item, review_category) in enumerate(
+            zip(plan_items, review_categories),
+            start=1,
+        )
+    ]
+
+
 def _flatten_plan_items(
     suggestions: list[OrganizationSuggestion],
 ) -> list[MovePlanItem]:
@@ -261,10 +314,18 @@ def _validate_saved_item_identity(item: dict[str, Any], index: int) -> None:
     decision = item.get("decision")
     if not isinstance(item_id, str) or not item_id.strip():
         raise ValueError(f"reviewed plan item {index} id must be a non-empty string")
-    if category not in {CATEGORY_DUPLICATE, CATEGORY_ORGANIZATION}:
+    if category not in {
+        CATEGORY_DUPLICATE,
+        CATEGORY_ORGANIZATION,
+        CATEGORY_REVIEW_CANDIDATE,
+    }:
         raise ValueError(f"reviewed plan item {index} category is invalid")
     if decision not in {DECISION_APPROVED, DECISION_REJECTED}:
         raise ValueError(f"reviewed plan item {index} decision is invalid")
+    if category == CATEGORY_REVIEW_CANDIDATE:
+        review_category = item.get("review_category")
+        if review_category not in REVIEW_CANDIDATE_CATEGORIES:
+            raise ValueError(f"reviewed plan item {index} review_category is invalid")
 
 
 def _validated_relative_path(
@@ -317,7 +378,7 @@ def _item_to_json(
     root: Path,
 ) -> dict[str, Any]:
     plan_item = item.plan_item
-    return {
+    data = {
         "id": item.id,
         "category": item.category,
         "decision": item.decision,
@@ -328,6 +389,9 @@ def _item_to_json(
         "operation": plan_item.operation,
         "overwrite_risk": plan_item.overwrite_risk,
     }
+    if item.category == CATEGORY_REVIEW_CANDIDATE and item.review_category is not None:
+        data["review_category"] = item.review_category
+    return data
 
 
 def _relative_path(path: Path, root: Path) -> str:

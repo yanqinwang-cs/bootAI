@@ -83,3 +83,4 @@ class ReviewedPlanItem:
     category: str
     plan_item: MovePlanItem
     decision: str
+    review_category: str | None = None

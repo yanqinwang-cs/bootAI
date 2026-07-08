@@ -337,6 +337,45 @@ Expected outcome: successful logged moves are restored.
 
 Also edit a copy of the reviewed-plan JSON to make malformed JSON, an absolute source path, or a `../` path. Expected outcome: `--apply-reviewed-plan` refuses the plan. Try a reviewed-plan path outside the scan root; expected outcome: refusal.
 
+## Stage 10.2 Review Candidates In Batch Review
+
+Use a disposable folder with duplicate files, project-like files, temporary files, backup/copy marker files, intentional empty placeholders, and normal files:
+
+```bash
+mkdir -p /path/to/temp-folder/subdir
+printf "same" > /path/to/temp-folder/a.txt
+printf "same" > /path/to/temp-folder/subdir/b.txt
+printf "notes" > /path/to/temp-folder/evosim_notes.txt
+printf "report" > /path/to/temp-folder/evosim_report.pdf
+printf "partial" > /path/to/temp-folder/file.tmp
+printf "" > /path/to/temp-folder/empty_candidate.txt
+printf "" > /path/to/temp-folder/__init__.py
+printf "notes" > /path/to/temp-folder/copywriting_notes.txt
+```
+
+Run:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --review-plans
+```
+
+In the review session, try:
+
+```text
+show review-candidates
+reject R1
+approve R1
+details R1
+summary
+save
+apply
+WRONG
+apply
+APPLY_REVIEWED_PLAN
+```
+
+Expected outcome: `R` IDs appear for review-candidate move rows only, intentional empty placeholders and copywriting-like names are not review-candidate rows, save writes `review_candidate` items with `review_category` metadata, the wrong confirmation moves nothing, and the exact confirmation applies only approved moves. Approved review-candidate moves go under `AI_Review/<category>/`, and the operation log path can be used with `--undo-log` to restore successful logged moves.
+
 ## Final Git Hygiene Check
 
 From the repository root:

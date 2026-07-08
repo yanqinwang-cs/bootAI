@@ -17,7 +17,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.1 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON reports, batch CLI review of duplicate and organization plans, and confirmed apply for saved reviewed plans.
+Stages 1 through 10.2 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON reports, batch CLI review of duplicate, organization, and review-candidate plans, and confirmed apply for saved reviewed plans.
 
 ## Reuse Before Create
 
@@ -69,8 +69,9 @@ Answer these before editing:
 - Stage 9 report mode writes report files only and must not move scanned files.
 - Stage 10.0 review mode approve/reject/save commands must not move files.
 - Stage 10.1 saved reviewed plans must be treated as untrusted input.
-- Stage 10.2 saved-session resume and editing remain future work.
-- Stage 10.3 review-candidate tables remain future work.
+- Stage 10.2 review-candidate rows use `category = "review_candidate"` and separate `review_category` metadata.
+- Stage 10.3 filtering, sorting, and pagination remain future work.
+- Stage 10.4 saved-session resume and editing remain future work.
 
 ## Testing And Git Hygiene
 

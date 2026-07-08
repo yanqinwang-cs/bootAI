@@ -1,8 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.1
+## Current Status Through Stage 10.2
 
-Stage 10.1 adds confirmed apply for saved reviewed-plan JSON files. Saved reviewed plans are treated as untrusted input, rejected items are ignored, and approved moves still apply through `executor.py`.
+Stage 10.2 adds review-candidate rows to batch review. Duplicate, organization, and review-candidate move candidates can now be reviewed together with `D`, `O`, and `R` IDs; approved moves still apply through `executor.py` only after exact confirmation.
 
 ## Stage Summary
 
@@ -21,6 +21,7 @@ Stage 10.1 adds confirmed apply for saved reviewed-plan JSON files. Saved review
 - Stage 9.5: report format documentation, sample report, and documentation-only schema reference.
 - Stage 10.0: batch CLI review and confirmed bulk apply for approved reviewed-plan items.
 - Stage 10.1: apply saved reviewed-plan JSON files after validation and exact confirmation.
+- Stage 10.2: review-candidate rows in batch review.
 
 ## Safety Model
 
@@ -36,6 +37,7 @@ Stage 10.1 adds confirmed apply for saved reviewed-plan JSON files. Saved review
 - LLM output is advisory and separately validated.
 - Report generation may create a new report file but does not move scanned files.
 - Batch review approve/reject/save commands do not move files.
+- Review-candidate rows are candidates for review and use `R` IDs in batch review.
 - Reviewed-plan JSON files are review records, not operation logs.
 - Saved reviewed-plan JSON files are untrusted input and are validated before use.
 
@@ -47,7 +49,7 @@ Stage 10.1 adds confirmed apply for saved reviewed-plan JSON files. Saved review
 - Project grouping: `--project-groups`, `--plan-organization`, `--apply-organization-plan`.
 - Local LLM refinement: `--refine-groups`, `--plan-refined-organization`, `--apply-refined-organization-plan`.
 - Reports: `--report`, `--report-output <path>`.
-- Batch review: `--review-plans`.
+- Batch review: `--review-plans` for duplicate, organization, and review-candidate move candidates.
 - Saved reviewed-plan apply: `--apply-reviewed-plan <path> --confirm APPLY_REVIEWED_PLAN`.
 - Undo: `--undo-log <path>`.
 
@@ -65,11 +67,11 @@ Apply commands require one of:
 - No GUI yet.
 - No cloud LLM APIs.
 - No saved review-session resume or editing yet.
-- No heuristic review-candidate table in batch review yet.
+- No filtering/sorting/pagination in batch review yet.
 - Ollama refinement requires a local Ollama service and model.
 - Prompt evaluation harness is documented but not implemented.
 - Users should inspect dry-run output before approved moves.
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.2 and later remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10.3 and later remain future work.
