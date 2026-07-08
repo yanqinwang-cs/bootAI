@@ -1,0 +1,31 @@
+{
+  "group_name": "Grant",
+  "reason": "files share filename token grant",
+  "confidence": 70,
+  "files": [
+    {
+      "relative_path": "Downloads/grant_budget.xlsx",
+      "name": "grant_budget.xlsx",
+      "extension": ".xlsx",
+      "deterministic_subfolder": "datasets"
+    },
+    {
+      "relative_path": "Downloads/grant_notes.txt",
+      "name": "grant_notes.txt",
+      "extension": ".txt",
+      "deterministic_subfolder": "notes"
+    },
+    {
+      "relative_path": "Downloads/grant_slides.pptx",
+      "name": "grant_slides.pptx",
+      "extension": ".pptx",
+      "deterministic_subfolder": "slides"
+    },
+    {
+      "relative_path": "Downloads/grant_summary.pdf",
+      "name": "grant_summary.pdf",
+      "extension": ".pdf",
+      "deterministic_subfolder": "other"
+    }
+  ]
+}

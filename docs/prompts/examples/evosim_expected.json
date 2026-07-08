@@ -1,0 +1,12 @@
+{
+  "folder_name": "EvoSim",
+  "confidence": 84,
+  "reason": "suggested project folder based on EvoSim-related paths",
+  "subfolders": {
+    "evosim/analysis_notes.md": "notes",
+    "evosim/predator_prey_results.csv": "results",
+    "evosim/frontend_demo.png": "images",
+    "evosim/research_paper.pdf": "papers"
+  },
+  "warnings": []
+}
