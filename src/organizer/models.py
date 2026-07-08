@@ -18,3 +18,13 @@ class DuplicateGroup:
     sha256: str
     size_bytes: int
     files: list[FileMetadata]
+
+
+@dataclass(frozen=True)
+class MovePlanItem:
+    source: Path
+    destination: Path
+    reason: str
+    confidence: int
+    operation: str
+    overwrite_risk: bool
