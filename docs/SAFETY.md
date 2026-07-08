@@ -18,12 +18,13 @@
 - Planner, review, grouping, and LLM modules must not move files.
 - Report generation must not move files and may only create a new report file.
 - Review approve/reject/save commands must not move files.
+- Review-candidate rows are candidates for review and must not be described as disposal targets.
 - Reviewed-plan JSON files are not operation logs.
 - Saved reviewed-plan JSON files are untrusted input and must be validated before use.
 - Rejected saved reviewed-plan items must be ignored for movement.
 - Batch review apply requires exact `APPLY_REVIEWED_PLAN` confirmation.
 - `executor.py` is the only movement module.
-- Approved duplicate and organization moves both use `executor.py`.
+- Approved duplicate, organization, and review-candidate moves all use `executor.py`.
 - Organization apply requires exact confirmation and keeps dry-run planning as the default.
 
 ## Risk Categories

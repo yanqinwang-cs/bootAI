@@ -84,6 +84,55 @@ class ReviewSessionConstructionTests(unittest.TestCase):
             self.assertFalse((root / "Organized").exists())
             self.assertFalse((root / "AI_Review" / "duplicates").exists())
 
+    def test_review_candidate_rows_are_built_from_existing_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+
+            items = build_review_session_items(scan_directory(root), root)
+            review_items = [
+                item
+                for item in items
+                if item.category == "review_candidate"
+            ]
+
+            self.assertEqual([item.id for item in review_items], ["R1", "R2"])
+            self.assertTrue(all(item.decision == "approved" for item in review_items))
+            self.assertEqual(
+                [item.review_category for item in review_items],
+                ["empty", "temporary"],
+            )
+            self.assertEqual(
+                review_items[0].plan_item.destination,
+                root.resolve() / "AI_Review" / "empty" / "empty.txt",
+            )
+            self.assertEqual(
+                review_items[1].plan_item.destination,
+                root.resolve() / "AI_Review" / "temporary" / "file.tmp",
+            )
+            self.assertTrue((root / "empty.txt").exists())
+            self.assertTrue((root / "file.tmp").exists())
+            self.assertFalse((root / "AI_Review").exists())
+
+    def test_review_candidate_construction_preserves_stage_5_heuristics(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+
+            items = build_review_session_items(scan_directory(root), root)
+            review_sources = {
+                item.plan_item.source.name
+                for item in items
+                if item.category == "review_candidate"
+            }
+
+            self.assertIn("empty.txt", review_sources)
+            self.assertIn("file.tmp", review_sources)
+            self.assertNotIn("__init__.py", review_sources)
+            self.assertNotIn(".gitkeep", review_sources)
+            self.assertNotIn(".keep", review_sources)
+            self.assertNotIn("copywriting_notes.txt", review_sources)
+
 
 class ReviewSessionDecisionTests(unittest.TestCase):
     def test_reject_and_approve_update_selected_ids(self) -> None:
@@ -127,6 +176,37 @@ class ReviewSessionDecisionTests(unittest.TestCase):
             self.assertIn("exact duplicate", detail.plan_item.reason)
             self.assertEqual(summary["duplicate_rejected_move_count"], 1)
             self.assertGreaterEqual(summary["organization_approved_move_count"], 1)
+
+    def test_review_candidate_decisions_and_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_full_review_session_fixture(root)
+            items = build_review_session_items(scan_directory(root), root)
+
+            rejected = reject_items(items, ["D1", "O1", "R1"])
+            approved = approve_items(rejected, ["R1"])
+            detail = get_item(approved, "R1")
+            summary = summarize_review_items(rejected)
+
+            self.assertEqual(get_item(rejected, "R1").decision, "rejected")
+            self.assertEqual(detail.decision, "approved")
+            self.assertEqual(detail.category, "review_candidate")
+            self.assertEqual(detail.review_category, "temporary")
+            self.assertIn("temporary", detail.plan_item.destination.as_posix())
+            self.assertEqual(summary["duplicate_rejected_move_count"], 1)
+            self.assertEqual(summary["organization_rejected_move_count"], 1)
+            self.assertEqual(summary["review_candidate_rejected_move_count"], 1)
+
+    def test_unknown_review_candidate_id_is_rejected_without_partial_change(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_full_review_session_fixture(root)
+            items = build_review_session_items(scan_directory(root), root)
+
+            with self.assertRaises(ValueError):
+                reject_items(items, ["R1", "R99"])
+
+            self.assertEqual(get_item(items, "R1").decision, "approved")
 
 
 class ReviewSessionSaveTests(unittest.TestCase):
@@ -176,6 +256,29 @@ class ReviewSessionSaveTests(unittest.TestCase):
             self.assertTrue((root / "subdir" / "b.txt").exists())
             self.assertTrue((root / "evosim_notes.txt").exists())
 
+    def test_save_includes_review_candidate_items_and_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_full_review_session_fixture(root)
+            items = reject_items(
+                build_review_session_items(scan_directory(root), root),
+                ["R1"],
+            )
+
+            path = save_reviewed_plan(items, root)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            review_items = [
+                item
+                for item in data["items"]
+                if item["category"] == "review_candidate"
+            ]
+
+            self.assertEqual(data["summary"]["review_candidate_rejected_move_count"], 1)
+            self.assertTrue(review_items)
+            self.assertEqual(review_items[0]["review_category"], "temporary")
+            self.assertIn("rejected", {item["decision"] for item in review_items})
+            self.assertTrue((root / "file.tmp").exists())
+
 
 class ReviewSessionCliTests(unittest.TestCase):
     def test_review_plans_rejects_incompatible_flags(self) -> None:
@@ -208,6 +311,47 @@ class ReviewSessionCliTests(unittest.TestCase):
             self.assertIn("Reviewed plan saved:", result.stdout)
             self.assertTrue(list((root / "AI_Review" / "review_sessions").glob("*.json")))
             self.assertTrue((root / "evosim_notes.txt").exists())
+
+    def test_review_plans_help_and_show_review_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+
+            result = run_cli(
+                root,
+                "--review-plans",
+                input_text="help\nshow review-candidates\nsummary\nquit\n",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("show review-candidates", result.stdout)
+            self.assertIn("Review-candidate suggested moves", result.stdout)
+            self.assertIn("R1 [approved]", result.stdout)
+            self.assertIn("review candidate approved moves", result.stdout)
+
+    def test_review_plans_can_reject_review_candidate_and_save(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+
+            result = run_cli(
+                root,
+                "--review-plans",
+                input_text="reject R1\nsave\nquit\n",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Rejected 1 reviewed plan item", result.stdout)
+            reviewed_plans = list((root / "AI_Review" / "review_sessions").glob("*.json"))
+            self.assertEqual(len(reviewed_plans), 1)
+            data = json.loads(reviewed_plans[0].read_text(encoding="utf-8"))
+            review_items = [
+                item
+                for item in data["items"]
+                if item["category"] == "review_candidate"
+            ]
+            self.assertEqual(review_items[0]["decision"], "rejected")
+            self.assertTrue((root / "empty.txt").exists())
 
     def test_wrong_apply_confirmation_does_not_move_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -274,6 +418,57 @@ class ReviewSessionCliTests(unittest.TestCase):
             self.assertTrue((root / "a.txt").exists())
             self.assertTrue((root / "b.txt").exists())
 
+    def test_all_rejected_across_all_categories_does_not_call_executor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_full_review_session_fixture(root)
+
+            exit_code, output = run_cli_main(
+                root,
+                "--review-plans",
+                input_text="reject D1 O1 O2 R1\napply\nquit\n",
+                apply_side_effect=AssertionError("executor should not be called"),
+            )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("No approved moves to apply.", output)
+            self.assertTrue((root / "a.txt").exists())
+            self.assertTrue((root / "evosim_notes.txt").exists())
+            self.assertTrue((root / "file.tmp").exists())
+
+    def test_confirmed_apply_includes_only_approved_review_candidate_items(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+            captured_plan_items = []
+
+            def fake_apply(plan_items, apply_root):
+                captured_plan_items.extend(plan_items)
+                return OperationLog(
+                    log_path=apply_root / "AI_Review" / "operation_logs" / "fake.json",
+                    operations=[
+                        MoveResult(
+                            source=plan_items[0].source,
+                            destination=plan_items[0].destination,
+                            success=True,
+                            message="moved",
+                        )
+                    ],
+                )
+
+            exit_code, output = run_cli_main(
+                root,
+                "--review-plans",
+                input_text="reject D1 D2 D3 R2\napply\nAPPLY_REVIEWED_PLAN\n",
+                apply_side_effect=fake_apply,
+            )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Applying approved moves from reviewed plan.", output)
+            self.assertEqual(len(captured_plan_items), 1)
+            self.assertEqual(captured_plan_items[0].source, root.resolve() / "empty.txt")
+            self.assertIn("AI_Review/empty", captured_plan_items[0].destination.as_posix())
+
     def test_empty_plan_does_not_call_executor(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -287,7 +482,7 @@ class ReviewSessionCliTests(unittest.TestCase):
             )
 
             self.assertEqual(exit_code, 0)
-            self.assertIn("No duplicate or organization move candidates", output)
+            self.assertIn("No duplicate, organization, or review-candidate move candidates", output)
 
 
 class SavedReviewedPlanValidationTests(unittest.TestCase):
@@ -342,9 +537,9 @@ class SavedReviewedPlanValidationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             reviewed_plan_data_to_move_items(non_list, Path("/tmp/root"))
 
-    def test_invalid_category_and_decision_are_rejected(self) -> None:
+    def test_unknown_category_and_invalid_decision_are_rejected(self) -> None:
         bad_category = valid_saved_plan_data()
-        bad_category["items"][0]["category"] = "review_candidate"
+        bad_category["items"][0]["category"] = "unknown"
         bad_decision = valid_saved_plan_data()
         bad_decision["items"][0]["decision"] = "maybe"
 
@@ -409,6 +604,55 @@ class SavedReviewedPlanValidationTests(unittest.TestCase):
         plan_items = reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
 
         self.assertEqual(plan_items, [])
+
+    def test_saved_review_candidate_items_are_accepted_and_rejected_items_ignored(self) -> None:
+        root = Path("/tmp/root")
+        data = valid_saved_plan_data()
+        data["items"] = [
+            {
+                "id": "R1",
+                "category": "review_candidate",
+                "review_category": "temporary",
+                "decision": "approved",
+                "source": "file.tmp",
+                "destination": "AI_Review/temporary/file.tmp",
+                "reason": "candidate for review",
+                "confidence": 95,
+                "operation": "dry-run move",
+                "overwrite_risk": False,
+            },
+            {
+                "id": "R2",
+                "category": "review_candidate",
+                "review_category": "empty",
+                "decision": "rejected",
+                "source": "empty.txt",
+                "destination": "AI_Review/empty/empty.txt",
+            },
+        ]
+
+        plan_items = reviewed_plan_data_to_move_items(data, root)
+
+        self.assertEqual(len(plan_items), 1)
+        self.assertEqual(plan_items[0].source, root / "file.tmp")
+        self.assertEqual(plan_items[0].destination, root / "AI_Review" / "temporary" / "file.tmp")
+
+    def test_saved_review_candidate_requires_valid_review_category(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"][0]["category"] = "review_candidate"
+        data["items"][0]["review_category"] = "other"
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+    def test_saved_plan_without_review_candidate_summary_fields_still_loads(self) -> None:
+        data = valid_saved_plan_data()
+        data["summary"].pop("review_candidate_approved_move_count", None)
+        data["summary"].pop("review_candidate_rejected_move_count", None)
+
+        plan_items = reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+        self.assertEqual(len(plan_items), 1)
 
     def test_plan_path_outside_root_directory_and_missing_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -600,6 +844,20 @@ def create_review_session_fixture(root: Path) -> None:
     (root / "subdir" / "b.txt").write_text("same", encoding="utf-8")
     (root / "evosim_notes.txt").write_text("notes", encoding="utf-8")
     (root / "evosim_report.pdf").write_text("report", encoding="utf-8")
+
+
+def create_review_candidate_fixture(root: Path) -> None:
+    (root / "empty.txt").write_text("", encoding="utf-8")
+    (root / "file.tmp").write_text("temporary", encoding="utf-8")
+    (root / "__init__.py").write_text("", encoding="utf-8")
+    (root / ".gitkeep").write_text("", encoding="utf-8")
+    (root / ".keep").write_text("", encoding="utf-8")
+    (root / "copywriting_notes.txt").write_text("notes", encoding="utf-8")
+
+
+def create_full_review_session_fixture(root: Path) -> None:
+    create_review_session_fixture(root)
+    (root / "file.tmp").write_text("temporary", encoding="utf-8")
 
 
 def create_duplicate_only_fixture(root: Path) -> None:
