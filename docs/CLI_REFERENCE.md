@@ -58,12 +58,16 @@ python -m organizer.cli <folder> --plan-review-candidates
 ```bash
 python -m organizer.cli <folder> --project-groups
 python -m organizer.cli <folder> --plan-organization
+python -m organizer.cli <folder> --apply-organization-plan
+python -m organizer.cli <folder> --apply-organization-plan --confirm APPLY_ORGANIZATION_PLAN
 ```
 
 - `--project-groups`: read-only; prints suggested groups.
 - `--plan-organization`: dry-run; prints an organization plan.
+- `--apply-organization-plan`: apply; prints the dry-run organization plan and refuses to apply without exact confirmation.
+- `--confirm APPLY_ORGANIZATION_PLAN`: apply; required for approved deterministic organization moves.
 
-Organization plans are not applied in Stage 7.6. No Stage 8 organization apply flags exist yet.
+Only `--apply-organization-plan --confirm APPLY_ORGANIZATION_PLAN` can apply deterministic organization moves. The move batch writes an operation log under `AI_Review/operation_logs` and can be undone with `--undo-log`.
 
 ## LLM Refinement
 
@@ -71,12 +75,16 @@ Organization plans are not applied in Stage 7.6. No Stage 8 organization apply f
 python -m organizer.cli <folder> --refine-groups --llm-provider ollama --llm-model qwen2.5:7b
 python -m organizer.cli <folder> --plan-refined-organization --llm-provider ollama --llm-model qwen2.5:7b
 python -m organizer.cli <folder> --plan-refined-organization --llm-provider ollama --llm-model qwen2.5:7b --ollama-host http://localhost:11434
+python -m organizer.cli <folder> --apply-refined-organization-plan --llm-provider ollama --llm-model qwen2.5:7b
+python -m organizer.cli <folder> --apply-refined-organization-plan --llm-provider ollama --llm-model qwen2.5:7b --confirm APPLY_REFINED_ORGANIZATION_PLAN
 ```
 
 - `--refine-groups`: LLM-assisted; prints advisory local Ollama refinements.
 - `--plan-refined-organization`: LLM-assisted dry-run; prints a refined organization plan.
+- `--apply-refined-organization-plan`: LLM-assisted apply; prints the dry-run refined organization plan and refuses to apply without exact confirmation.
 - `--llm-provider ollama`: LLM-assisted; required for refinement commands.
 - `--llm-model <model>`: LLM-assisted; required for refinement commands.
 - `--ollama-host <url>`: LLM-assisted; optional local Ollama host override.
+- `--confirm APPLY_REFINED_ORGANIZATION_PLAN`: apply; required for approved refined organization moves.
 
-LLM refinement is optional and local-only. Refined organization plans are dry-run only.
+LLM refinement is optional and local-only. Refined organization apply still uses validated Python `MovePlanItem` values and `executor.py`.

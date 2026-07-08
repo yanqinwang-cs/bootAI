@@ -17,7 +17,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 7.5 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, and documentation.
+Stages 1 through 8 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, and approved organization moves through `executor.py`.
 
 ## Reuse Before Create
 
@@ -52,7 +52,7 @@ Answer these before editing:
 
 ## Forbidden Behavior
 
-- No permanent file removal.
+- Never permanently delete files.
 - No overwriting.
 - No automatic moving unless the current stage explicitly says apply.
 - No cloud APIs unless the current stage explicitly requests them.
@@ -61,9 +61,9 @@ Answer these before editing:
 
 ## Stage Boundaries
 
-- Stage 8 should reuse `executor.py` for approved organization apply behavior.
-- Stage 8 must not create a second mover.
-- Stage 8 must not bypass `MovePlanItem`.
+- Stage 8 reuses `executor.py` for approved organization apply behavior.
+- Do not create a second mover for organization changes.
+- Do not bypass `MovePlanItem`.
 - Stage 9 should not move files without an explicit configured approval policy.
 
 ## Testing And Git Hygiene

@@ -42,8 +42,8 @@ Facts come from deterministic Python: paths, sizes, hashes, extensions, and infe
 
 Suggestions are represented as `MovePlanItem` objects and printed as dry-run plans. `llm_refinement.py` produces advisory suggestions only and stores them separately from deterministic `ProjectGroup` data.
 
-Approved moves are explicit `MovePlanItem` values accepted by a user-facing flow. Execution is isolated in `executor.py`, which validates and applies approved moves only. Undo is driven by operation logs written by `executor.py`.
+Approved moves are explicit `MovePlanItem` values accepted by a user-facing flow. Execution is isolated in `executor.py`, which validates and applies approved duplicate and organization moves only. Undo is driven by operation logs written by `executor.py`.
 
 Planner, review, grouping, and LLM modules do not execute actions. `executor.py` does not decide what should move; it only validates and applies explicit `MovePlanItem` objects. `cli.py` orchestrates user-facing flow.
 
-Future Stage 8 must reuse `executor.py` for approved organization moves. It must not create another movement subsystem.
+Stage 8 organization apply reuses `executor.py` for approved organization moves. It does not create another movement subsystem.
