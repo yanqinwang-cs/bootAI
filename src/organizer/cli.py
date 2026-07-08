@@ -4,13 +4,19 @@ from pathlib import Path
 from organizer.duplicates import find_exact_duplicates
 from organizer.executor import apply_move_plan, undo_operation_log
 from organizer.grouping import build_organization_suggestions, find_project_groups
+from organizer.llm_refinement import (
+    build_refined_organization_suggestion,
+    refine_project_groups_with_ollama,
+)
 from organizer.models import (
+    LLMRefinement,
     MovePlanItem,
     OperationLog,
     OrganizationSuggestion,
     ProjectGroup,
     ReviewCandidate,
 )
+from organizer.ollama_client import OllamaClient
 from organizer.planner import build_duplicate_review_plan
 from organizer.review import build_review_candidate_plan, detect_review_candidates
 from organizer.scanner import scan_directory
@@ -31,6 +37,11 @@ def main() -> None:
     parser.add_argument("--plan-review-candidates", action="store_true")
     parser.add_argument("--project-groups", action="store_true")
     parser.add_argument("--plan-organization", action="store_true")
+    parser.add_argument("--refine-groups", action="store_true")
+    parser.add_argument("--plan-refined-organization", action="store_true")
+    parser.add_argument("--llm-provider", default=None)
+    parser.add_argument("--llm-model", default=None)
+    parser.add_argument("--ollama-host", default="http://localhost:11434")
     args = parser.parse_args()
 
     if args.undo_log is not None:
@@ -43,6 +54,10 @@ def main() -> None:
             or args.plan_review_candidates
             or args.project_groups
             or args.plan_organization
+            or args.refine_groups
+            or args.plan_refined_organization
+            or args.llm_provider is not None
+            or args.llm_model is not None
         ):
             parser.error("--undo-log cannot be combined with planning or review flags")
         operation_log = undo_operation_log(args.undo_log, args.folder)
@@ -130,6 +145,42 @@ def main() -> None:
         suggestions = build_organization_suggestions(project_groups, args.folder)
         _print_organization_suggestions(suggestions)
 
+    refinements = None
+
+    if args.refine_groups or args.plan_refined_organization:
+        _validate_llm_args(parser, args.llm_provider, args.llm_model)
+        if project_groups is None:
+            project_groups = find_project_groups(metadata_items)
+        client = OllamaClient(
+            model=args.llm_model,
+            host=args.ollama_host,
+        )
+        try:
+            refinements = refine_project_groups_with_ollama(project_groups, client)
+        except (RuntimeError, ValueError) as error:
+            parser.error(str(error))
+
+    if args.refine_groups:
+        _print_llm_refinements(refinements or [])
+
+    if args.plan_refined_organization:
+        refined_suggestions = [
+            build_refined_organization_suggestion(group, refinement, args.folder)
+            for group, refinement in zip(project_groups or [], refinements or [])
+        ]
+        _print_refined_organization_suggestions(refined_suggestions)
+
+
+def _validate_llm_args(
+    parser: argparse.ArgumentParser,
+    llm_provider: str | None,
+    llm_model: str | None,
+) -> None:
+    if llm_provider != "ollama":
+        parser.error("--llm-provider ollama is required for LLM refinement")
+    if not llm_model:
+        parser.error("--llm-model is required for LLM refinement")
+
 
 def _print_duplicate_review_plan(plan_items: list[MovePlanItem]) -> None:
     print("")
@@ -203,6 +254,51 @@ def _print_organization_suggestions(
     print("Dry-run only: no files will be moved by this command.")
     if not suggestions:
         print("No candidate organization plan items found.")
+        return
+
+    for suggestion in suggestions:
+        print(f"Candidate organization: {suggestion.group.group_name}")
+        print(f"  suggested_root: {suggestion.suggested_root}")
+        for index, item in enumerate(suggestion.plan_items, start=1):
+            print(f"  Planned action {index}: {item.operation}")
+            print(f"    source: {item.source}")
+            print(f"    destination: {item.destination}")
+            print(f"    reason: {item.reason}")
+            print(f"    confidence: {item.confidence}")
+            print(f"    overwrite_risk: {item.overwrite_risk}")
+
+
+def _print_llm_refinements(refinements: list[LLMRefinement]) -> None:
+    print("")
+    print("LLM group refinements")
+    if not refinements:
+        print("No LLM refinements found.")
+        return
+
+    for index, refinement in enumerate(refinements, start=1):
+        print(f"LLM refinement {index}: {refinement.original_group_name}")
+        print(f"  refined_folder: {refinement.folder_name}")
+        print(f"  confidence: {refinement.confidence}")
+        print(f"  reason: {refinement.reason}")
+        print("  warnings:")
+        if refinement.warnings:
+            for warning in refinement.warnings:
+                print(f"    - {warning}")
+        else:
+            print("    - none")
+        print("  subfolders:")
+        for relative_path, subfolder in sorted(refinement.subfolders.items()):
+            print(f"    - {relative_path}: {subfolder}")
+
+
+def _print_refined_organization_suggestions(
+    suggestions: list[OrganizationSuggestion],
+) -> None:
+    print("")
+    print("Dry-run refined organization plan")
+    print("Dry-run only: no files will be moved by this command.")
+    if not suggestions:
+        print("No refined organization plan items found.")
         return
 
     for suggestion in suggestions:

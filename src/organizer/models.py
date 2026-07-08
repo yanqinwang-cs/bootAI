@@ -65,3 +65,13 @@ class OrganizationSuggestion:
     group: ProjectGroup
     suggested_root: Path
     plan_items: list[MovePlanItem]
+
+
+@dataclass(frozen=True)
+class LLMRefinement:
+    original_group_name: str
+    folder_name: str
+    confidence: int
+    reason: str
+    subfolders: dict[str, str]
+    warnings: list[str]
