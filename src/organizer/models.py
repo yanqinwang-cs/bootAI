@@ -75,3 +75,11 @@ class LLMRefinement:
     reason: str
     subfolders: dict[str, str]
     warnings: list[str]
+
+
+@dataclass(frozen=True)
+class ReviewedPlanItem:
+    id: str
+    category: str
+    plan_item: MovePlanItem
+    decision: str

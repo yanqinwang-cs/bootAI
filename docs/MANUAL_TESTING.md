@@ -250,6 +250,57 @@ Also confirm:
 
 Reference: [REPORT_FORMAT](REPORT_FORMAT.md) and [sample_report.json](examples/sample_report.json).
 
+## Stage 10.0 Batch Review
+
+Use a disposable folder and run:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --review-plans
+```
+
+In the review session, try:
+
+```text
+show duplicates
+show organization
+reject D1 O1
+approve D1
+details O1
+summary
+save
+quit
+```
+
+Expected outcome: a reviewed-plan JSON file appears under `AI_Review/review_sessions/`, and no files move.
+
+Run review mode again and test wrong confirmation:
+
+```text
+apply
+WRONG
+quit
+```
+
+Expected outcome: the command refuses to apply and no files move.
+
+Run review mode again and test confirmed apply:
+
+```text
+reject O1
+apply
+APPLY_REVIEWED_PLAN
+```
+
+Expected outcome: only approved move candidates move, rejected move candidates stay in place, and an operation log path is printed.
+
+Use the operation log path:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --undo-log /path/to/temp-folder/AI_Review/operation_logs/operation_log_YYYYMMDD.json
+```
+
+Expected outcome: successful logged moves are restored. The reviewed-plan JSON is not an operation log.
+
 ## Final Git Hygiene Check
 
 From the repository root:

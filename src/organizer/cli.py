@@ -15,16 +15,27 @@ from organizer.models import (
     OrganizationSuggestion,
     ProjectGroup,
     ReviewCandidate,
+    ReviewedPlanItem,
 )
 from organizer.ollama_client import OllamaClient
 from organizer.planner import build_duplicate_review_plan
 from organizer.reports import build_scan_report, write_report
 from organizer.review import build_review_candidate_plan, detect_review_candidates
+from organizer.review_session import (
+    approve_items,
+    approved_plan_items,
+    build_review_session_items,
+    get_item,
+    reject_items,
+    save_reviewed_plan,
+    summarize_review_items,
+)
 from organizer.scanner import scan_directory
 
 CONFIRM_APPLY_DUPLICATE_PLAN = "APPLY_DUPLICATE_PLAN"
 CONFIRM_APPLY_ORGANIZATION_PLAN = "APPLY_ORGANIZATION_PLAN"
 CONFIRM_APPLY_REFINED_ORGANIZATION_PLAN = "APPLY_REFINED_ORGANIZATION_PLAN"
+CONFIRM_APPLY_REVIEWED_PLAN = "APPLY_REVIEWED_PLAN"
 
 
 def main() -> int:
@@ -38,6 +49,7 @@ def main() -> int:
     parser.add_argument("--apply-refined-organization-plan", action="store_true")
     parser.add_argument("--report", action="store_true")
     parser.add_argument("--report-output", type=Path, default=None)
+    parser.add_argument("--review-plans", action="store_true")
     parser.add_argument("--confirm", default=None)
     parser.add_argument("--undo-log", type=Path, default=None)
     parser.add_argument("--review-candidates", action="store_true")
@@ -57,6 +69,9 @@ def main() -> int:
     if args.report:
         return _handle_report(parser, args)
 
+    if args.review_plans:
+        return _handle_review_plans(parser, args)
+
     if args.undo_log is not None:
         if (
             args.duplicates
@@ -69,6 +84,7 @@ def main() -> int:
             or args.plan_review_candidates
             or args.project_groups
             or args.plan_organization
+            or args.review_plans
             or args.refine_groups
             or args.plan_refined_organization
             or args.llm_provider is not None
@@ -228,6 +244,181 @@ def _validate_llm_args(
         parser.error("--llm-model is required for LLM refinement")
 
 
+def _handle_review_plans(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.report
+        or args.report_output is not None
+        or args.confirm is not None
+        or args.undo_log is not None
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.refine_groups
+        or args.plan_refined_organization
+        or args.llm_provider is not None
+        or args.llm_model is not None
+    ):
+        parser.error(
+            "--review-plans cannot be combined with display, planning, apply, "
+            "undo, report, LLM, or confirmation flags"
+        )
+
+    metadata_items = scan_directory(args.folder, max_depth=args.max_depth)
+    items = build_review_session_items(metadata_items, args.folder)
+    if not items:
+        print("No duplicate or organization move candidates found for review.")
+        return 0
+
+    print("Batch review session")
+    print("Approve/reject commands update review decisions only; they do not move files.")
+    _print_review_session_help()
+    _print_review_session_summary(items)
+    saved_current_plan_path: Path | None = None
+
+    while True:
+        try:
+            command_line = input("review> ").strip()
+        except EOFError:
+            print("")
+            print("Exiting review session without applying.")
+            return 0
+
+        if not command_line:
+            continue
+
+        command = command_line.split()
+        action = command[0].lower()
+
+        try:
+            if action == "help" and len(command) == 1:
+                _print_review_session_help()
+            elif action == "show" and len(command) == 2 and command[1].lower() == "duplicates":
+                _print_review_session_rows(items, "duplicate", args.folder)
+            elif action == "show" and len(command) == 2 and command[1].lower() == "organization":
+                _print_review_session_rows(items, "organization", args.folder)
+            elif action == "summary" and len(command) == 1:
+                _print_review_session_summary(items)
+            elif action == "reject" and len(command) > 1:
+                items = reject_items(items, command[1:])
+                saved_current_plan_path = None
+                print(f"Rejected {len(command) - 1} reviewed plan item(s).")
+            elif action == "approve" and len(command) > 1:
+                items = approve_items(items, command[1:])
+                saved_current_plan_path = None
+                print(f"Approved {len(command) - 1} reviewed plan item(s).")
+            elif action == "details" and len(command) == 2:
+                _print_review_session_item(get_item(items, command[1]), args.folder)
+            elif action == "save" and len(command) == 1:
+                saved_current_plan_path = save_reviewed_plan(items, args.folder)
+                print(f"Reviewed plan saved: {saved_current_plan_path}")
+            elif action == "apply" and len(command) == 1:
+                _print_review_session_summary(items)
+                plan_items = approved_plan_items(items)
+                if not plan_items:
+                    print("No approved moves to apply.")
+                    continue
+                if saved_current_plan_path is None:
+                    saved_current_plan_path = save_reviewed_plan(items, args.folder)
+                    print(f"Reviewed plan saved: {saved_current_plan_path}")
+                confirmation = input("Type APPLY_REVIEWED_PLAN to continue: ")
+                if confirmation != CONFIRM_APPLY_REVIEWED_PLAN:
+                    print("Apply refused: exact confirmation was not provided.")
+                    continue
+                print("Applying approved moves from reviewed plan.")
+                return _apply_plan_items(plan_items, args.folder)
+            elif action == "quit" and len(command) == 1:
+                print("Exiting review session without applying.")
+                return 0
+            else:
+                print("Unknown command. Type help for available commands.")
+        except ValueError as error:
+            print(f"Error: {error}")
+
+
+def _print_review_session_help() -> None:
+    print(
+        "Commands: help, show duplicates, show organization, summary, "
+        "reject <IDs...>, approve <IDs...>, details <ID>, save, apply, quit"
+    )
+
+
+def _print_review_session_rows(
+    items: list[ReviewedPlanItem],
+    category: str,
+    root: Path,
+) -> None:
+    matching_items = [item for item in items if item.category == category]
+    title = (
+        "Duplicate move candidates"
+        if category == "duplicate"
+        else "Organization move candidates"
+    )
+    print("")
+    print(title)
+    if not matching_items:
+        print("No candidates for this category.")
+        return
+    for item in matching_items:
+        _print_review_session_item_summary(item, root)
+
+
+def _print_review_session_item_summary(
+    item: ReviewedPlanItem,
+    root: Path,
+) -> None:
+    plan_item = item.plan_item
+    print(
+        f"{item.id} [{item.decision}] "
+        f"{_relative_to_root(plan_item.source, root)} -> "
+        f"{_relative_to_root(plan_item.destination, root)}"
+    )
+
+
+def _print_review_session_item(
+    item: ReviewedPlanItem,
+    root: Path,
+) -> None:
+    plan_item = item.plan_item
+    print(f"{item.id}")
+    print(f"  category: {item.category}")
+    print(f"  decision: {item.decision}")
+    print(f"  source: {_relative_to_root(plan_item.source, root)}")
+    print(f"  destination: {_relative_to_root(plan_item.destination, root)}")
+    print(f"  reason: {plan_item.reason}")
+    print(f"  confidence: {plan_item.confidence}")
+    print(f"  operation: {plan_item.operation}")
+    print(f"  overwrite_risk: {plan_item.overwrite_risk}")
+
+
+def _print_review_session_summary(items: list[ReviewedPlanItem]) -> None:
+    summary = summarize_review_items(items)
+    print("")
+    print("Review summary")
+    print(f"  duplicate approved moves: {summary['duplicate_approved_move_count']}")
+    print(f"  duplicate rejected moves: {summary['duplicate_rejected_move_count']}")
+    print(f"  organization approved moves: {summary['organization_approved_move_count']}")
+    print(f"  organization rejected moves: {summary['organization_rejected_move_count']}")
+    print(f"  total approved moves: {summary['approved_move_count']}")
+    print(f"  total rejected moves: {summary['rejected_move_count']}")
+
+
+def _relative_to_root(path: Path, root: Path) -> str:
+    resolved_root = root.resolve()
+    try:
+        return path.relative_to(resolved_root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
 def _handle_report(
     parser: argparse.ArgumentParser,
     args: argparse.Namespace,
@@ -240,6 +431,7 @@ def _handle_report(
         or args.apply_refined_organization_plan
         or args.confirm is not None
         or args.undo_log is not None
+        or args.review_plans
         or args.review_candidates
         or args.plan_review_candidates
         or args.project_groups
