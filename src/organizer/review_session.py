@@ -100,6 +100,68 @@ def approved_plan_items(items: list[ReviewedPlanItem]) -> list[MovePlanItem]:
     ]
 
 
+def load_reviewed_plan_move_items(
+    plan_path: Path,
+    root: Path,
+) -> list[MovePlanItem]:
+    resolved_root = root.resolve()
+    resolved_plan_path = _validate_existing_reviewed_plan_path(plan_path, resolved_root)
+
+    try:
+        with resolved_plan_path.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"invalid reviewed plan JSON: {error}") from error
+
+    return reviewed_plan_data_to_move_items(data, resolved_root)
+
+
+def reviewed_plan_data_to_move_items(
+    data: object,
+    root: Path,
+) -> list[MovePlanItem]:
+    if not isinstance(data, dict):
+        raise ValueError("reviewed plan must contain a JSON object")
+    if data.get("schema_version") != REVIEW_SESSION_SCHEMA_VERSION:
+        raise ValueError("reviewed plan schema_version must be 1")
+    if data.get("plan_type") != REVIEW_PLAN_TYPE:
+        raise ValueError('reviewed plan plan_type must be "batch_review"')
+
+    items = data.get("items")
+    if not isinstance(items, list):
+        raise ValueError("reviewed plan items must be a list")
+
+    move_items: list[MovePlanItem] = []
+    for index, item in enumerate(items, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(f"reviewed plan item {index} must be an object")
+        _validate_saved_item_identity(item, index)
+        if item["decision"] == DECISION_REJECTED:
+            continue
+
+        source = _validated_relative_path(item.get("source"), "source", index)
+        destination = _validated_relative_path(item.get("destination"), "destination", index)
+        source_path = root / source
+        destination_path = root / destination
+        validate_under_root(source_path.resolve(strict=False), root)
+        validate_under_root(destination_path.resolve(strict=False), root)
+
+        move_items.append(
+            MovePlanItem(
+                source=source_path,
+                destination=destination_path,
+                reason=_optional_string(item.get("reason"), "Approved reviewed plan item."),
+                confidence=_optional_confidence(item.get("confidence")),
+                operation=_optional_string(item.get("operation"), "dry-run move"),
+                overwrite_risk=_optional_bool(
+                    item.get("overwrite_risk"),
+                    destination_path.exists(),
+                ),
+            )
+        )
+    return move_items
+
+
 def reviewed_plan_to_json_data(
     items: list[ReviewedPlanItem],
     root: Path,
@@ -179,6 +241,63 @@ def _set_decision(
         else item
         for item in items
     ]
+
+
+def _validate_existing_reviewed_plan_path(path: Path, root: Path) -> Path:
+    candidate = path if path.is_absolute() else root / path
+    resolved_path = validate_under_root(candidate.resolve(strict=False), root)
+    if candidate.is_symlink():
+        validate_under_root(candidate.resolve(), root)
+    if not candidate.exists():
+        raise ValueError(f"reviewed plan does not exist: {path}")
+    if not candidate.is_file():
+        raise ValueError(f"reviewed plan is not a file: {path}")
+    return resolved_path
+
+
+def _validate_saved_item_identity(item: dict[str, Any], index: int) -> None:
+    item_id = item.get("id")
+    category = item.get("category")
+    decision = item.get("decision")
+    if not isinstance(item_id, str) or not item_id.strip():
+        raise ValueError(f"reviewed plan item {index} id must be a non-empty string")
+    if category not in {CATEGORY_DUPLICATE, CATEGORY_ORGANIZATION}:
+        raise ValueError(f"reviewed plan item {index} category is invalid")
+    if decision not in {DECISION_APPROVED, DECISION_REJECTED}:
+        raise ValueError(f"reviewed plan item {index} decision is invalid")
+
+
+def _validated_relative_path(
+    value: object,
+    field_name: str,
+    index: int,
+) -> Path:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"reviewed plan item {index} {field_name} must be a relative path string")
+    path = Path(value)
+    if path.is_absolute():
+        raise ValueError(f"reviewed plan item {index} {field_name} must be relative")
+    if any(part == ".." for part in path.parts):
+        raise ValueError(f"reviewed plan item {index} {field_name} must not contain path traversal")
+    return path
+
+
+def _optional_string(value: object, fallback: str) -> str:
+    if isinstance(value, str) and value.strip():
+        return value
+    return fallback
+
+
+def _optional_confidence(value: object) -> int:
+    if isinstance(value, int) and 0 <= value <= 100:
+        return value
+    return 100
+
+
+def _optional_bool(value: object, fallback: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    return fallback
 
 
 def _count(

@@ -6,7 +6,7 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.0 are implemented. Stage 10.0 adds batch CLI review for duplicate and deterministic organization move candidates. Built-in scheduler daemons, saved review-session resume, and GUI work remain future work.
+Stages 1 through 10.1 are implemented. Stage 10.1 adds confirmed apply for saved reviewed-plan JSON files. Built-in scheduler daemons, saved review-session resume/editing, and GUI work remain future work.
 
 ## Quick Navigation
 

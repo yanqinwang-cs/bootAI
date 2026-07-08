@@ -17,7 +17,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.0 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON reports, and batch CLI review of duplicate and organization plans.
+Stages 1 through 10.1 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON reports, batch CLI review of duplicate and organization plans, and confirmed apply for saved reviewed plans.
 
 ## Reuse Before Create
 
@@ -32,7 +32,7 @@ Stages 1 through 10.0 are complete. Current code supports scanning, duplicate de
 - `grouping.py` owns deterministic project grouping.
 - `llm_refinement.py` owns prompt, payload, and validation for LLM group refinement.
 - `reports.py` owns read-only report assembly and JSON report writing.
-- `review_session.py` owns batch review-session construction, decisions, and reviewed-plan JSON writing.
+- `review_session.py` owns batch review-session construction, decisions, reviewed-plan JSON writing, saved-plan validation, and conversion back to `MovePlanItem` values.
 - `executor.py` owns moving and undo.
 
 ## Do Not Skip Ahead
@@ -68,8 +68,9 @@ Answer these before editing:
 - Do not bypass `MovePlanItem`.
 - Stage 9 report mode writes report files only and must not move scanned files.
 - Stage 10.0 review mode approve/reject/save commands must not move files.
-- Stage 10.1 saved-session resume remains future work.
-- Stage 10.2 review-candidate tables remain future work.
+- Stage 10.1 saved reviewed plans must be treated as untrusted input.
+- Stage 10.2 saved-session resume and editing remain future work.
+- Stage 10.3 review-candidate tables remain future work.
 
 ## Testing And Git Hygiene
 

@@ -17,16 +17,17 @@
 | 9 | Read-only scheduled-compatible report mode | `reports.py`, `cli.py` | `--report`, `--report-output` | report file only |
 | 9.5 | Report format stabilization and examples | `docs/`, `tests/test_reports.py` | none | documentation/sample/schema only |
 | 10.0 | Batch CLI review and confirmed bulk apply | `review_session.py`, `cli.py` | `--review-plans` | final exact confirmation required |
+| 10.1 | Apply saved reviewed plans | `review_session.py`, `cli.py` | `--apply-reviewed-plan`, `--confirm` | validates untrusted saved plan |
 
 ## Future Stages
 
-### Stage 10.1: Resume Saved Review Sessions
+### Stage 10.2: Resume Or Edit Saved Review Sessions
 
 Goal: load a saved reviewed-plan JSON file for continued review.
 
 Non-goals: no apply-from-saved-plan bypass of existing safety checks.
 
-### Stage 10.2: Review Candidate Table
+### Stage 10.3: Review Candidate Table
 
 Goal: add heuristic review candidates to the batch review interface.
 

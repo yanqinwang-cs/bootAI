@@ -301,6 +301,42 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --undo-log /path/to
 
 Expected outcome: successful logged moves are restored. The reviewed-plan JSON is not an operation log.
 
+## Stage 10.1 Apply Saved Reviewed Plan
+
+Use a disposable folder and run:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --review-plans
+```
+
+In the review session, reject at least one ID, save the reviewed plan, and quit:
+
+```text
+reject O1
+save
+quit
+```
+
+Use the printed reviewed-plan JSON path:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --apply-reviewed-plan /path/to/temp-folder/AI_Review/review_sessions/reviewed_plan.json
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --apply-reviewed-plan /path/to/temp-folder/AI_Review/review_sessions/reviewed_plan.json --confirm WRONG
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --apply-reviewed-plan /path/to/temp-folder/AI_Review/review_sessions/reviewed_plan.json --confirm APPLY_REVIEWED_PLAN
+```
+
+Expected outcome: the first two commands refuse to apply and no files move. The confirmed command applies only approved items, leaves rejected items in place, and prints an operation log path.
+
+Then run undo with the operation log path:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --undo-log /path/to/temp-folder/AI_Review/operation_logs/operation_log_YYYYMMDD.json
+```
+
+Expected outcome: successful logged moves are restored.
+
+Also edit a copy of the reviewed-plan JSON to make malformed JSON, an absolute source path, or a `../` path. Expected outcome: `--apply-reviewed-plan` refuses the plan. Try a reviewed-plan path outside the scan root; expected outcome: refusal.
+
 ## Final Git Hygiene Check
 
 From the repository root:

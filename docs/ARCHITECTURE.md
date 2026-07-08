@@ -50,7 +50,7 @@ Suggestions are represented as `MovePlanItem` objects and printed as dry-run pla
 
 Reports serialize facts and suggestions into JSON for manual review or external scheduler runs. `reports.py` may write a new report file under the scan root, but it does not execute moves or approve actions.
 
-Batch review sessions collect duplicate and deterministic organization `MovePlanItem` values for command-line review. Approve/reject decisions and reviewed-plan JSON records do not execute moves. Final apply still uses `executor.py`.
+Batch review sessions collect duplicate and deterministic organization `MovePlanItem` values for command-line review. Approve/reject decisions and reviewed-plan JSON records do not execute moves. Saved reviewed-plan JSON is treated as untrusted input when loaded later; `review_session.py` validates it and converts only approved records back into `MovePlanItem` values. Final apply still uses `executor.py`.
 
 Approved moves are explicit `MovePlanItem` values accepted by a user-facing flow. Execution is isolated in `executor.py`, which validates and applies approved duplicate and organization moves only. Undo is driven by operation logs written by `executor.py`.
 

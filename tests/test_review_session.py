@@ -15,8 +15,10 @@ from organizer.review_session import (
     approved_plan_items,
     build_review_session_items,
     get_item,
+    load_reviewed_plan_move_items,
     reject_items,
     save_reviewed_plan,
+    reviewed_plan_data_to_move_items,
     summarize_review_items,
 )
 from organizer.scanner import scan_directory
@@ -288,6 +290,310 @@ class ReviewSessionCliTests(unittest.TestCase):
             self.assertIn("No duplicate or organization move candidates", output)
 
 
+class SavedReviewedPlanValidationTests(unittest.TestCase):
+    def test_valid_saved_reviewed_plan_loads_successfully(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_session_fixture(root)
+            plan_path = write_reviewed_plan(root, valid_saved_plan_data())
+
+            plan_items = load_reviewed_plan_move_items(plan_path, root)
+
+            self.assertEqual(len(plan_items), 1)
+            self.assertEqual(plan_items[0].source, root.resolve() / "a.txt")
+            self.assertEqual(plan_items[0].destination, root.resolve() / "AI_Review" / "duplicates" / "a.txt")
+
+    def test_invalid_json_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plan_path = root / "AI_Review" / "review_sessions" / "bad.json"
+            plan_path.parent.mkdir(parents=True)
+            plan_path.write_text("{", encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                load_reviewed_plan_move_items(plan_path, root)
+
+    def test_top_level_non_object_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items([], Path("/tmp/root"))
+
+    def test_unsupported_schema_version_is_rejected(self) -> None:
+        data = valid_saved_plan_data()
+        data["schema_version"] = 2
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+    def test_wrong_plan_type_is_rejected(self) -> None:
+        data = valid_saved_plan_data()
+        data["plan_type"] = "other"
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+    def test_missing_or_non_list_items_is_rejected(self) -> None:
+        missing = valid_saved_plan_data()
+        missing.pop("items")
+        non_list = valid_saved_plan_data()
+        non_list["items"] = {}
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(missing, Path("/tmp/root"))
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(non_list, Path("/tmp/root"))
+
+    def test_invalid_category_and_decision_are_rejected(self) -> None:
+        bad_category = valid_saved_plan_data()
+        bad_category["items"][0]["category"] = "review_candidate"
+        bad_decision = valid_saved_plan_data()
+        bad_decision["items"][0]["decision"] = "maybe"
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(bad_category, Path("/tmp/root"))
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(bad_decision, Path("/tmp/root"))
+
+    def test_absolute_paths_and_traversal_are_rejected(self) -> None:
+        root = Path("/tmp/root")
+        cases = [
+            ("source", "/tmp/source.txt"),
+            ("destination", "/tmp/destination.txt"),
+            ("source", "../source.txt"),
+            ("destination", "../destination.txt"),
+        ]
+
+        for field, value in cases:
+            data = valid_saved_plan_data()
+            data["items"][0][field] = value
+            with self.subTest(field=field, value=value):
+                with self.assertRaises(ValueError):
+                    reviewed_plan_data_to_move_items(data, root)
+
+    def test_only_approved_items_become_move_plan_items(self) -> None:
+        root = Path("/tmp/root")
+        data = valid_saved_plan_data()
+        data["items"].append(
+            {
+                "id": "O1",
+                "category": "organization",
+                "decision": "rejected",
+                "source": "evosim_notes.txt",
+                "destination": "Organized/Evosim/notes/evosim_notes.txt",
+                "reason": "ignored",
+                "extra": "ignored",
+            }
+        )
+
+        plan_items = reviewed_plan_data_to_move_items(data, root)
+
+        self.assertEqual(len(plan_items), 1)
+        self.assertEqual(plan_items[0].source, root / "a.txt")
+
+    def test_reason_operation_and_confidence_fallbacks(self) -> None:
+        root = Path("/tmp/root")
+        data = valid_saved_plan_data()
+        data["items"][0]["reason"] = ""
+        data["items"][0]["confidence"] = "high"
+        data["items"][0]["operation"] = ""
+
+        plan_items = reviewed_plan_data_to_move_items(data, root)
+
+        self.assertEqual(plan_items[0].reason, "Approved reviewed plan item.")
+        self.assertEqual(plan_items[0].confidence, 100)
+        self.assertEqual(plan_items[0].operation, "dry-run move")
+
+    def test_all_rejected_plan_returns_empty_move_plan(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"][0]["decision"] = "rejected"
+
+        plan_items = reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+        self.assertEqual(plan_items, [])
+
+    def test_plan_path_outside_root_directory_and_missing_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            root = base / "root"
+            outside = base / "outside.json"
+            root.mkdir()
+            outside.write_text(json.dumps(valid_saved_plan_data()), encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                load_reviewed_plan_move_items(outside, root)
+            with self.assertRaises(ValueError):
+                load_reviewed_plan_move_items(root, root)
+            with self.assertRaises(ValueError):
+                load_reviewed_plan_move_items(root / "missing.json", root)
+
+    def test_executor_rejects_missing_source_and_existing_destination(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_duplicate_only_fixture(root)
+            destination = root / "AI_Review" / "duplicates" / "a.txt"
+            destination.parent.mkdir(parents=True)
+            destination.write_text("existing", encoding="utf-8")
+            plan_path = write_reviewed_plan(root, valid_saved_plan_data())
+
+            plan_items = load_reviewed_plan_move_items(plan_path, root)
+            with self.assertRaises(ValueError):
+                apply_move_plan(plan_items, root)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            data = valid_saved_plan_data()
+            data["items"][0]["source"] = "missing.txt"
+            plan_path = write_reviewed_plan(root, data)
+
+            plan_items = load_reviewed_plan_move_items(plan_path, root)
+            with self.assertRaises(ValueError):
+                apply_move_plan(plan_items, root)
+
+    def test_executor_rejects_direct_symlink_source(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "target.txt"
+            source = root / "a.txt"
+            target.write_text("target", encoding="utf-8")
+            try:
+                source.symlink_to(target)
+            except (NotImplementedError, OSError):
+                self.skipTest("Symlinks are not supported on this OS or filesystem")
+            plan_path = write_reviewed_plan(root, valid_saved_plan_data())
+
+            plan_items = load_reviewed_plan_move_items(plan_path, root)
+            with self.assertRaises(ValueError):
+                apply_move_plan(plan_items, root)
+
+    def test_executor_rejects_unsafe_destination_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            root = base / "root"
+            outside = base / "outside"
+            root.mkdir()
+            outside.mkdir()
+            (root / "a.txt").write_text("same", encoding="utf-8")
+            try:
+                (root / "AI_Review").symlink_to(outside, target_is_directory=True)
+            except (NotImplementedError, OSError):
+                self.skipTest("Symlinks are not supported on this OS or filesystem")
+            plan_path = root / "plan.json"
+            plan_path.write_text(json.dumps(valid_saved_plan_data()), encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                load_reviewed_plan_move_items(plan_path, root)
+
+
+class SavedReviewedPlanCliTests(unittest.TestCase):
+    def test_apply_reviewed_plan_requires_exact_confirmation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_duplicate_only_fixture(root)
+            plan_path = write_reviewed_plan(root, valid_saved_plan_data())
+
+            refused = run_cli(root, "--apply-reviewed-plan", str(plan_path))
+            wrong = run_cli(
+                root,
+                "--apply-reviewed-plan",
+                str(plan_path),
+                "--confirm",
+                "WRONG",
+            )
+
+            self.assertEqual(refused.returncode, 0, refused.stderr)
+            self.assertEqual(wrong.returncode, 0, wrong.stderr)
+            self.assertIn("Apply refused", wrong.stdout)
+            self.assertTrue((root / "a.txt").exists())
+
+    def test_confirmed_apply_passes_only_approved_items_to_executor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_session_fixture(root)
+            data = valid_saved_plan_data()
+            data["items"].append(
+                {
+                    "id": "O1",
+                    "category": "organization",
+                    "decision": "rejected",
+                    "source": "evosim_notes.txt",
+                    "destination": "Organized/Evosim/notes/evosim_notes.txt",
+                    "reason": "ignored",
+                }
+            )
+            plan_path = write_reviewed_plan(root, data)
+            captured_plan_items = []
+
+            def fake_apply(plan_items, apply_root):
+                captured_plan_items.extend(plan_items)
+                return OperationLog(
+                    log_path=apply_root / "AI_Review" / "operation_logs" / "fake.json",
+                    operations=[
+                        MoveResult(
+                            source=plan_items[0].source,
+                            destination=plan_items[0].destination,
+                            success=True,
+                            message="moved",
+                        )
+                    ],
+                )
+
+            exit_code, output = run_cli_main(
+                root,
+                "--apply-reviewed-plan",
+                str(plan_path),
+                "--confirm",
+                "APPLY_REVIEWED_PLAN",
+                input_text="",
+                apply_side_effect=fake_apply,
+            )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Applying approved moves from saved reviewed plan.", output)
+            self.assertEqual(len(captured_plan_items), 1)
+            self.assertEqual(captured_plan_items[0].source, root.resolve() / "a.txt")
+
+    def test_all_rejected_saved_plan_does_not_call_executor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_duplicate_only_fixture(root)
+            data = valid_saved_plan_data()
+            data["items"][0]["decision"] = "rejected"
+            plan_path = write_reviewed_plan(root, data)
+
+            exit_code, output = run_cli_main(
+                root,
+                "--apply-reviewed-plan",
+                str(plan_path),
+                "--confirm",
+                "APPLY_REVIEWED_PLAN",
+                input_text="",
+                apply_side_effect=AssertionError("executor should not be called"),
+            )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("No approved moves to apply.", output)
+
+    def test_apply_reviewed_plan_rejects_incompatible_flags(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_duplicate_only_fixture(root)
+            plan_path = write_reviewed_plan(root, valid_saved_plan_data())
+
+            report_result = run_cli(root, "--apply-reviewed-plan", str(plan_path), "--report")
+            review_result = run_cli(root, "--apply-reviewed-plan", str(plan_path), "--review-plans")
+            undo_result = run_cli(
+                root,
+                "--apply-reviewed-plan",
+                str(plan_path),
+                "--undo-log",
+                str(root / "log.json"),
+            )
+
+            self.assertNotEqual(report_result.returncode, 0)
+            self.assertNotEqual(review_result.returncode, 0)
+            self.assertNotEqual(undo_result.returncode, 0)
+            self.assertIn("--apply-reviewed-plan cannot be combined", undo_result.stderr)
+
+
 def create_review_session_fixture(root: Path) -> None:
     (root / "subdir").mkdir()
     (root / "a.txt").write_text("same", encoding="utf-8")
@@ -299,6 +605,43 @@ def create_review_session_fixture(root: Path) -> None:
 def create_duplicate_only_fixture(root: Path) -> None:
     (root / "a.txt").write_text("same", encoding="utf-8")
     (root / "b.txt").write_text("same", encoding="utf-8")
+
+
+def valid_saved_plan_data():
+    return {
+        "schema_version": 1,
+        "created_at": "2026-07-09T12:00:00+00:00",
+        "scan_root": ".",
+        "plan_type": "batch_review",
+        "summary": {
+            "approved_move_count": 1,
+            "rejected_move_count": 0,
+            "duplicate_approved_move_count": 1,
+            "duplicate_rejected_move_count": 0,
+            "organization_approved_move_count": 0,
+            "organization_rejected_move_count": 0,
+        },
+        "items": [
+            {
+                "id": "D1",
+                "category": "duplicate",
+                "decision": "approved",
+                "source": "a.txt",
+                "destination": "AI_Review/duplicates/a.txt",
+                "reason": "exact duplicate of b.txt",
+                "confidence": 100,
+                "operation": "dry-run move",
+                "overwrite_risk": False,
+            }
+        ],
+    }
+
+
+def write_reviewed_plan(root: Path, data) -> Path:
+    path = root / "AI_Review" / "review_sessions" / "reviewed_plan.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data), encoding="utf-8")
+    return path
 
 
 def run_cli(

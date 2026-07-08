@@ -19,6 +19,8 @@
 - Report generation must not move files and may only create a new report file.
 - Review approve/reject/save commands must not move files.
 - Reviewed-plan JSON files are not operation logs.
+- Saved reviewed-plan JSON files are untrusted input and must be validated before use.
+- Rejected saved reviewed-plan items must be ignored for movement.
 - Batch review apply requires exact `APPLY_REVIEWED_PLAN` confirmation.
 - `executor.py` is the only movement module.
 - Approved duplicate and organization moves both use `executor.py`.
