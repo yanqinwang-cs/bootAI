@@ -1,8 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.0
+## Current Status Through Stage 10.1
 
-Stage 10.0 adds batch CLI review for duplicate and deterministic organization move candidates. Approve, reject, and save commands do not move files; final apply requires exact confirmation and uses `executor.py`.
+Stage 10.1 adds confirmed apply for saved reviewed-plan JSON files. Saved reviewed plans are treated as untrusted input, rejected items are ignored, and approved moves still apply through `executor.py`.
 
 ## Stage Summary
 
@@ -20,6 +20,7 @@ Stage 10.0 adds batch CLI review for duplicate and deterministic organization mo
 - Stage 9: read-only scheduled-compatible report generation.
 - Stage 9.5: report format documentation, sample report, and documentation-only schema reference.
 - Stage 10.0: batch CLI review and confirmed bulk apply for approved reviewed-plan items.
+- Stage 10.1: apply saved reviewed-plan JSON files after validation and exact confirmation.
 
 ## Safety Model
 
@@ -36,6 +37,7 @@ Stage 10.0 adds batch CLI review for duplicate and deterministic organization mo
 - Report generation may create a new report file but does not move scanned files.
 - Batch review approve/reject/save commands do not move files.
 - Reviewed-plan JSON files are review records, not operation logs.
+- Saved reviewed-plan JSON files are untrusted input and are validated before use.
 
 ## Current CLI Capabilities
 
@@ -46,6 +48,7 @@ Stage 10.0 adds batch CLI review for duplicate and deterministic organization mo
 - Local LLM refinement: `--refine-groups`, `--plan-refined-organization`, `--apply-refined-organization-plan`.
 - Reports: `--report`, `--report-output <path>`.
 - Batch review: `--review-plans`.
+- Saved reviewed-plan apply: `--apply-reviewed-plan <path> --confirm APPLY_REVIEWED_PLAN`.
 - Undo: `--undo-log <path>`.
 
 Apply commands require one of:
@@ -54,13 +57,14 @@ Apply commands require one of:
 - `--confirm APPLY_ORGANIZATION_PLAN`
 - `--confirm APPLY_REFINED_ORGANIZATION_PLAN`
 - interactive `APPLY_REVIEWED_PLAN` inside `--review-plans`
+- `--confirm APPLY_REVIEWED_PLAN`
 
 ## Known Limitations
 
 - No built-in scheduler daemon or background service.
 - No GUI yet.
 - No cloud LLM APIs.
-- No saved review-session resume yet.
+- No saved review-session resume or editing yet.
 - No heuristic review-candidate table in batch review yet.
 - Ollama refinement requires a local Ollama service and model.
 - Prompt evaluation harness is documented but not implemented.
@@ -68,4 +72,4 @@ Apply commands require one of:
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.1 and later remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10.2 and later remain future work.

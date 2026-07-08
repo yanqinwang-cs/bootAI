@@ -26,6 +26,7 @@ from organizer.review_session import (
     approved_plan_items,
     build_review_session_items,
     get_item,
+    load_reviewed_plan_move_items,
     reject_items,
     save_reviewed_plan,
     summarize_review_items,
@@ -50,6 +51,7 @@ def main() -> int:
     parser.add_argument("--report", action="store_true")
     parser.add_argument("--report-output", type=Path, default=None)
     parser.add_argument("--review-plans", action="store_true")
+    parser.add_argument("--apply-reviewed-plan", type=Path, default=None)
     parser.add_argument("--confirm", default=None)
     parser.add_argument("--undo-log", type=Path, default=None)
     parser.add_argument("--review-candidates", action="store_true")
@@ -66,6 +68,9 @@ def main() -> int:
     if args.report_output is not None and not args.report:
         parser.error("--report-output requires --report")
 
+    if args.apply_reviewed_plan is not None:
+        return _handle_apply_reviewed_plan(parser, args)
+
     if args.report:
         return _handle_report(parser, args)
 
@@ -79,6 +84,7 @@ def main() -> int:
             or args.apply_duplicate_plan
             or args.apply_organization_plan
             or args.apply_refined_organization_plan
+            or args.apply_reviewed_plan is not None
             or args.confirm is not None
             or args.review_candidates
             or args.plan_review_candidates
@@ -254,6 +260,7 @@ def _handle_review_plans(
         or args.apply_duplicate_plan
         or args.apply_organization_plan
         or args.apply_refined_organization_plan
+        or args.apply_reviewed_plan is not None
         or args.report
         or args.report_output is not None
         or args.confirm is not None
@@ -342,6 +349,53 @@ def _handle_review_plans(
                 print("Unknown command. Type help for available commands.")
         except ValueError as error:
             print(f"Error: {error}")
+
+
+def _handle_apply_reviewed_plan(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.report
+        or args.report_output is not None
+        or args.undo_log is not None
+        or args.review_plans
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.refine_groups
+        or args.plan_refined_organization
+        or args.llm_provider is not None
+        or args.llm_model is not None
+    ):
+        parser.error(
+            "--apply-reviewed-plan cannot be combined with display, planning, "
+            "apply, undo, report, review, or LLM flags"
+        )
+
+    if args.confirm != CONFIRM_APPLY_REVIEWED_PLAN:
+        print(
+            "Apply refused: pass --confirm APPLY_REVIEWED_PLAN "
+            "to apply this reviewed plan."
+        )
+        return 0
+
+    try:
+        plan_items = load_reviewed_plan_move_items(args.apply_reviewed_plan, args.folder)
+        print(f"Reviewed plan approved moves: {len(plan_items)}")
+        if not plan_items:
+            print("No approved moves to apply.")
+            return 0
+        print("Applying approved moves from saved reviewed plan.")
+        return _apply_plan_items(plan_items, args.folder)
+    except ValueError as error:
+        parser.error(str(error))
 
 
 def _print_review_session_help() -> None:

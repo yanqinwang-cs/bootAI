@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.0 are implemented. The tool can currently:
+Stages 1 through 10.1 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -20,8 +20,9 @@ Stages 1 through 10.0 are implemented. The tool can currently:
 - Undo logged move operations.
 - Generate read-only JSON reports for manual review or external scheduler runs.
 - Review duplicate and organization move candidates in a batch CLI session.
+- Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.0 adds batch CLI review and confirmed bulk apply. Resume/load review sessions, review-candidate tables, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.1 adds confirmed apply for saved reviewed plans. Resume/editing review sessions, review-candidate tables, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -76,6 +77,7 @@ Approved move commands:
 ```bash
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-duplicate-plan --confirm APPLY_DUPLICATE_PLAN
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-organization-plan --confirm APPLY_ORGANIZATION_PLAN
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-reviewed-plan AI_Review/review_sessions/reviewed_plan.json --confirm APPLY_REVIEWED_PLAN
 ```
 
 Local Ollama refinement:
@@ -95,6 +97,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Report mode writes a JSON report file but does not move scanned files.
 - Review mode approve/reject/save commands do not move files.
 - Review mode applies approved moves only after exact `APPLY_REVIEWED_PLAN` confirmation.
+- Saved reviewed plans are validated as untrusted input before approved moves are applied.
 - `executor.py` is the only module that performs real movement.
 - Review, grouping, and LLM modules produce facts or suggestions; they do not execute moves.
 
