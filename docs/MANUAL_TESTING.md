@@ -376,6 +376,30 @@ APPLY_REVIEWED_PLAN
 
 Expected outcome: `R` IDs appear for review-candidate move rows only, intentional empty placeholders and copywriting-like names are not review-candidate rows, save writes `review_candidate` items with `review_category` metadata, the wrong confirmation moves nothing, and the exact confirmation applies only approved moves. Approved review-candidate moves go under `AI_Review/<category>/`, and the operation log path can be used with `--undo-log` to restore successful logged moves.
 
+## Stage 10.2.1 Reviewed Plan Conflicts
+
+Use a disposable folder that creates an overlap between duplicate and review-candidate rows:
+
+```bash
+printf "" > /path/to/temp-folder/empty_candidate.txt
+printf "" > /path/to/temp-folder/.gitkeep
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --review-plans
+```
+
+In the review session, try:
+
+```text
+summary
+conflicts
+apply
+reject <conflicting IDs until one approved move remains for each path>
+summary
+apply
+APPLY_REVIEWED_PLAN
+```
+
+Expected outcome: `summary` reports unresolved approved move conflicts, `conflicts` lists the conflicted source or destination rows, and the first `apply` is blocked before confirmation. After rejecting all but one approved move for each conflicted source or destination, exact confirmation is required before any approved move is applied. Saving during a conflict is still allowed and does not move files.
+
 ## Final Git Hygiene Check
 
 From the repository root:

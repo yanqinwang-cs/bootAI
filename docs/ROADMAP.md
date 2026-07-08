@@ -19,6 +19,7 @@
 | 10.0 | Batch CLI review and confirmed bulk apply | `review_session.py`, `cli.py` | `--review-plans` | final exact confirmation required |
 | 10.1 | Apply saved reviewed plans | `review_session.py`, `cli.py` | `--apply-reviewed-plan`, `--confirm` | validates untrusted saved plan |
 | 10.2 | Review-candidate rows in batch review | `review_session.py`, `cli.py` | `--review-plans` | final exact confirmation required |
+| 10.2.1 | Reviewed-plan conflict detection | `review_session.py`, `cli.py` | `conflicts` inside `--review-plans` | conflicts block apply |
 
 ## Future Stages
 

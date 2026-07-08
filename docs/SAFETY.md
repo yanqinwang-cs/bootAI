@@ -20,6 +20,8 @@
 - Review approve/reject/save commands must not move files.
 - Review-candidate rows are candidates for review and must not be described as disposal targets.
 - Reviewed-plan JSON files are not operation logs.
+- A source or destination path must not have multiple approved reviewed-plan moves.
+- Reviewed-plan conflicts must block apply until the user rejects conflicting approved rows.
 - Saved reviewed-plan JSON files are untrusted input and must be validated before use.
 - Rejected saved reviewed-plan items must be ignored for movement.
 - Batch review apply requires exact `APPLY_REVIEWED_PLAN` confirmation.

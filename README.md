@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.2 are implemented. The tool can currently:
+Stages 1 through 10.2.1 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -20,9 +20,10 @@ Stages 1 through 10.2 are implemented. The tool can currently:
 - Undo logged move operations.
 - Generate read-only JSON reports for manual review or external scheduler runs.
 - Review duplicate, organization, and review-candidate move candidates in a batch CLI session.
+- Detect reviewed-plan conflicts before approved batch apply.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.2 adds review-candidate rows to batch review. Resume/editing review sessions, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.2.1 adds reviewed-plan conflict detection. Resume/editing review sessions, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -98,6 +99,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Review mode approve/reject/save commands do not move files.
 - Review mode applies approved moves only after exact `APPLY_REVIEWED_PLAN` confirmation.
 - Review-candidate rows are candidates for review and use `R` IDs in batch review.
+- Review mode blocks apply when one source or destination has multiple approved moves.
 - Saved reviewed plans are validated as untrusted input before approved moves are applied.
 - `executor.py` is the only module that performs real movement.
 - Review, grouping, and LLM modules produce facts or suggestions; they do not execute moves.
