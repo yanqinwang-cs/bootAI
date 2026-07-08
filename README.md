@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 8 are implemented. The tool can currently:
+Stages 1 through 9.5 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -20,7 +20,7 @@ Stages 1 through 8 are implemented. The tool can currently:
 - Undo logged move operations.
 - Generate read-only JSON reports for manual review or external scheduler runs.
 
-Stage 9 adds scheduler-compatible report generation. Built-in scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 9.5 stabilizes the report format documentation and sample report. Built-in scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -97,6 +97,8 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 
 - [Documentation index](docs/README.md)
 - [CLI reference](docs/CLI_REFERENCE.md)
+- [Report format](docs/REPORT_FORMAT.md)
+- [Sample report](docs/examples/sample_report.json)
 - [Manual testing guide](docs/MANUAL_TESTING.md)
 - [Release notes](docs/RELEASE_NOTES.md)
 - [Safety constitution](docs/SAFETY.md)
