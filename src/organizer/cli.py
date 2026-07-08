@@ -22,15 +22,19 @@ from organizer.review import build_review_candidate_plan, detect_review_candidat
 from organizer.scanner import scan_directory
 
 CONFIRM_APPLY_DUPLICATE_PLAN = "APPLY_DUPLICATE_PLAN"
+CONFIRM_APPLY_ORGANIZATION_PLAN = "APPLY_ORGANIZATION_PLAN"
+CONFIRM_APPLY_REFINED_ORGANIZATION_PLAN = "APPLY_REFINED_ORGANIZATION_PLAN"
 
 
-def main() -> None:
+def main() -> int:
     parser = argparse.ArgumentParser(description="Print a read-only file metadata report.")
     parser.add_argument("folder", type=Path)
     parser.add_argument("--max-depth", type=int, default=None)
     parser.add_argument("--duplicates", action="store_true")
     parser.add_argument("--plan-duplicates", action="store_true")
     parser.add_argument("--apply-duplicate-plan", action="store_true")
+    parser.add_argument("--apply-organization-plan", action="store_true")
+    parser.add_argument("--apply-refined-organization-plan", action="store_true")
     parser.add_argument("--confirm", default=None)
     parser.add_argument("--undo-log", type=Path, default=None)
     parser.add_argument("--review-candidates", action="store_true")
@@ -49,6 +53,8 @@ def main() -> None:
             args.duplicates
             or args.plan_duplicates
             or args.apply_duplicate_plan
+            or args.apply_organization_plan
+            or args.apply_refined_organization_plan
             or args.confirm is not None
             or args.review_candidates
             or args.plan_review_candidates
@@ -63,7 +69,7 @@ def main() -> None:
         operation_log = undo_operation_log(args.undo_log, args.folder)
         print("Undo operation results")
         _print_operation_log(operation_log)
-        return
+        return 0
 
     metadata_items = scan_directory(args.folder, max_depth=args.max_depth)
     print(f"Metadata report for {args.folder.resolve()}")
@@ -100,7 +106,7 @@ def main() -> None:
         plan_items = build_duplicate_review_plan(duplicate_groups, args.folder)
         _print_duplicate_review_plan(plan_items)
         if not plan_items:
-            return
+            return 0
 
         if args.apply_duplicate_plan:
             print("")
@@ -109,14 +115,9 @@ def main() -> None:
                     "Apply refused: pass "
                     "--confirm APPLY_DUPLICATE_PLAN to apply this plan."
                 )
-                return
+                return 0
 
-            operation_log = apply_move_plan(plan_items, args.folder)
-            if any(not result.success for result in operation_log.operations):
-                print("Apply completed with failures.")
-            else:
-                print("Apply completed.")
-            _print_operation_log(operation_log)
+            return _apply_plan_items(plan_items, args.folder)
 
     review_candidates = None
 
@@ -139,15 +140,34 @@ def main() -> None:
         project_groups = find_project_groups(metadata_items)
         _print_project_groups(project_groups)
 
-    if args.plan_organization:
+    if args.plan_organization or args.apply_organization_plan:
         if project_groups is None:
             project_groups = find_project_groups(metadata_items)
         suggestions = build_organization_suggestions(project_groups, args.folder)
         _print_organization_suggestions(suggestions)
+        plan_items = _flatten_plan_items(suggestions)
+        if not plan_items:
+            return 0
+
+        if args.apply_organization_plan:
+            print("")
+            if args.confirm != CONFIRM_APPLY_ORGANIZATION_PLAN:
+                print(
+                    "Apply refused: pass "
+                    "--confirm APPLY_ORGANIZATION_PLAN to apply this plan."
+                )
+                return 0
+
+            print("Approved organization move")
+            return _apply_plan_items(plan_items, args.folder)
 
     refinements = None
 
-    if args.refine_groups or args.plan_refined_organization:
+    if (
+        args.refine_groups
+        or args.plan_refined_organization
+        or args.apply_refined_organization_plan
+    ):
         _validate_llm_args(parser, args.llm_provider, args.llm_model)
         if project_groups is None:
             project_groups = find_project_groups(metadata_items)
@@ -163,12 +183,29 @@ def main() -> None:
     if args.refine_groups:
         _print_llm_refinements(refinements or [])
 
-    if args.plan_refined_organization:
+    if args.plan_refined_organization or args.apply_refined_organization_plan:
         refined_suggestions = [
             build_refined_organization_suggestion(group, refinement, args.folder)
             for group, refinement in zip(project_groups or [], refinements or [])
         ]
         _print_refined_organization_suggestions(refined_suggestions)
+        plan_items = _flatten_plan_items(refined_suggestions)
+        if not plan_items:
+            return 0
+
+        if args.apply_refined_organization_plan:
+            print("")
+            if args.confirm != CONFIRM_APPLY_REFINED_ORGANIZATION_PLAN:
+                print(
+                    "Apply refused: pass "
+                    "--confirm APPLY_REFINED_ORGANIZATION_PLAN to apply this plan."
+                )
+                return 0
+
+            print("Approved refined organization move")
+            return _apply_plan_items(plan_items, args.folder)
+
+    return 0
 
 
 def _validate_llm_args(
@@ -313,6 +350,28 @@ def _print_refined_organization_suggestions(
             print(f"    overwrite_risk: {item.overwrite_risk}")
 
 
+def _flatten_plan_items(
+    suggestions: list[OrganizationSuggestion],
+) -> list[MovePlanItem]:
+    return [
+        item
+        for suggestion in suggestions
+        for item in suggestion.plan_items
+    ]
+
+
+def _apply_plan_items(plan_items: list[MovePlanItem], root: Path) -> int:
+    operation_log = apply_move_plan(plan_items, root)
+    if any(not result.success for result in operation_log.operations):
+        print("Apply completed with failures.")
+        _print_operation_log(operation_log)
+        return 1
+
+    print("Apply completed.")
+    _print_operation_log(operation_log)
+    return 0
+
+
 def _print_operation_log(operation_log: OperationLog) -> None:
     print(f"Operation log: {operation_log.log_path}")
     for index, result in enumerate(operation_log.operations, start=1):
@@ -324,4 +383,4 @@ def _print_operation_log(operation_log: OperationLog) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -1,6 +1,6 @@
 # Stage 8 Precheck
 
-This document is the safety gate for Stage 8. Read it before planning or editing.
+Stage 8 has been implemented. This document remains the maintenance checklist for future changes to organization apply behavior. Read it before planning or editing anything that can affect organization moves.
 
 ## Purpose
 
@@ -19,9 +19,9 @@ Apply approved organization plans using the existing executor.
 - No new executor.
 - No hidden movement in grouping or LLM modules.
 
-## Required Inspection
+## Required Inspection For Maintenance
 
-Before implementing Stage 8, inspect:
+Before changing Stage 8 behavior, inspect:
 
 - `src/organizer/models.py`
 - `src/organizer/safety.py`
@@ -33,7 +33,7 @@ Before implementing Stage 8, inspect:
 - `tests/test_llm_refinement.py`
 - `tests/test_executor.py`
 
-## Implementation Direction
+## Implementation Direction To Preserve
 
 - Organization suggestions should produce explicit `MovePlanItem` values.
 - `executor.py` should apply approved `MovePlanItem` values.
@@ -42,7 +42,7 @@ Before implementing Stage 8, inspect:
 - `llm_refinement.py` should not execute moves.
 - `executor.py` should not decide what should move.
 
-Stage 8 must reuse `executor.py`. It must not create a second mover and must not bypass `MovePlanItem`.
+Stage 8 reuses `executor.py`. Future changes must not create a second mover and must not bypass `MovePlanItem`.
 
 ## Safety Invariants
 
@@ -60,7 +60,7 @@ Stage 8 must reuse `executor.py`. It must not create a second mover and must not
 
 ## Required Tests
 
-Stage 8 tests should cover at least:
+Stage 8 tests should continue to cover at least:
 
 - Dry-run organization plan remains non-mutating.
 - Apply organization plan requires exact confirmation.
@@ -74,7 +74,7 @@ Stage 8 tests should cover at least:
 - Destination collisions do not overwrite.
 - `AI_Review` paths are not reorganized accidentally.
 
-## Manual Checklist
+## Manual Maintenance Checklist
 
 - Create a small messy folder.
 - Run the dry-run organization plan.

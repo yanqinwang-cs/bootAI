@@ -12,14 +12,9 @@
 | 6 | Deterministic project grouping and organization plans | `grouping.py` | `--project-groups`, `--plan-organization` | dry-run only |
 | 7 | Optional Ollama LLM group refinement | `llm_refinement.py`, `ollama_client.py` | `--refine-groups`, `--plan-refined-organization` | advisory and dry-run only |
 | 7.5 | Documentation and prompt framework | `docs/` | none | documentation only |
+| 8 | Apply approved organization plans | `cli.py`, `executor.py` | `--apply-organization-plan`, `--apply-refined-organization-plan`, `--confirm` | explicit approval required |
 
 ## Future Stages
-
-### Stage 8: Apply Approved Organization Plans
-
-Goal: reuse `executor.py` to apply explicitly approved organization plans.
-
-Non-goals: no new mover module, no hidden approval policy, no scheduled mode.
 
 ### Stage 9: Overnight Scheduled Report Mode
 
