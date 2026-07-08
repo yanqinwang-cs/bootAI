@@ -42,3 +42,11 @@ class MoveResult:
 class OperationLog:
     log_path: Path
     operations: list[MoveResult]
+
+
+@dataclass(frozen=True)
+class ReviewCandidate:
+    file: FileMetadata
+    category: str
+    reason: str
+    confidence: int
