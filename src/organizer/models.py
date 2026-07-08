@@ -28,3 +28,17 @@ class MovePlanItem:
     confidence: int
     operation: str
     overwrite_risk: bool
+
+
+@dataclass(frozen=True)
+class MoveResult:
+    source: Path
+    destination: Path
+    success: bool
+    message: str
+
+
+@dataclass(frozen=True)
+class OperationLog:
+    log_path: Path
+    operations: list[MoveResult]
