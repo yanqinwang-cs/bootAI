@@ -105,3 +105,29 @@ python -m organizer.cli <folder> --apply-refined-organization-plan --llm-provide
 - `--confirm APPLY_REFINED_ORGANIZATION_PLAN`: apply; required for approved refined organization moves.
 
 LLM refinement is optional and local-only. Refined organization apply still uses validated Python `MovePlanItem` values and `executor.py`.
+
+## Batch Review
+
+```bash
+python -m organizer.cli <folder> --review-plans
+python -m organizer.cli <folder> --review-plans --max-depth 2
+```
+
+- `--review-plans`: interactive batch review for duplicate and deterministic organization move candidates.
+
+Review mode is single-purpose. It rejects display, planning, apply, undo, report, LLM, and confirmation flags. It allows `--max-depth`.
+
+Inside the review session:
+
+- `help`: show commands.
+- `show duplicates`: show duplicate suggested moves.
+- `show organization`: show organization suggested moves.
+- `summary`: show approved and rejected move counts.
+- `reject <IDs...>`: mark suggested moves as rejected.
+- `approve <IDs...>`: mark rejected moves as approved again.
+- `details <ID>`: show full details for one item.
+- `save`: write a reviewed-plan JSON file under `AI_Review/review_sessions/`.
+- `apply`: save the current reviewed plan if needed, then require exact `APPLY_REVIEWED_PLAN` confirmation before applying approved moves.
+- `quit`: exit without applying.
+
+Approve, reject, and save commands do not move files. Only `apply` with exact `APPLY_REVIEWED_PLAN` confirmation can move approved files, and movement still goes through `executor.py`. Reviewed-plan JSON files are review records, not operation logs. Undo uses the operation log printed after a real apply.

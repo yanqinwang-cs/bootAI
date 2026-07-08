@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 9.5 are implemented. The tool can currently:
+Stages 1 through 10.0 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -19,15 +19,16 @@ Stages 1 through 9.5 are implemented. The tool can currently:
 - Apply approved organization plans with undo logs.
 - Undo logged move operations.
 - Generate read-only JSON reports for manual review or external scheduler runs.
+- Review duplicate and organization move candidates in a batch CLI session.
 
-Stage 9.5 stabilizes the report format documentation and sample report. Built-in scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.0 adds batch CLI review and confirmed bulk apply. Resume/load review sessions, review-candidate tables, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
 Use Python 3 and the standard library. No third-party dependencies are required for the current test suite.
 
 ```bash
-PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply
+PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session
 ```
 
 ## Quickstart
@@ -39,6 +40,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --duplicates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-organization
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans
 ```
 
 Apply commands require exact confirmation:
@@ -66,6 +68,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-review-candidates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-duplicates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report --report-output /path/to/folder/AI_Review/reports/manual_report.json
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans
 ```
 
 Approved move commands:
@@ -90,6 +93,8 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Keep operation logs when testing undo.
 - Do not run apply commands on important folders while testing.
 - Report mode writes a JSON report file but does not move scanned files.
+- Review mode approve/reject/save commands do not move files.
+- Review mode applies approved moves only after exact `APPLY_REVIEWED_PLAN` confirmation.
 - `executor.py` is the only module that performs real movement.
 - Review, grouping, and LLM modules produce facts or suggestions; they do not execute moves.
 
