@@ -400,6 +400,55 @@ APPLY_REVIEWED_PLAN
 
 Expected outcome: `summary` reports unresolved approved move conflicts, `conflicts` lists the conflicted source or destination rows, and the first `apply` is blocked before confirmation. After rejecting all but one approved move for each conflicted source or destination, exact confirmation is required before any approved move is applied. Saving during a conflict is still allowed and does not move files.
 
+## Stage 10.3 Review State Memory
+
+Use a disposable folder with duplicate files and project-like files:
+
+```bash
+mkdir -p /path/to/temp-folder/subdir
+printf "same" > /path/to/temp-folder/a.txt
+printf "same" > /path/to/temp-folder/subdir/b.txt
+printf "notes" > /path/to/temp-folder/evosim_notes.txt
+printf "report" > /path/to/temp-folder/evosim_report.pdf
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --review-plans
+```
+
+In the first review session:
+
+```text
+reject D1
+save
+quit
+```
+
+Expected outcome: a reviewed-plan JSON file is written under `AI_Review/review_sessions/`, review decision memory is written under `AI_Review/review_state/review_decisions.json`, no operation log is written, and no files move.
+
+Run review mode again:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --review-plans
+```
+
+Then try:
+
+```text
+show duplicates
+summary
+quit
+```
+
+Expected outcome: matching rows show remembered decision wording, and `summary` includes remembered approval, remembered rejection, new suggestion, and stale prior decision counts.
+
+Run review mode while ignoring memory:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --review-plans --ignore-review-state
+```
+
+Expected outcome: rows start from current suggestions, not remembered decisions. The state file is not an operation log and cannot be used with `--undo-log`.
+
+If a source file changes after a decision is remembered, run review mode again. Expected outcome: the row is marked as a stale prior decision and keeps the current default decision until reviewed again.
+
 ## Final Git Hygiene Check
 
 From the repository root:

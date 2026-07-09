@@ -22,6 +22,7 @@ from organizer.review_session import (
     reviewed_plan_data_to_move_items,
     summarize_review_items,
 )
+from organizer.review_state import load_review_state, review_state_path
 from organizer.scanner import scan_directory
 
 
@@ -487,6 +488,76 @@ class ReviewSessionCliTests(unittest.TestCase):
             self.assertTrue(list((root / "AI_Review" / "review_sessions").glob("*.json")))
             self.assertTrue((root / "evosim_notes.txt").exists())
 
+    def test_review_plans_applies_remembered_decisions_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_session_fixture(root)
+
+            first = run_cli(
+                root,
+                "--review-plans",
+                input_text="reject D1\nsave\nquit\n",
+            )
+            second = run_cli(
+                root,
+                "--review-plans",
+                input_text="show duplicates\nsummary\nquit\n",
+            )
+
+            self.assertEqual(first.returncode, 0, first.stderr)
+            self.assertEqual(second.returncode, 0, second.stderr)
+            self.assertIn("Review state saved:", first.stdout)
+            self.assertIn("Review state loaded:", second.stdout)
+            self.assertIn("D1 [rejected remembered]", second.stdout)
+            self.assertIn("remembered rejected decisions: 1", second.stdout)
+
+    def test_review_plans_ignore_review_state_leaves_new_suggestions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_session_fixture(root)
+            run_cli(root, "--review-plans", input_text="reject D1\nsave\nquit\n")
+
+            result = run_cli(
+                root,
+                "--review-plans",
+                "--ignore-review-state",
+                input_text="show duplicates\nsummary\nquit\n",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Review state ignored for this session.", result.stdout)
+            self.assertIn("D1 [approved]", result.stdout)
+            self.assertIn("remembered rejected decisions: 0", result.stdout)
+
+    def test_ignore_review_state_requires_review_plans(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "a.txt").write_text("same", encoding="utf-8")
+
+            result = run_cli(root, "--ignore-review-state")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("--ignore-review-state requires --review-plans", result.stderr)
+
+    def test_save_writes_review_state_and_does_not_move_or_write_operation_log(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_session_fixture(root)
+
+            result = run_cli(
+                root,
+                "--review-plans",
+                input_text="reject D1\nsave\nquit\n",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            state = load_review_state(root)
+            persisted = {(record.category, record.decision) for record in state.decisions}
+            self.assertIn(("duplicate", "rejected"), persisted)
+            self.assertIn(("organization", "approved"), persisted)
+            self.assertTrue((root / "subdir" / "b.txt").exists())
+            self.assertFalse((root / "AI_Review" / "operation_logs").exists())
+
     def test_review_plans_help_and_show_review_candidates(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -624,6 +695,40 @@ class ReviewSessionCliTests(unittest.TestCase):
             self.assertIn("Applying approved moves from reviewed plan.", output)
             self.assertEqual(len(captured_plan_items), 1)
             self.assertIn("AI_Review/duplicates", captured_plan_items[0].destination.as_posix())
+            state = load_review_state(root)
+            self.assertTrue(any(record.category == "organization" for record in state.decisions))
+            self.assertFalse((root / "AI_Review" / "operation_logs").exists())
+
+    def test_apply_failure_does_not_record_filesystem_success_in_review_state(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_session_fixture(root)
+
+            def fake_apply(plan_items, apply_root):
+                return OperationLog(
+                    log_path=apply_root / "AI_Review" / "operation_logs" / "fake.json",
+                    operations=[
+                        MoveResult(
+                            source=plan_items[0].source,
+                            destination=plan_items[0].destination,
+                            success=False,
+                            message="simulated failure",
+                        )
+                    ],
+                )
+
+            exit_code, output = run_cli_main(
+                root,
+                "--review-plans",
+                input_text="reject O1 O2\napply\nAPPLY_REVIEWED_PLAN\n",
+                apply_side_effect=fake_apply,
+            )
+
+            self.assertEqual(exit_code, 1)
+            self.assertIn("Apply completed with failures.", output)
+            state_data = json.loads(review_state_path(root).read_text(encoding="utf-8"))
+            self.assertNotIn("success", json.dumps(state_data))
+            self.assertEqual(state_data["decisions"][0]["decision"], "rejected")
 
     def test_all_rejected_does_not_call_executor(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -707,6 +812,27 @@ class ReviewSessionCliTests(unittest.TestCase):
 
             self.assertEqual(exit_code, 0)
             self.assertIn("No duplicate, organization, or review-candidate move candidates", output)
+
+    def test_remembered_rejections_reduce_conflict_count(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_review_candidate_fixture(root)
+
+            first = run_cli(
+                root,
+                "--review-plans",
+                input_text="reject R1\nsave\nquit\n",
+            )
+            second = run_cli(
+                root,
+                "--review-plans",
+                input_text="summary\nquit\n",
+            )
+
+            self.assertEqual(first.returncode, 0, first.stderr)
+            self.assertEqual(second.returncode, 0, second.stderr)
+            self.assertIn("remembered rejected decisions: 1", second.stdout)
+            self.assertIn("approved source conflicts: 0", second.stdout)
 
 
 class SavedReviewedPlanValidationTests(unittest.TestCase):
@@ -1049,6 +1175,42 @@ class SavedReviewedPlanCliTests(unittest.TestCase):
             self.assertIn("Applying approved moves from saved reviewed plan.", output)
             self.assertEqual(len(captured_plan_items), 1)
             self.assertEqual(captured_plan_items[0].source, root.resolve() / "a.txt")
+
+    def test_saved_reviewed_plan_apply_is_independent_of_review_state(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            create_duplicate_only_fixture(root)
+            run_cli(root, "--review-plans", input_text="reject D1\nsave\nquit\n")
+            plan_path = write_reviewed_plan(root, valid_saved_plan_data())
+            captured_plan_items = []
+
+            def fake_apply(plan_items, apply_root):
+                captured_plan_items.extend(plan_items)
+                return OperationLog(
+                    log_path=apply_root / "AI_Review" / "operation_logs" / "fake.json",
+                    operations=[
+                        MoveResult(
+                            source=plan_items[0].source,
+                            destination=plan_items[0].destination,
+                            success=True,
+                            message="moved",
+                        )
+                    ],
+                )
+
+            exit_code, output = run_cli_main(
+                root,
+                "--apply-reviewed-plan",
+                str(plan_path),
+                "--confirm",
+                "APPLY_REVIEWED_PLAN",
+                input_text="",
+                apply_side_effect=fake_apply,
+            )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Applying approved moves from saved reviewed plan.", output)
+            self.assertEqual(len(captured_plan_items), 1)
 
     def test_all_rejected_saved_plan_does_not_call_executor(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

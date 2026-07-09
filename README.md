@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.2.1 are implemented. The tool can currently:
+Stages 1 through 10.3 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -21,16 +21,17 @@ Stages 1 through 10.2.1 are implemented. The tool can currently:
 - Generate read-only JSON reports for manual review or external scheduler runs.
 - Review duplicate, organization, and review-candidate move candidates in a batch CLI session.
 - Detect reviewed-plan conflicts before approved batch apply.
+- Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.2.1 adds reviewed-plan conflict detection. Resume/editing review sessions, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.3 adds persistent review decision memory. Resume/editing saved review sessions, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
 Use Python 3 and the standard library. No third-party dependencies are required for the current test suite.
 
 ```bash
-PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session
+PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_state
 ```
 
 ## Quickstart
@@ -43,6 +44,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --duplicates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-organization
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans --ignore-review-state
 ```
 
 Apply commands require exact confirmation:
@@ -97,10 +99,13 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Do not run apply commands on important folders while testing.
 - Report mode writes a JSON report file but does not move scanned files.
 - Review mode approve/reject/save commands do not move files.
+- Review mode stores decision memory under `AI_Review/review_state/review_decisions.json`.
+- Review state is decision memory, not an operation log, and does not record filesystem success.
 - Review mode applies approved moves only after exact `APPLY_REVIEWED_PLAN` confirmation.
 - Review-candidate rows are candidates for review and use `R` IDs in batch review.
 - Review mode blocks apply when one source or destination has multiple approved moves.
 - Saved reviewed plans are validated as untrusted input before approved moves are applied.
+- Operation logs remain authoritative for actual successful moves and undo.
 - `executor.py` is the only module that performs real movement.
 - Review, grouping, and LLM modules produce facts or suggestions; they do not execute moves.
 

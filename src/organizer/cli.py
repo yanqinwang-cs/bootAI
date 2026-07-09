@@ -32,6 +32,13 @@ from organizer.review_session import (
     save_reviewed_plan,
     summarize_review_items,
 )
+from organizer.review_state import (
+    ReviewState,
+    apply_review_state_to_items,
+    load_review_state,
+    save_review_state,
+    update_review_state_from_items,
+)
 from organizer.scanner import scan_directory
 
 CONFIRM_APPLY_DUPLICATE_PLAN = "APPLY_DUPLICATE_PLAN"
@@ -52,6 +59,7 @@ def main() -> int:
     parser.add_argument("--report", action="store_true")
     parser.add_argument("--report-output", type=Path, default=None)
     parser.add_argument("--review-plans", action="store_true")
+    parser.add_argument("--ignore-review-state", action="store_true")
     parser.add_argument("--apply-reviewed-plan", type=Path, default=None)
     parser.add_argument("--confirm", default=None)
     parser.add_argument("--undo-log", type=Path, default=None)
@@ -68,6 +76,8 @@ def main() -> int:
 
     if args.report_output is not None and not args.report:
         parser.error("--report-output requires --report")
+    if args.ignore_review_state and not args.review_plans:
+        parser.error("--ignore-review-state requires --review-plans")
 
     if args.apply_reviewed_plan is not None:
         return _handle_apply_reviewed_plan(parser, args)
@@ -282,6 +292,20 @@ def _handle_review_plans(
 
     metadata_items = scan_directory(args.folder, max_depth=args.max_depth)
     items = build_review_session_items(metadata_items, args.folder)
+    state: ReviewState | None = None
+    if args.ignore_review_state:
+        print("Review state ignored for this session.")
+    else:
+        try:
+            state = load_review_state(args.folder)
+        except ValueError as error:
+            parser.error(str(error))
+        if state.decisions:
+            items = apply_review_state_to_items(items, state, args.folder)
+            print(f"Review state loaded: {len(state.decisions)} remembered decision(s).")
+        else:
+            print("No review state found; starting with new suggestions.")
+
     if not items:
         print("No duplicate, organization, or review-candidate move candidates found for review.")
         return 0
@@ -332,6 +356,7 @@ def _handle_review_plans(
             elif action == "save" and len(command) == 1:
                 saved_current_plan_path = save_reviewed_plan(items, args.folder)
                 print(f"Reviewed plan saved: {saved_current_plan_path}")
+                state = _save_review_state_for_items(items, args.folder, state)
             elif action == "apply" and len(command) == 1:
                 _print_review_session_summary(items, args.folder)
                 plan_items = approved_plan_items(items)
@@ -353,6 +378,7 @@ def _handle_review_plans(
                 if confirmation != CONFIRM_APPLY_REVIEWED_PLAN:
                     print("Apply refused: exact confirmation was not provided.")
                     continue
+                state = _save_review_state_for_items(items, args.folder, state)
                 print("Applying approved moves from reviewed plan.")
                 return _apply_plan_items(plan_items, args.folder)
             elif action == "quit" and len(command) == 1:
@@ -411,6 +437,19 @@ def _handle_apply_reviewed_plan(
         parser.error(str(error))
 
 
+def _save_review_state_for_items(
+    items: list[ReviewedPlanItem],
+    root: Path,
+    current_state: ReviewState | None,
+) -> ReviewState:
+    if current_state is None:
+        current_state = load_review_state(root)
+    updated_state = update_review_state_from_items(current_state, items, root)
+    path = save_review_state(updated_state, root)
+    print(f"Review state saved: {path}")
+    return updated_state
+
+
 def _print_review_session_help() -> None:
     print(
         "Commands: help, show duplicates, show organization, show review-candidates, "
@@ -447,7 +486,7 @@ def _print_review_session_item_summary(
 ) -> None:
     plan_item = item.plan_item
     print(
-        f"{item.id} [{item.decision}] "
+        f"{item.id} [{_review_session_decision_label(item)}] "
         f"{_relative_to_root(plan_item.source, root)} -> "
         f"{_relative_to_root(plan_item.destination, root)}"
     )
@@ -463,6 +502,9 @@ def _print_review_session_item(
     if item.review_category is not None:
         print(f"  review_category: {item.review_category}")
     print(f"  decision: {item.decision}")
+    print(f"  memory_status: {item.memory_status}")
+    if item.remembered_decision is not None:
+        print(f"  remembered_decision: {item.remembered_decision}")
     print(f"  source: {_relative_to_root(plan_item.source, root)}")
     print(f"  destination: {_relative_to_root(plan_item.destination, root)}")
     print(f"  reason: {plan_item.reason}")
@@ -495,8 +537,22 @@ def _print_review_session_summary(
     print(f"  approved source conflicts: {summary['approved_source_conflict_count']}")
     print(f"  approved destination conflicts: {summary['approved_destination_conflict_count']}")
     print(f"  approved move conflicts: {summary['approved_move_conflict_count']}")
+    print(f"  new suggestions: {summary['memory_new_suggestion_count']}")
+    print(f"  remembered rejected decisions: {summary['memory_rejected_remembered_count']}")
+    print(f"  remembered approved decisions: {summary['memory_approved_remembered_count']}")
+    print(f"  stale prior decisions: {summary['memory_stale_prior_decision_count']}")
     if summary["approved_move_conflict_count"]:
         print("  final apply is blocked until conflicts are resolved")
+
+
+def _review_session_decision_label(item: ReviewedPlanItem) -> str:
+    if item.memory_status == "rejected_remembered":
+        return "rejected remembered"
+    if item.memory_status == "approved_remembered":
+        return "approved remembered"
+    if item.memory_status == "stale_prior_decision":
+        return "stale prior decision"
+    return item.decision
 
 
 def _print_review_session_conflicts(

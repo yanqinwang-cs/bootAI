@@ -111,13 +111,15 @@ LLM refinement is optional and local-only. Refined organization apply still uses
 ```bash
 python -m organizer.cli <folder> --review-plans
 python -m organizer.cli <folder> --review-plans --max-depth 2
+python -m organizer.cli <folder> --review-plans --ignore-review-state
 python -m organizer.cli <folder> --apply-reviewed-plan AI_Review/review_sessions/<plan>.json --confirm APPLY_REVIEWED_PLAN
 ```
 
 - `--review-plans`: interactive batch review for duplicate, deterministic organization, and review-candidate move candidates.
+- `--ignore-review-state`: review mode only; starts from current suggestions without applying remembered review decisions.
 - `--apply-reviewed-plan <path>`: apply approved items from a saved reviewed-plan JSON file after validation and exact confirmation.
 
-Review mode is single-purpose. It rejects display, planning, apply, undo, report, LLM, and confirmation flags. It allows `--max-depth`.
+Review mode is single-purpose. It rejects display, planning, apply, undo, report, LLM, and confirmation flags. It allows `--max-depth` and `--ignore-review-state`.
 
 Inside the review session:
 
@@ -134,6 +136,10 @@ Inside the review session:
 - `apply`: save the current reviewed plan if needed, then require exact `APPLY_REVIEWED_PLAN` confirmation before applying approved moves.
 - `quit`: exit without applying.
 
-Approve, reject, and save commands do not move files. Review-candidate rows are candidates for review, use `R` IDs, and keep `category = "review_candidate"` separate from the review candidate category such as `temporary`, `empty`, or `backup_or_copy`. If one source or destination path has multiple approved moves, `summary` reports the conflict count and `apply` is blocked until the conflict is resolved. Resolve a source conflict by rejecting all but one approved move for that source. Resolve a destination conflict by rejecting all but one approved move targeting that destination. Only `apply` with exact `APPLY_REVIEWED_PLAN` confirmation can move approved files, and movement still goes through `executor.py`. Reviewed-plan JSON files are review records, not operation logs. Undo uses the operation log printed after a real apply.
+By default, `--review-plans` loads review decision memory from `AI_Review/review_state/review_decisions.json`. Matching rows can be pre-marked as remembered approvals or remembered rejections, and stale prior decisions are shown when the source path still matches but file size or modified time changed. `--ignore-review-state` skips this memory for the current session. Review state is decision memory only. It is not an operation log, does not record filesystem success, and does not replace undo logs.
+
+Approve, reject, and save commands do not move files. `save` writes both a reviewed-plan JSON record and review-state decision memory. Review-candidate rows are candidates for review, use `R` IDs, and keep `category = "review_candidate"` separate from the review candidate category such as `temporary`, `empty`, or `backup_or_copy`. If one source or destination path has multiple approved moves, `summary` reports the conflict count and `apply` is blocked until the conflict is resolved. Resolve a source conflict by rejecting all but one approved move for that source. Resolve a destination conflict by rejecting all but one approved move targeting that destination. Only `apply` with exact `APPLY_REVIEWED_PLAN` confirmation can move approved files, and movement still goes through `executor.py`. Reviewed-plan JSON files are review records, not operation logs. Undo uses the operation log printed after a real apply.
+
+Interactive apply may update review-state memory after exact confirmation and before executor apply. That state records review intent only. Operation logs remain authoritative for actual successful moves and undo, and failed moves do not become success records in review state.
 
 Saved reviewed plans are untrusted input. `--apply-reviewed-plan` validates the plan path under the scan root, checks the JSON shape, rejects absolute paths and path traversal, ignores rejected items, blocks approved move conflicts, and converts only approved items back into `MovePlanItem` values. It does not resume or edit review sessions.
