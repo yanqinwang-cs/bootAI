@@ -24,6 +24,10 @@ CATEGORY_REVIEW_CANDIDATE = "review_candidate"
 REVIEW_CANDIDATE_CATEGORIES = {"empty", "temporary", "backup_or_copy"}
 CONFLICT_SOURCE = "source"
 CONFLICT_DESTINATION = "destination"
+MEMORY_NEW = "new_suggestion"
+MEMORY_REJECTED = "rejected_remembered"
+MEMORY_APPROVED = "approved_remembered"
+MEMORY_STALE = "stale_prior_decision"
 
 
 @dataclass(frozen=True)
@@ -149,6 +153,10 @@ def summarize_review_items(
         "approved_source_conflict_count": len(source_conflicts),
         "approved_destination_conflict_count": len(destination_conflicts),
         "approved_move_conflict_count": len(conflicts),
+        "memory_new_suggestion_count": _memory_count(items, MEMORY_NEW),
+        "memory_rejected_remembered_count": _memory_count(items, MEMORY_REJECTED),
+        "memory_approved_remembered_count": _memory_count(items, MEMORY_APPROVED),
+        "memory_stale_prior_decision_count": _memory_count(items, MEMORY_STALE),
     }
 
 
@@ -368,7 +376,12 @@ def _set_decision(
 
     ids_to_update = set(normalized_ids)
     return [
-        replace(item, decision=decision)
+        replace(
+            item,
+            decision=decision,
+            memory_status=MEMORY_NEW,
+            remembered_decision=None,
+        )
         if item.id in ids_to_update
         else item
         for item in items
@@ -485,6 +498,17 @@ def _count(
         1
         for item in items
         if item.category == category and item.decision == decision
+    )
+
+
+def _memory_count(
+    items: list[ReviewedPlanItem],
+    memory_status: str,
+) -> int:
+    return sum(
+        1
+        for item in items
+        if item.memory_status == memory_status
     )
 
 

@@ -6,7 +6,7 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.2.1 are implemented. Stage 10.2.1 adds reviewed-plan conflict detection before batch apply. Built-in scheduler daemons, saved review-session resume/editing, filtering/sorting/pagination, and GUI work remain future work.
+Stages 1 through 10.3 are implemented. Stage 10.3 adds persistent review decision memory for batch review. Built-in scheduler daemons, saved review-session resume/editing, filtering/sorting/pagination, and GUI work remain future work.
 
 ## Quick Navigation
 
@@ -26,4 +26,4 @@ Stages 1 through 10.2.1 are implemented. Stage 10.2.1 adds reviewed-plan conflic
 
 ## Safety Philosophy
 
-The system separates facts, suggestions, approved moves, execution, and undo. Scanners and detectors collect facts. Planners build suggested dry-run actions. Execution requires explicit approval and writes an operation log. No module should permanently delete files.
+The system separates facts, suggestions, reviewed decisions, approved moves, execution, and undo. Scanners and detectors collect facts. Planners build suggested dry-run actions. Review state remembers human decisions only. Execution requires explicit approval and writes an operation log. No module should permanently delete files.

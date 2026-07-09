@@ -84,3 +84,5 @@ class ReviewedPlanItem:
     plan_item: MovePlanItem
     decision: str
     review_category: str | None = None
+    memory_status: str = "new_suggestion"
+    remembered_decision: str | None = None

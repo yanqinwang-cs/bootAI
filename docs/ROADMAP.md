@@ -20,22 +20,23 @@
 | 10.1 | Apply saved reviewed plans | `review_session.py`, `cli.py` | `--apply-reviewed-plan`, `--confirm` | validates untrusted saved plan |
 | 10.2 | Review-candidate rows in batch review | `review_session.py`, `cli.py` | `--review-plans` | final exact confirmation required |
 | 10.2.1 | Reviewed-plan conflict detection | `review_session.py`, `cli.py` | `conflicts` inside `--review-plans` | conflicts block apply |
+| 10.3 | Persistent review state and organization memory | `review_state.py`, `review_session.py`, `cli.py` | `--ignore-review-state` | decision memory only |
 
 ## Future Stages
 
-### Stage 10.3: Filtering, Sorting, Or Pagination
+### Stage 10.4: Filtering, Sorting, Or Pagination
 
 Goal: make large batch review sessions easier to inspect.
 
 Non-goals: no bypass of exact confirmation or executor movement rules.
 
-### Stage 10.4: Resume Or Edit Saved Review Sessions
+### Stage 10.5: Resume Or Edit Saved Review Sessions
 
 Goal: load a saved reviewed-plan JSON file for continued review.
 
 Non-goals: no bypass of saved-plan validation.
 
-### Stage 10.5: UI Or Richer Review Interface
+### Stage 10.6: UI Or Richer Review Interface
 
 Goal: provide a safer review surface for candidates, groups, plans, and logs.
 

@@ -1,8 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.2.1
+## Current Status Through Stage 10.3
 
-Stage 10.2.1 adds reviewed-plan conflict detection. Batch review now reports source and destination conflicts and blocks apply until each conflicted path has only one approved move.
+Stage 10.3 adds persistent review decision memory. Batch review can remember prior approved or rejected decisions, flag stale prior decisions when source metadata changes, and still requires exact confirmation before any approved move can be applied.
 
 ## Stage Summary
 
@@ -23,6 +23,7 @@ Stage 10.2.1 adds reviewed-plan conflict detection. Batch review now reports sou
 - Stage 10.1: apply saved reviewed-plan JSON files after validation and exact confirmation.
 - Stage 10.2: review-candidate rows in batch review.
 - Stage 10.2.1: reviewed-plan source and destination conflict detection.
+- Stage 10.3: persistent review state and organization memory.
 
 ## Safety Model
 
@@ -41,6 +42,8 @@ Stage 10.2.1 adds reviewed-plan conflict detection. Batch review now reports sou
 - Review-candidate rows are candidates for review and use `R` IDs in batch review.
 - Reviewed-plan apply is blocked when approved rows conflict on source or destination.
 - Reviewed-plan JSON files are review records, not operation logs.
+- Review state is decision memory, not an operation log.
+- Review state does not record filesystem success and does not replace undo logs.
 - Saved reviewed-plan JSON files are untrusted input and are validated before use.
 
 ## Current CLI Capabilities
@@ -52,6 +55,7 @@ Stage 10.2.1 adds reviewed-plan conflict detection. Batch review now reports sou
 - Local LLM refinement: `--refine-groups`, `--plan-refined-organization`, `--apply-refined-organization-plan`.
 - Reports: `--report`, `--report-output <path>`.
 - Batch review: `--review-plans` for duplicate, organization, and review-candidate move candidates.
+- Review state bypass: `--review-plans --ignore-review-state`.
 - Saved reviewed-plan apply: `--apply-reviewed-plan <path> --confirm APPLY_REVIEWED_PLAN`.
 - Undo: `--undo-log <path>`.
 
@@ -68,12 +72,12 @@ Apply commands require one of:
 - No built-in scheduler daemon or background service.
 - No GUI yet.
 - No cloud LLM APIs.
-- No saved review-session resume or editing yet.
 - No filtering/sorting/pagination in batch review yet.
+- No saved review-session resume or editing yet.
 - Ollama refinement requires a local Ollama service and model.
 - Prompt evaluation harness is documented but not implemented.
 - Users should inspect dry-run output before approved moves.
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.3 and later remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10.4 and later remain future work.

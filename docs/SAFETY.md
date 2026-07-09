@@ -19,6 +19,10 @@
 - Report generation must not move files and may only create a new report file.
 - Review approve/reject/save commands must not move files.
 - Review-candidate rows are candidates for review and must not be described as disposal targets.
+- Review state records human decisions only.
+- Review state is not an operation log and must not be used for undo.
+- Remembered decisions must not bypass exact confirmation.
+- Failed moves must not become success records in review state.
 - Reviewed-plan JSON files are not operation logs.
 - A source or destination path must not have multiple approved reviewed-plan moves.
 - Reviewed-plan conflicts must block apply until the user rejects conflicting approved rows.
