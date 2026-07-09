@@ -10,6 +10,7 @@ from unittest import mock
 from organizer.executor import apply_move_plan, undo_operation_log
 from organizer.grouping import build_organization_suggestions, find_project_groups
 from organizer.models import LLMRefinement, MovePlanItem, MoveResult, OperationLog
+from organizer.organization_rules import load_organization_rules
 from organizer.scanner import scan_directory
 
 
@@ -181,6 +182,7 @@ class DeterministicOrganizationApplyTests(unittest.TestCase):
             second.parent.mkdir()
             first.write_text("a", encoding="utf-8")
             second.write_text("b", encoding="utf-8")
+            write_locked_evosim_rules(root)
 
             result = run_cli(
                 root,
@@ -388,11 +390,21 @@ class RefinedOrganizationApplyTests(unittest.TestCase):
 def create_evosim_files(root: Path) -> None:
     (root / "evosim_notes.txt").write_text("notes", encoding="utf-8")
     (root / "evosim_report.pdf").write_text("report", encoding="utf-8")
+    write_locked_evosim_rules(root)
+
+
+def write_locked_evosim_rules(root: Path) -> None:
+    config = root / "AI_Review" / "config" / "organization_rules.json"
+    config.parent.mkdir(parents=True, exist_ok=True)
+    config.write_text(
+        '{"version": 1, "locked_anchors": ["Evosim"], "ignored_terms": [], "anchor_aliases": {}}\n',
+        encoding="utf-8",
+    )
 
 
 def organization_plan_items(root: Path):
     metadata_items = scan_directory(root)
-    groups = find_project_groups(metadata_items)
+    groups = find_project_groups(metadata_items, rules=load_organization_rules(root).rules)
     suggestions = build_organization_suggestions(groups, root)
     return [
         item

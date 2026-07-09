@@ -36,6 +36,8 @@
 - Protected-context files are not actionable move candidates by default.
 - Generated web/archive assets are not actionable move candidates by default.
 - Organization suggestions require strong grouping evidence, not confidence alone.
+- Broad course/name/project/organization anchors are non-actionable by default.
+- Concrete organization suggestions require narrow repeated document-set evidence or an explicit locked anchor.
 - Organization rules are read-only in Stage 10.4.4.
 - Locked anchors must not bypass protected/generated/project-output exclusions.
 - Locked anchors should require at least two eligible safe files before producing organization suggestions.

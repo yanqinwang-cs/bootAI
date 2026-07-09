@@ -76,9 +76,11 @@ do not bypass protected/generated/project-output exclusions.
 
 `anchor_decisions` has three user-facing sections:
 
-- `suggested_groups`: anchors that can produce organization suggestions.
-- `needs_decision`: repeated anchors that are reported but do not produce
-  `MovePlanItem` values unless later rules make them suggested.
+- `suggested_groups`: narrow repeated document sets that can produce
+  organization suggestions.
+- `needs_decision`: broader anchors that are reported but do not produce
+  `MovePlanItem` values unless later rules lock them or narrower evidence is
+  detected.
 - `ignored_terms`: anchors ignored by rules or conservative defaults.
 
 ## Fact Sections

@@ -15,6 +15,17 @@
     ],
     "needs_decision": [
       {
+        "anchor": "CS2103",
+        "decision": "needs_decision",
+        "evidence": "broad_anchor",
+        "examples": [
+          "CS2103/project_notes.md",
+          "CS2103/report.md"
+        ],
+        "file_count": 2,
+        "reason": "Broad course/module anchor. Lock CS2103 if you want all matching files grouped together."
+      },
+      {
         "anchor": "Wang",
         "decision": "needs_decision",
         "evidence": "needs_decision",
@@ -28,15 +39,15 @@
     ],
     "suggested_groups": [
       {
-        "anchor": "CS2103",
+        "anchor": "CS2103 finals",
         "decision": "suggested",
-        "evidence": "course_code",
+        "evidence": "year_variant_set",
         "examples": [
-          "CS2103/project_notes.md",
-          "CS2103/report.md"
+          "CS2103 finals 2025.pdf",
+          "CS2103 finals 2026.pdf"
         ],
         "file_count": 2,
-        "reason": "files share course/module code CS2103; evidence course_code"
+        "reason": "Files appear to be the same document set across years or terms: CS2103 finals"
       }
     ]
   },
@@ -73,37 +84,37 @@
   },
   "organization_suggestions": [
     {
-      "group_name": "CS2103",
+      "group_name": "CS2103 finals",
       "plan_items": [
         {
-          "confidence": 90,
-          "destination": "Organized/CS2103/notes/project_notes.md",
+          "confidence": 80,
+          "destination": "Organized/CS2103_finals/exams/CS2103 finals 2025.pdf",
           "operation": "dry-run move",
           "overwrite_risk": false,
-          "reason": "files share course/module code CS2103; suggested subfolder notes",
-          "source": "CS2103/project_notes.md"
+          "reason": "Files appear to be the same document set across years or terms: CS2103 finals; suggested subfolder exams",
+          "source": "CS2103 finals 2025.pdf"
         },
         {
-          "confidence": 90,
-          "destination": "Organized/CS2103/notes/report.md",
+          "confidence": 80,
+          "destination": "Organized/CS2103_finals/exams/CS2103 finals 2026.pdf",
           "operation": "dry-run move",
           "overwrite_risk": false,
-          "reason": "files share course/module code CS2103; suggested subfolder notes",
-          "source": "CS2103/report.md"
+          "reason": "Files appear to be the same document set across years or terms: CS2103 finals; suggested subfolder exams",
+          "source": "CS2103 finals 2026.pdf"
         }
       ],
-      "suggested_root": "Organized"
+      "suggested_root": "Organized/CS2103_finals"
     }
   ],
   "project_groups": [
     {
-      "confidence": 90,
+      "confidence": 80,
       "files": [
-        "CS2103/project_notes.md",
-        "CS2103/report.md"
+        "CS2103 finals 2025.pdf",
+        "CS2103 finals 2026.pdf"
       ],
-      "group_name": "CS2103",
-      "reason": "files share course/module code CS2103"
+      "group_name": "CS2103 finals",
+      "reason": "Files appear to be the same document set across years or terms: CS2103 finals"
     }
   ],
   "refined_organization_suggestions": [],
@@ -139,7 +150,7 @@
       "backup_or_copy": 1
     },
     "suggested_anchor_count": 1,
-    "needs_decision_anchor_count": 1,
+    "needs_decision_anchor_count": 2,
     "ignored_anchor_count": 1,
     "total_bytes": 9728
   },

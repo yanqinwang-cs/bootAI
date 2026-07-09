@@ -134,6 +134,11 @@ def _anchor_decisions_section(anchor_decisions: object) -> str:
     if not isinstance(anchor_decisions, dict) or not anchor_decisions:
         return _section("Anchor decisions", _empty_message())
     blocks = [
+        (
+            "<p>Suggested groups are narrow file sets bootAI is willing to organize "
+            "in dry-run mode. Needs decision contains broader patterns that may "
+            "depend on your personal organization preference.</p>"
+        ),
         _anchor_decision_table("Suggested groups", anchor_decisions.get("suggested_groups")),
         _anchor_decision_table("Needs decision", anchor_decisions.get("needs_decision")),
         _anchor_decision_table("Ignored terms", anchor_decisions.get("ignored_terms")),

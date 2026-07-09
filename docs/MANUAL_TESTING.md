@@ -366,7 +366,7 @@ printf "print('project')\n" > "$SMOKE_ROOT/project/src/main.py"
 PYTHONPATH=src python3 -m organizer.cli "$SMOKE_ROOT" --html-report
 ```
 
-Expected outcome: `CS1010X` appears as an organization group with role-based subfolders, weak `summary` files do not create a top-level organization group, generated web assets do not appear as `orphan_code`, contextual project-output files are not actionable candidates, loose `practice.py` appears as an `orphan_code` candidate for review, and no files move.
+Expected outcome: broad `CS1010X` appears under anchors needing a decision, concrete narrow sets such as finals or recitations may appear as organization groups with role-based subfolders, weak `summary` files do not create a top-level organization group, generated web assets do not appear as `orphan_code`, contextual project-output files are not actionable candidates, loose `practice.py` appears as an `orphan_code` candidate for review, and no files move.
 
 ## Stage 10.4.4 Read-Only Organization Rules Check
 

@@ -1447,6 +1447,12 @@ def create_review_session_fixture(root: Path) -> None:
     (root / "subdir" / "b.txt").write_text("same", encoding="utf-8")
     (root / "evosim_notes.txt").write_text("notes", encoding="utf-8")
     (root / "evosim_report.pdf").write_text("report", encoding="utf-8")
+    config = root / "AI_Review" / "config" / "organization_rules.json"
+    config.parent.mkdir(parents=True, exist_ok=True)
+    config.write_text(
+        '{"version": 1, "locked_anchors": ["Evosim"], "ignored_terms": [], "anchor_aliases": {}}\n',
+        encoding="utf-8",
+    )
 
 
 def create_review_candidate_fixture(root: Path) -> None:

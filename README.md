@@ -28,7 +28,7 @@ Stages 1 through 10.4.4 are implemented. The tool can currently:
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.4.4 keeps organization rules read-only, resolves aliases before reporting anchor decisions, and lets ignored terms win over locked anchors. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.4.4 keeps organization rules read-only, resolves aliases before reporting anchor decisions, and lets ignored terms win over locked anchors. Broad anchors such as course codes, project names, personal names, and organization-like terms are reported as needing a decision unless locked; concrete suggestions are reserved for narrow repeated document sets. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -112,10 +112,11 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Isolated code files may appear as `orphan_code` candidates for review.
 - Protected-context files can appear in factual reports but are excluded from actionable move plans by default.
 - Generated web/archive assets and contextual project-output files are excluded from actionable move plans by default.
-- Organization suggestions require strong anchors such as course codes or strict repeated named-project evidence.
+- Organization suggestions require narrow repeated document-set evidence or an explicit locked anchor.
+- Broad anchors such as course codes, project names, personal names, and organization-like terms are non-actionable by default.
 - Organization rules are optional and read-only; create `AI_Review/config/organization_rules.json` manually if you need locked anchors, ignored terms, or aliases.
 - Locked anchors still require at least two eligible safe files and do not bypass protected/generated/project-output exclusions.
-- Reports show anchor decisions after alias normalization: suggested groups, needs decision, and ignored terms.
+- Reports show anchor decisions after alias normalization: suggested narrow groups, broad anchors needing a decision, and ignored terms.
 - Review mode approve/reject/save commands do not move files.
 - Review mode stores decision memory under `AI_Review/review_state/review_decisions.json`.
 - Review state is decision memory, not an operation log, and does not record filesystem success.

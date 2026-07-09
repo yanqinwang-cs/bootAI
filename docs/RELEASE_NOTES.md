@@ -10,7 +10,7 @@ Stage 10.4.2 excludes protected contexts from actionable move plans. Exact dupli
 
 Stage 10.4.3 requires strong organization anchors, suppresses weak top-level token groups, assigns role-based subfolders after grouping, and excludes generated web/archive and contextual project-output assets from actionable plans.
 
-Stage 10.4.4 adds optional read-only organization rules loaded from `AI_Review/config/organization_rules.json` when present. It reports alias-normalized anchor decisions as suggested groups, anchors needing a user decision, and ignored terms. Ignored terms win over locked anchors, and locked anchors still require at least two eligible safe files.
+Stage 10.4.4 adds optional read-only organization rules loaded from `AI_Review/config/organization_rules.json` when present. It reports alias-normalized anchor decisions as suggested narrow groups, broad anchors needing a user decision, and ignored terms. Ignored terms win over locked anchors, locked anchors still require at least two eligible safe files, and broad anchors are non-actionable by default unless locked.
 
 ## Stage Summary
 
@@ -65,6 +65,7 @@ Stage 10.4.4 adds optional read-only organization rules loaded from `AI_Review/c
 - Generated web/archive and contextual project-output files are excluded from actionable move plans by default.
 - Organization rules are read-only; the CLI does not create or edit `AI_Review/config/organization_rules.json`.
 - Anchor aliases are resolved before reporting; ignored terms win over locked anchors.
+- Broad course/name/project/organization anchors are reported for decision instead of becoming concrete organization suggestions by default.
 - Exact duplicate facts remain distinct from duplicate move candidates.
 
 ## Current CLI Capabilities

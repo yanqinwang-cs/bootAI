@@ -84,7 +84,7 @@ Answer these before editing:
 - Stage 10.4.2 exact duplicate facts must remain distinct from duplicate review candidates.
 - Stage 10.4.3 generated web/archive assets and contextual project-output files must not become actionable move candidates by default.
 - Stage 10.4.3 organization suggestions must use strong grouping evidence, not confidence alone.
-- Stage 10.4.4 organization rules are read-only; aliases resolve before decisions, ignored terms win over locked anchors, and locked anchors do not bypass scope exclusions.
+- Stage 10.4.4 organization rules are read-only; aliases resolve before decisions, ignored terms win over locked anchors, locked anchors do not bypass scope exclusions, and broad anchors stay non-actionable by default.
 - Stage 10.5 static HTML review export remains future work.
 - Stage 10.6 filtering, sorting, and pagination remain future work.
 - Stage 10.7 saved-session resume and editing remain future work.

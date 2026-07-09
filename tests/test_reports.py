@@ -39,7 +39,7 @@ class ReportGenerationTests(unittest.TestCase):
             self.assertTrue(report_path.exists())
             self.assertTrue((root / "a.txt").exists())
             self.assertTrue((root / "subdir" / "b.txt").exists())
-            self.assertTrue((root / "evosim_notes.txt").exists())
+            self.assertTrue((root / "EvoSim_project_slides.pptx").exists())
             self.assertFalse((root / "Organized").exists())
             self.assertTrue((root / "AI_Review" / "reports").exists())
 
@@ -121,7 +121,7 @@ class ReportGenerationTests(unittest.TestCase):
     def test_excessive_organization_suggestion_warning_is_added(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            for name in ["evosim_notes.txt", "evosim_report.pdf", "other.pdf"]:
+            for name in ["CS1010X finals 2025.pdf", "CS1010X finals 2026.pdf", "other.pdf"]:
                 (root / name).write_text("document", encoding="utf-8")
 
             report = build_scan_report(root)
@@ -182,8 +182,8 @@ class ReportGenerationTests(unittest.TestCase):
             (generated / "a.js").write_text("same", encoding="utf-8")
             (generated / "b.js").write_text("same", encoding="utf-8")
             (generated / "file.tmp").write_text("temporary", encoding="utf-8")
-            (root / "CS1010X practical exam 2025 questions.pdf").write_text("course", encoding="utf-8")
-            (root / "CS1010X recitation 04.pdf").write_text("course", encoding="utf-8")
+            (root / "CS1010X finals 2025.pdf").write_text("course", encoding="utf-8")
+            (root / "CS1010X finals 2026.pdf").write_text("course", encoding="utf-8")
             (root / "summary_one.pdf").write_text("weak", encoding="utf-8")
             (root / "summary_two.pdf").write_text("weak", encoding="utf-8")
 
@@ -206,7 +206,7 @@ class ReportGenerationTests(unittest.TestCase):
             self.assertIn("Instagram_files/a.js", duplicate_fact_files)
             self.assertNotIn("Instagram_files/b.js", actionable_sources)
             self.assertNotIn("Instagram_files/file.tmp", actionable_sources)
-            self.assertIn("CS1010X", organization_groups)
+            self.assertIn("CS1010X finals", organization_groups)
             self.assertNotIn("Summary", organization_groups)
 
     def test_report_loads_organization_rules_and_reports_anchor_decisions(self) -> None:
@@ -227,8 +227,8 @@ class ReportGenerationTests(unittest.TestCase):
             )
             (root / "misc_notes.txt").write_text("notes", encoding="utf-8")
             (root / "misc_report.pdf").write_text("report", encoding="utf-8")
-            (root / "evosim_notes.txt").write_text("notes", encoding="utf-8")
-            (root / "evosim_report.pdf").write_text("report", encoding="utf-8")
+            (root / "EvoSim_notes.txt").write_text("notes", encoding="utf-8")
+            (root / "EvoSim_report.pdf").write_text("report", encoding="utf-8")
 
             report = build_scan_report(root)
 
@@ -351,7 +351,7 @@ class ReportNoMovementTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((root / "a.txt").exists())
             self.assertTrue((root / "subdir" / "b.txt").exists())
-            self.assertTrue((root / "evosim_notes.txt").exists())
+            self.assertTrue((root / "EvoSim_project_slides.pptx").exists())
             self.assertFalse((root / "Organized").exists())
             self.assertFalse((root / "AI_Review" / "duplicates").exists())
 
@@ -526,8 +526,8 @@ def create_report_fixture(root: Path) -> None:
     (root / "subdir").mkdir()
     (root / "a.txt").write_text("same", encoding="utf-8")
     (root / "subdir" / "b.txt").write_text("same", encoding="utf-8")
-    (root / "evosim_notes.txt").write_text("notes", encoding="utf-8")
-    (root / "evosim_report.pdf").write_text("report", encoding="utf-8")
+    (root / "EvoSim_project_slides.pptx").write_text("notes", encoding="utf-8")
+    (root / "EvoSim_project_slides_final.pptx").write_text("report", encoding="utf-8")
     (root / "empty_candidate.txt").write_text("", encoding="utf-8")
 
 
