@@ -1,8 +1,10 @@
 # Release Notes
 
-## Current Status Through Stage 10.4
+## Current Status Through Stage 10.4.1
 
 Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the existing JSON report and a browser-openable HTML rendering from the same report data without approving or applying moves.
+
+Stage 10.4.1 makes organization conservative by default. Normal organization suggestions are limited to low-risk document-like files, standalone HTML is included only when it does not look like web-project HTML, and isolated code files may be flagged as `orphan_code` candidates for review instead of normal organization suggestions.
 
 ## Stage Summary
 
@@ -25,6 +27,7 @@ Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the exi
 - Stage 10.2.1: reviewed-plan source and destination conflict detection.
 - Stage 10.3: persistent review state and organization memory.
 - Stage 10.4: automatic static HTML report viewer.
+- Stage 10.4.1: conservative organization scope and orphan-code review candidates.
 
 ## Safety Model
 
@@ -47,13 +50,15 @@ Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the exi
 - Review state is decision memory, not an operation log.
 - Review state does not record filesystem success and does not replace undo logs.
 - Saved reviewed-plan JSON files are untrusted input and are validated before use.
+- Normal organization suggestions are document-like by default and exclude code/project/package internals.
+- Orphan code is a candidate for review only.
 
 ## Current CLI Capabilities
 
 - Metadata scan: base command and `--max-depth`.
 - Duplicate analysis: `--duplicates`, `--plan-duplicates`, `--apply-duplicate-plan`.
 - Review candidates: `--review-candidates`, `--plan-review-candidates`.
-- Project grouping: `--project-groups`, `--plan-organization`, `--apply-organization-plan`.
+- Project grouping: `--project-groups`, `--plan-organization`, `--apply-organization-plan`; normal organization suggestions are conservative and document-like by default.
 - Local LLM refinement: `--refine-groups`, `--plan-refined-organization`, `--apply-refined-organization-plan`.
 - Reports: `--report`, `--report-output <path>`, `--html-report`, `--html-report-output <path>`.
 - Batch review: `--review-plans` for duplicate, organization, and review-candidate move candidates.

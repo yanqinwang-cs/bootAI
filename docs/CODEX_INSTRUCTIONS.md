@@ -17,7 +17,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.4 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
+Stages 1 through 10.4.1 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
 
 ## Reuse Before Create
 
@@ -29,6 +29,7 @@ Stages 1 through 10.4 are complete. Current code supports scanning, duplicate de
 
 - `duplicates.py` owns hashing and exact duplicate grouping.
 - `review.py` owns heuristic review candidates.
+- `scope.py` owns deterministic organization-scope and orphan-code classification helpers only.
 - `grouping.py` owns deterministic project grouping.
 - `llm_refinement.py` owns prompt, payload, and validation for LLM group refinement.
 - `reports.py` owns read-only report assembly and JSON report writing.
@@ -76,6 +77,8 @@ Answer these before editing:
 - Stage 10.3 review state records human decisions only; it is not an operation log and must not record filesystem success.
 - Stage 10.3 remembered decisions must not bypass exact confirmation.
 - Stage 10.4 HTML reports must not include approval buttons, apply buttons, review actions, server behavior, or operation-log behavior.
+- Stage 10.4.1 normal organization scope is conservative and document-like by default.
+- Stage 10.4.1 orphan code is a candidate for review only and must not be broadly organized.
 - Stage 10.5 static HTML review export remains future work.
 - Stage 10.6 filtering, sorting, and pagination remain future work.
 - Stage 10.7 saved-session resume and editing remain future work.

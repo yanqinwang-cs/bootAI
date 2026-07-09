@@ -292,6 +292,33 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --html-report --htm
 
 Expected outcome: both commands refuse. Reusing the same `--html-report-output` path also refuses to overwrite the existing HTML report.
 
+## Stage 10.4.1 Conservative Scope Check
+
+Use a disposable folder:
+
+```bash
+mkdir -p /path/to/temp-folder/web_project
+mkdir -p /path/to/temp-folder/project
+mkdir -p /path/to/temp-folder/Fake.app/Contents/Resources
+printf "notes" > /path/to/temp-folder/course_notes.pdf
+printf "notes" > /path/to/temp-folder/course_notes.md
+printf "notes" > /path/to/temp-folder/course_notes.txt
+printf "doc" > /path/to/temp-folder/course_notes.docx
+printf "slides" > /path/to/temp-folder/course_notes.pptx
+printf "<html>article</html>" > /path/to/temp-folder/article.html
+printf "<html>app</html>" > /path/to/temp-folder/web_project/index.html
+printf "body{}" > /path/to/temp-folder/web_project/style.css
+printf "console.log('app')" > /path/to/temp-folder/web_project/app.js
+printf "{}" > /path/to/temp-folder/web_project/package.json
+printf "print('practice')" > /path/to/temp-folder/practice.py
+printf "[project]" > /path/to/temp-folder/project/pyproject.toml
+printf "print('project')" > /path/to/temp-folder/project/app.py
+printf "app data" > /path/to/temp-folder/Fake.app/Contents/Resources/file.txt
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --html-report
+```
+
+Expected outcome: normal organization suggestions mostly include document-like files, standalone `article.html` can be suggested, web-project HTML is excluded, code/project files are not normal organization suggestions, isolated `practice.py` appears as an `orphan_code` candidate for review, project code does not appear as `orphan_code`, and no files move.
+
 ## Stage 10.0 Batch Review
 
 Use a disposable folder and run:

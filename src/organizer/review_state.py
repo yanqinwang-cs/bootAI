@@ -18,7 +18,7 @@ DECISION_REJECTED = "rejected"
 CATEGORY_DUPLICATE = "duplicate"
 CATEGORY_ORGANIZATION = "organization"
 CATEGORY_REVIEW_CANDIDATE = "review_candidate"
-REVIEW_CANDIDATE_CATEGORIES = {"empty", "temporary", "backup_or_copy"}
+REVIEW_CANDIDATE_CATEGORIES = {"empty", "temporary", "backup_or_copy", "orphan_code"}
 
 MEMORY_NEW = "new_suggestion"
 MEMORY_REJECTED = "rejected_remembered"

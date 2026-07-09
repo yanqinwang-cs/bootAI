@@ -22,6 +22,7 @@
 | 10.2.1 | Reviewed-plan conflict detection | `review_session.py`, `cli.py` | `conflicts` inside `--review-plans` | conflicts block apply |
 | 10.3 | Persistent review state and organization memory | `review_state.py`, `review_session.py`, `cli.py` | `--ignore-review-state` | decision memory only |
 | 10.4 | Automatic HTML report viewer | `html_report.py`, `reports.py`, `cli.py` | `--html-report`, `--html-report-output` | report files only |
+| 10.4.1 | Conservative organization scope and orphan code review | `scope.py`, `grouping.py`, `review.py` | none | scope control only |
 
 ## Future Stages
 

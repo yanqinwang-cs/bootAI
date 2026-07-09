@@ -95,6 +95,33 @@ class ReportGenerationTests(unittest.TestCase):
             self.assertIn("source", report["duplicate_review_plan"][0])
             self.assertIn("destination", report["organization_suggestions"][0]["plan_items"][0])
 
+    def test_report_includes_orphan_code_candidate_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "practice.py").write_text("print('x')", encoding="utf-8")
+
+            report = build_scan_report(root)
+
+            self.assertEqual(report["summary"]["review_candidate_count"], 1)
+            self.assertEqual(
+                report["summary"]["review_candidate_counts_by_category"]["orphan_code"],
+                1,
+            )
+            self.assertEqual(report["review_candidates"][0]["category"], "orphan_code")
+
+    def test_excessive_organization_suggestion_warning_is_added(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ["evosim_notes.txt", "evosim_report.pdf", "other.pdf"]:
+                (root / name).write_text("document", encoding="utf-8")
+
+            report = build_scan_report(root)
+
+            self.assertGreater(report["summary"]["organization_suggestion_count"], 0)
+            self.assertTrue(
+                any("Organization suggestions are unusually broad" in warning for warning in report["warnings"])
+            )
+
 
 class ReportOutputSafetyTests(unittest.TestCase):
     def test_default_report_writes_under_review_reports(self) -> None:

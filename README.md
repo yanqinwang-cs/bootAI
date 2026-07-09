@@ -6,15 +6,16 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.4 are implemented. The tool can currently:
+Stages 1 through 10.4.1 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
 - Build duplicate review plans.
 - Apply approved duplicate review moves with undo logs.
 - Detect review candidates.
-- Group project-related files deterministically.
+- Group document-like files deterministically.
 - Suggest organization plans.
+- Flag isolated code files as candidates for review.
 - Optionally refine organization suggestions with local Ollama.
 - Apply approved organization plans with undo logs.
 - Undo logged move operations.
@@ -25,7 +26,7 @@ Stages 1 through 10.4 are implemented. The tool can currently:
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.4 adds a static HTML report viewer. HTML review export with actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.4.1 makes organization conservative by default. Normal organization suggestions are limited to low-risk document-like files, standalone HTML is handled cautiously, and isolated code files are review candidates instead of organization suggestions. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -104,6 +105,9 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Report mode writes a JSON report file but does not move scanned files.
 - HTML report mode writes JSON and HTML report files but does not move scanned files.
 - HTML reports do not approve moves, apply moves, perform review actions, write operation logs, or start a server.
+- Normal organization suggestions are document-only by default.
+- Code/project files are excluded from normal organization suggestions.
+- Isolated code files may appear as `orphan_code` candidates for review.
 - Review mode approve/reject/save commands do not move files.
 - Review mode stores decision memory under `AI_Review/review_state/review_decisions.json`.
 - Review state is decision memory, not an operation log, and does not record filesystem success.

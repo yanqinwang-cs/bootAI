@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 from organizer.models import FileMetadata, MovePlanItem, ReviewCandidate
+from organizer.scope import is_orphan_code_candidate
 
 TEMPORARY_EXACT_NAMES = {".DS_Store", "Thumbs.db", "desktop.ini"}
 TEMPORARY_SUFFIXES = {".tmp", ".temp", ".part", ".crdownload", ".swp", ".swo"}
@@ -31,7 +32,7 @@ def detect_review_candidates(
         if _is_under_review_folder(metadata.relative_path, review_folder_name):
             continue
 
-        candidate = _detect_candidate(metadata)
+        candidate = _detect_candidate(metadata, files)
         if candidate is not None:
             candidates.append(candidate)
 
@@ -72,7 +73,10 @@ def build_review_candidate_plan(
     return plan_items
 
 
-def _detect_candidate(metadata: FileMetadata) -> ReviewCandidate | None:
+def _detect_candidate(
+    metadata: FileMetadata,
+    all_metadata: list[FileMetadata],
+) -> ReviewCandidate | None:
     if _is_temporary(metadata.name):
         return ReviewCandidate(
             file=metadata,
@@ -93,6 +97,15 @@ def _detect_candidate(metadata: FileMetadata) -> ReviewCandidate | None:
             category="backup_or_copy",
             reason="filename contains a backup/copy/version marker",
             confidence=70,
+        )
+    if metadata.name in INTENTIONAL_EMPTY_NAMES:
+        return None
+    if is_orphan_code_candidate(metadata, all_metadata):
+        return ReviewCandidate(
+            file=metadata,
+            category="orphan_code",
+            reason="isolated code file is outside a detected project context",
+            confidence=65,
         )
     return None
 

@@ -16,6 +16,9 @@
 - LLM output is advisory only.
 - Full file contents are not sent to the LLM by default.
 - Planner, review, grouping, and LLM modules must not move files.
+- Normal organization suggestions must remain conservative and document-like by default.
+- Code/project files must not be broadly organized by default.
+- Orphan code is a candidate for review only.
 - Report generation must not move files and may only create a new report file.
 - HTML report generation must not move files and may only create JSON/HTML report files.
 - HTML reports must not approve moves, apply moves, perform review actions, write operation logs, or start a server.
@@ -42,6 +45,7 @@
 - Temporary files: candidate for review when filename patterns match system or temporary artifacts.
 - Backup or copy files: candidate for review when filename tokens indicate version markers.
 - Project organization candidates: suggested groups based on deterministic course-code or token signals.
+- Orphan code: isolated code files outside detected project contexts, surfaced only as candidates for review.
 
 ## Language Rules
 
