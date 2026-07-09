@@ -489,6 +489,42 @@ PYTHONPATH=src python3 -m organizer.cli "$AUDIT_ROOT" --html-report
 test ! -f "$AUDIT_ROOT/AI_Review/config/organization_rules.json" && echo "OK: report did not create rules"
 ```
 
+## Stage 10.8 Organization Review Export Check
+
+Use a disposable folder:
+
+```bash
+REVIEW_ROOT="/tmp/bootai_organization_review_smoke"
+rm -rf "$REVIEW_ROOT"
+mkdir -p "$REVIEW_ROOT/AI_Review/config"
+
+cat > "$REVIEW_ROOT/AI_Review/config/organization_rules.json" <<'JSON'
+{
+  "version": 1,
+  "locked_anchors": ["CS1010X"],
+  "preferred_granularities": ["course_code"]
+}
+JSON
+
+printf "one\n" > "$REVIEW_ROOT/CS1010X lecture 01.pdf"
+printf "two\n" > "$REVIEW_ROOT/CS1010X lecture 02.pdf"
+
+PYTHONPATH=src python3 -m organizer.cli "$REVIEW_ROOT" \
+  --export-organization-review
+```
+
+Expected outcome: `AI_Review/reviews/organization_review.json` exists, every row starts with `decision: "undecided"` and an empty note, destinations are relative under `Organized/`, and the rule audit summary lists `CS1010X` and advisory preferred granularities. No source file moves, no operation log is written, and `organization_rules.json` is unchanged.
+
+Run the same command again. Expected outcome: `organization_review_1.json` is created and the first file is unchanged. Then verify an explicit collision is refused:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli "$REVIEW_ROOT" \
+  --export-organization-review \
+  --organization-review-output AI_Review/reviews/organization_review.json
+```
+
+Edit a copy manually and set selected rows to `approve`, `reject`, or `undecided`. Stage 10.8 has no command that applies this file; editing it remains non-mutating review work.
+
 ## Stage 10.0 Batch Review
 
 Use a disposable folder and run:

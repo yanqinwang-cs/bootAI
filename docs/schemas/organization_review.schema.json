@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/bootai/organization_review.schema.json",
+  "title": "bootAI Stage 10.8 Organization Review",
+  "description": "Documentation-only schema. Runtime validation is implemented with the Python standard library and does not import this file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source",
+    "generated_at",
+    "scan_root",
+    "instructions",
+    "rules_loaded",
+    "rules_path",
+    "rule_audit_summary",
+    "items"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "source": {
+      "const": "bootAI Stage 10.8 rule-aware organization review"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scan_root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instructions": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rules_loaded": {
+      "type": "boolean"
+    },
+    "rules_path": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/relative_path"
+        }
+      ]
+    },
+    "rule_audit_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "locked_anchors",
+        "preferred_granularities",
+        "warnings"
+      ],
+      "properties": {
+        "locked_anchors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "preferred_granularities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/review_item"
+      }
+    }
+  },
+  "$defs": {
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "review_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_id",
+        "source",
+        "destination",
+        "anchor",
+        "evidence",
+        "reason",
+        "confidence",
+        "risk_level",
+        "overwrite_risk",
+        "decision",
+        "note"
+      ],
+      "properties": {
+        "review_id": {
+          "type": "string",
+          "pattern": "^org-[0-9]{6}$"
+        },
+        "source": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "destination": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relative_path"
+            },
+            {
+              "pattern": "^Organized/.+"
+            }
+          ]
+        },
+        "anchor": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!.*[\\\\/:])(?!.*\\.\\.).+$"
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "risk_level": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "overwrite_risk": {
+          "type": "boolean"
+        },
+        "decision": {
+          "enum": [
+            "approve",
+            "reject",
+            "undecided"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

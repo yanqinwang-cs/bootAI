@@ -45,6 +45,7 @@ Filesystem
 | `pattern_inference.py` | report-only inference of existing folder organization patterns |
 | `rule_review.py` | organization rule candidate export, reviewed-decision validation, and confirmed config updates |
 | `rule_audit.py` | read-only audit of organization-rule effects in reports |
+| `organization_review.py` | export and validation of rule-aware organization review JSON; never applies rows |
 | `llm_refinement.py` | advisory LLM prompt, payload, validation, refined suggestions |
 | `ollama_client.py` | local Ollama client only |
 | `reports.py` | read-only report assembly and JSON report writing |
@@ -65,6 +66,8 @@ Reports serialize facts and suggestions into JSON for manual review or external 
 Rule review is a configuration workflow, not a movement workflow. `rule_review.py` exports inferred rule candidates to manually editable JSON, validates reviewed decisions as untrusted input, and writes `organization_rules.json` only after exact `APPLY ORGANIZATION RULES` confirmation through the CLI. It does not create `MovePlanItem` values, import `executor.py`, write operation logs, or move files. Rule apply result files are configuration-update audit records only.
 
 Rule-aware audit is report-only. `rule_audit.py` compares conservative defaults with loaded explicit organization rules in memory, reports per-rule effects and broad-impact warnings, and does not create movement-plan items, write rules, import `executor.py`, or move files.
+
+Organization-review export is also report-derived and read-only. `organization_review.py` consumes serialized organization suggestions, anchor decisions, organization rules, and rule-audit context already assembled by `reports.py`. It writes editable review records, not `MovePlanItem` values or execution-ready plans. Stage 10.8 has no path from an approved review row to filesystem movement.
 
 Batch review sessions collect duplicate, deterministic organization, and review-candidate `MovePlanItem` values for command-line review. Review-candidate rows keep `category = "review_candidate"` separate from `review_category` metadata such as `empty`, `temporary`, or `backup_or_copy`. Approve/reject decisions and reviewed-plan JSON records do not execute moves. Approved rows are checked for source and destination conflicts before apply. Saved reviewed-plan JSON is treated as untrusted input when loaded later; `review_session.py` validates it, rejects approved move conflicts, and converts only approved records back into `MovePlanItem` values. Final apply still uses `executor.py`.
 

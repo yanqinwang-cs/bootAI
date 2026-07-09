@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-07-10T12:00:00+00:00",
+  "instructions": "Review each organization suggestion. Set decision to approve, reject, or undecided. Applying approved movement requires a later explicit confirmation step.",
+  "items": [
+    {
+      "anchor": "CS1010X",
+      "confidence": 80,
+      "decision": "undecided",
+      "destination": "Organized/CS1010X/lectures/CS1010X lecture 01.pdf",
+      "evidence": "locked_anchor",
+      "note": "",
+      "overwrite_risk": false,
+      "reason": "files share locked anchor CS1010X; evidence locked_anchor; suggested subfolder lectures",
+      "review_id": "org-000001",
+      "risk_level": "high",
+      "source": "CS1010X lecture 01.pdf"
+    }
+  ],
+  "rule_audit_summary": {
+    "locked_anchors": [
+      "CS1010X"
+    ],
+    "preferred_granularities": [
+      "course_code"
+    ],
+    "warnings": [
+      "Locked anchor CS1010X matched 149 files. Review generated organization suggestions before applying movement."
+    ]
+  },
+  "rules_loaded": true,
+  "rules_path": "AI_Review/config/organization_rules.json",
+  "scan_root": ".",
+  "schema_version": 1,
+  "source": "bootAI Stage 10.8 rule-aware organization review"
+}

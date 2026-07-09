@@ -48,6 +48,9 @@
 - Rule-aware audit is read-only and must not write or modify organization rules.
 - Rule-aware audit must not create movement-plan items, call `executor.py`, move files, or write operation logs.
 - Preferred granularities remain advisory and non-behavior-changing in Stage 10.7.
+- Organization-review export may write a new JSON review file but must not create execution-ready movement plans or apply reviewed rows.
+- Organization-review destinations must be safe relative paths under the controlled `Organized/` output namespace; they do not need to exist during review.
+- Organization-review decisions remain review metadata and must not bypass a later separately designed confirmation and validation stage.
 - Locked anchors must not bypass protected/generated/project-output exclusions.
 - Locked anchors should require at least two eligible safe files before producing organization suggestions.
 - Ignored terms win over locked anchors after alias normalization.

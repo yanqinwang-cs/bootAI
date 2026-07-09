@@ -225,3 +225,27 @@ the actionable duplicate review plan. The same warning class covers generated
 and project-output contexts.
 
 Warnings do not approve movement and do not change apply-command requirements.
+
+## Organization Review Export
+
+`--export-organization-review` writes a separate Stage 10.8 review artifact. It is derived from the report's existing `organization_suggestions`, `anchor_decisions`, `organization_rules`, and `rule_audit`; it is not part of the report top-level schema.
+
+Top-level fields:
+
+| Field | Meaning |
+| --- | --- |
+| `schema_version` | Organization-review schema version, currently `1`. |
+| `source` | Fixed Stage 10.8 artifact identifier. |
+| `generated_at` | Timezone-aware ISO generation timestamp. |
+| `scan_root` | Root display value inherited from the report. |
+| `instructions` | Manual review instructions. |
+| `rules_loaded` | Whether explicit organization rules were loaded. |
+| `rules_path` | Relative rules path or `null`. |
+| `rule_audit_summary` | Locked anchors, advisory preferred granularities, and warnings. |
+| `items` | Deterministically sorted organization-review rows. |
+
+Each item contains `review_id`, `source`, `destination`, `anchor`, `evidence`, `reason`, `confidence`, `risk_level`, `overwrite_risk`, `decision`, and `note`. IDs use `org-NNNNNN`. Decisions are `approve`, `reject`, or `undecided`; exported rows start as `undecided`. Risk is `low`, `medium`, or `high`. Locked-anchor risk uses the complete matched file count, not the number represented by one row.
+
+Sources and destinations are relative paths. Destinations must be under `Organized/`, but neither the destination file nor its parent directories need to exist during review. The default output is collision-safe; an explicit existing output is rejected.
+
+This artifact is a review record only. Stage 10.8 does not convert it to `MovePlanItem` values, apply approved rows, write operation or undo logs, modify organization rules, or move files. The documentation-only schema is [organization_review.schema.json](schemas/organization_review.schema.json), and a compact example is [sample_organization_review.json](examples/sample_organization_review.json).

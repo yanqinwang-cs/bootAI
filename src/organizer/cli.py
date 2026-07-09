@@ -20,6 +20,7 @@ from organizer.models import (
 )
 from organizer.ollama_client import OllamaClient
 from organizer.organization_rules import load_organization_rules
+from organizer.organization_review import export_organization_review
 from organizer.planner import build_duplicate_review_plan
 from organizer.reports import build_scan_report, default_report_path, write_report
 from organizer.review import build_review_candidate_plan, detect_review_candidates
@@ -53,6 +54,7 @@ CONFIRM_APPLY_ORGANIZATION_PLAN = "APPLY_ORGANIZATION_PLAN"
 CONFIRM_APPLY_REFINED_ORGANIZATION_PLAN = "APPLY_REFINED_ORGANIZATION_PLAN"
 CONFIRM_APPLY_REVIEWED_PLAN = "APPLY_REVIEWED_PLAN"
 CONFIRM_APPLY_ORGANIZATION_RULES = "APPLY ORGANIZATION RULES"
+DEFAULT_OLLAMA_HOST = "http://localhost:11434"
 
 
 def main() -> int:
@@ -71,6 +73,8 @@ def main() -> int:
     parser.add_argument("--export-rule-candidates", action="store_true")
     parser.add_argument("--rule-candidates-output", type=Path, default=None)
     parser.add_argument("--apply-rule-decisions", type=Path, default=None)
+    parser.add_argument("--export-organization-review", action="store_true")
+    parser.add_argument("--organization-review-output", type=Path, default=None)
     parser.add_argument("--review-plans", action="store_true")
     parser.add_argument("--ignore-review-state", action="store_true")
     parser.add_argument("--apply-reviewed-plan", type=Path, default=None)
@@ -84,7 +88,7 @@ def main() -> int:
     parser.add_argument("--plan-refined-organization", action="store_true")
     parser.add_argument("--llm-provider", default=None)
     parser.add_argument("--llm-model", default=None)
-    parser.add_argument("--ollama-host", default="http://localhost:11434")
+    parser.add_argument("--ollama-host", default=None)
     args = parser.parse_args()
 
     if args.report_output is not None and not args.report:
@@ -93,8 +97,18 @@ def main() -> int:
         parser.error("--html-report-output requires --html-report")
     if args.rule_candidates_output is not None and not args.export_rule_candidates:
         parser.error("--rule-candidates-output requires --export-rule-candidates")
+    if (
+        args.organization_review_output is not None
+        and not args.export_organization_review
+    ):
+        parser.error(
+            "--organization-review-output requires --export-organization-review"
+        )
     if args.ignore_review_state and not args.review_plans:
         parser.error("--ignore-review-state requires --review-plans")
+
+    if args.export_organization_review:
+        return _handle_export_organization_review(parser, args)
 
     if args.export_rule_candidates:
         return _handle_export_rule_candidates(parser, args)
@@ -251,7 +265,7 @@ def main() -> int:
             project_groups = find_project_groups(metadata_items, rules=organization_rules)
         client = OllamaClient(
             model=args.llm_model,
-            host=args.ollama_host,
+            host=args.ollama_host or DEFAULT_OLLAMA_HOST,
         )
         try:
             refinements = refine_project_groups_with_ollama(project_groups, client)
@@ -323,6 +337,7 @@ def _handle_review_plans(
         or args.plan_refined_organization
         or args.llm_provider is not None
         or args.llm_model is not None
+        or args.ollama_host is not None
     ):
         parser.error(
             "--review-plans cannot be combined with display, planning, apply, "
@@ -524,6 +539,59 @@ def _handle_export_rule_candidates(
     print(f"Rule candidates exported: {output_path}")
     print(f"Candidates: {len(candidates)}")
     print("Review the file manually, then apply accepted decisions with exact confirmation.")
+    return 0
+
+
+def _handle_export_organization_review(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.apply_reviewed_plan is not None
+        or args.export_rule_candidates
+        or args.rule_candidates_output is not None
+        or args.apply_rule_decisions is not None
+        or args.report
+        or args.report_output is not None
+        or args.html_report
+        or args.html_report_output is not None
+        or args.confirm is not None
+        or args.undo_log is not None
+        or args.review_plans
+        or args.ignore_review_state
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.refine_groups
+        or args.plan_refined_organization
+        or args.llm_provider is not None
+        or args.llm_model is not None
+        or args.ollama_host is not None
+    ):
+        parser.error(
+            "--export-organization-review may be combined only with --max-depth"
+        )
+
+    try:
+        report = build_scan_report(args.folder, max_depth=args.max_depth)
+        output_path = export_organization_review(
+            report,
+            args.folder,
+            args.organization_review_output,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+
+    item_count = report["summary"]["organization_suggestion_count"]
+    print(f"Organization review exported: {output_path}")
+    print(f"Suggestions: {item_count}")
+    print("Decisions default to undecided. This command does not move files.")
     return 0
 
 
@@ -758,7 +826,7 @@ def _handle_report(
         _validate_llm_args(parser, args.llm_provider, args.llm_model)
         client = OllamaClient(
             model=args.llm_model,
-            host=args.ollama_host,
+            host=args.ollama_host or DEFAULT_OLLAMA_HOST,
         )
     else:
         if args.llm_provider is not None or args.llm_model is not None:
@@ -815,7 +883,7 @@ def _handle_html_report(
         _validate_llm_args(parser, args.llm_provider, args.llm_model)
         client = OllamaClient(
             model=args.llm_model,
-            host=args.ollama_host,
+            host=args.ollama_host or DEFAULT_OLLAMA_HOST,
         )
     else:
         if args.llm_provider is not None or args.llm_model is not None:

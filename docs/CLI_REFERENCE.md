@@ -111,6 +111,23 @@ Candidate export is advisory and does not write `organization_rules.json`. If th
 
 Applying rule decisions treats the reviewed JSON file as the source of truth. It does not rescan, infer new candidates, create move plans, call the executor, move files, or write operation logs. Rejected, ignored, and undecided candidates are recorded in the apply result log but do not update rules. `preferred_granularities` are stored as advisory configuration only in this stage.
 
+## Organization Suggestion Review Export
+
+```bash
+python -m organizer.cli <folder> --export-organization-review
+python -m organizer.cli <folder> --export-organization-review --max-depth 2
+python -m organizer.cli <folder> --export-organization-review --organization-review-output AI_Review/reviews/manual_review.json
+```
+
+- `--export-organization-review`: builds existing rule-aware report data and writes organization suggestions as manually editable JSON review rows.
+- `--organization-review-output <path>`: selects a new output path under the scan root.
+- Rows use `approve`, `reject`, or `undecided`; every exported row starts as `undecided`.
+- Locked-anchor risk uses the anchor's complete matched file count. Preferred granularities remain advisory and do not create rows.
+
+This is a single-purpose read-only export mode. Only `--max-depth` may be combined with it. The default output is `AI_Review/reviews/organization_review.json`; an existing default gets a collision-safe sibling, while an explicit existing path is rejected. Destination strings are validated as relative paths under `Organized/`, but the destination directories do not need to exist.
+
+Organization-review export does not apply approved rows, create execution plans, write operation or undo logs, modify organization rules, invoke an LLM, or move files. See the [organization review format](REPORT_FORMAT.md#organization-review-export).
+
 ## Grouping
 
 ```bash
