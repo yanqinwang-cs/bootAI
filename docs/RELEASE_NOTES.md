@@ -1,10 +1,16 @@
 # Release Notes
 
-## Current Status Through Stage 10.4.1
+## Current Status Through Stage 10.4.4
 
 Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the existing JSON report and a browser-openable HTML rendering from the same report data without approving or applying moves.
 
 Stage 10.4.1 makes organization conservative by default. Normal organization suggestions are limited to low-risk document-like files, standalone HTML is included only when it does not look like web-project HTML, and isolated code files may be flagged as `orphan_code` candidates for review instead of normal organization suggestions.
+
+Stage 10.4.2 excludes protected contexts from actionable move plans. Exact duplicate facts can still report byte-for-byte matches, but duplicate review plans, review candidate plans, organization suggestions, batch review rows, and approved saved reviewed-plan items exclude protected contexts by default.
+
+Stage 10.4.3 requires strong organization anchors, suppresses weak top-level token groups, assigns role-based subfolders after grouping, and excludes generated web/archive and contextual project-output assets from actionable plans.
+
+Stage 10.4.4 adds optional read-only organization rules loaded from `AI_Review/config/organization_rules.json` when present. It reports alias-normalized anchor decisions as suggested groups, anchors needing a user decision, and ignored terms. Ignored terms win over locked anchors, and locked anchors still require at least two eligible safe files.
 
 ## Stage Summary
 
@@ -28,6 +34,9 @@ Stage 10.4.1 makes organization conservative by default. Normal organization sug
 - Stage 10.3: persistent review state and organization memory.
 - Stage 10.4: automatic static HTML report viewer.
 - Stage 10.4.1: conservative organization scope and orphan-code review candidates.
+- Stage 10.4.2: protected-context exclusion across actionable plans.
+- Stage 10.4.3: strong anchor organization, role-based subfolders, and generated asset suppression.
+- Stage 10.4.4: read-only organization rules and anchor-decision reporting.
 
 ## Safety Model
 
@@ -52,6 +61,11 @@ Stage 10.4.1 makes organization conservative by default. Normal organization sug
 - Saved reviewed-plan JSON files are untrusted input and are validated before use.
 - Normal organization suggestions are document-like by default and exclude code/project/package internals.
 - Orphan code is a candidate for review only.
+- Protected-context files are excluded from actionable move plans by default.
+- Generated web/archive and contextual project-output files are excluded from actionable move plans by default.
+- Organization rules are read-only; the CLI does not create or edit `AI_Review/config/organization_rules.json`.
+- Anchor aliases are resolved before reporting; ignored terms win over locked anchors.
+- Exact duplicate facts remain distinct from duplicate move candidates.
 
 ## Current CLI Capabilities
 

@@ -1,4 +1,45 @@
 {
+  "anchor_decisions": {
+    "ignored_terms": [
+      {
+        "anchor": "Summary",
+        "decision": "ignored",
+        "evidence": "named_project",
+        "examples": [
+          "downloads/summary_notes.pdf",
+          "downloads/summary_report.pdf"
+        ],
+        "file_count": 2,
+        "reason": "anchor Summary is ignored by organization rules or conservative defaults"
+      }
+    ],
+    "needs_decision": [
+      {
+        "anchor": "Wang",
+        "decision": "needs_decision",
+        "evidence": "needs_decision",
+        "examples": [
+          "downloads/Wang_notes.pdf",
+          "downloads/Wang_report.pdf"
+        ],
+        "file_count": 2,
+        "reason": "anchor Wang appears in 2 eligible files and needs a user decision"
+      }
+    ],
+    "suggested_groups": [
+      {
+        "anchor": "CS2103",
+        "decision": "suggested",
+        "evidence": "course_code",
+        "examples": [
+          "CS2103/project_notes.md",
+          "CS2103/report.md"
+        ],
+        "file_count": 2,
+        "reason": "files share course/module code CS2103; evidence course_code"
+      }
+    ]
+  },
   "duplicate_review_plan": [
     {
       "confidence": 100,
@@ -20,6 +61,16 @@
     }
   ],
   "generated_at": "2026-07-09T12:00:00+00:00",
+  "organization_rules": {
+    "anchor_aliases": {},
+    "ignored_terms": [
+      "summary"
+    ],
+    "locked_anchors": [],
+    "message": "No organization rules file found. Using conservative built-in defaults.",
+    "path": null,
+    "status": "defaults"
+  },
   "organization_suggestions": [
     {
       "group_name": "CS2103",
@@ -87,6 +138,9 @@
     "review_candidate_counts_by_category": {
       "backup_or_copy": 1
     },
+    "suggested_anchor_count": 1,
+    "needs_decision_anchor_count": 1,
+    "ignored_anchor_count": 1,
     "total_bytes": 9728
   },
   "warnings": []

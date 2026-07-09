@@ -37,6 +37,8 @@ operation logs, or start a server.
 | `project_groups` | Deterministic suggested project groups. | array |
 | `organization_suggestions` | Dry-run deterministic organization suggestions. | array |
 | `refined_organization_suggestions` | Dry-run local-LLM refined suggestions, if requested and valid. | array |
+| `organization_rules` | Read-only organization-rules status and resolved rule metadata. | object |
+| `anchor_decisions` | Alias-normalized anchor decisions used for grouping reports. | object |
 | `warnings` | Non-fatal report-generation warnings. | array |
 
 ## `summary`
@@ -51,18 +53,48 @@ operation logs, or start a server.
 - `review_candidate_counts_by_category`: candidate counts by category.
 - `project_group_count`: number of deterministic project groups.
 - `organization_suggestion_count`: total deterministic organization plan items.
+- `suggested_anchor_count`: number of final suggested organization anchors.
+- `needs_decision_anchor_count`: number of anchors reported for manual decision.
+- `ignored_anchor_count`: number of final ignored anchors.
 - `refinement_status`: `not_requested`, `completed`, or `failed`.
+
+## Organization Rules And Anchor Decisions
+
+`organization_rules` reports whether `AI_Review/config/organization_rules.json`
+was loaded or whether conservative built-in defaults were used. The file is
+read-only in Stage 10.4.4; the CLI does not create, edit, or initialize it.
+
+Supported rule concepts are:
+
+- `locked_anchors`: anchors that can become suggested groups when at least two
+  eligible safe files match.
+- `ignored_terms`: anchors that should not create organization suggestions.
+- `anchor_aliases`: alias-to-canonical mappings resolved before reporting.
+
+Ignored terms win over locked anchors after alias normalization. Locked anchors
+do not bypass protected/generated/project-output exclusions.
+
+`anchor_decisions` has three user-facing sections:
+
+- `suggested_groups`: anchors that can produce organization suggestions.
+- `needs_decision`: repeated anchors that are reported but do not produce
+  `MovePlanItem` values unless later rules make them suggested.
+- `ignored_terms`: anchors ignored by rules or conservative defaults.
 
 ## Fact Sections
 
 `duplicates`, `review_candidates`, and `project_groups` describe detected facts or
 deterministic suggestions. They do not authorize movement.
 
-Duplicate groups contain:
+Duplicate groups contain factual exact duplicate matches:
 
 - `sha256`
 - `size_bytes`
 - `files`
+
+Protected-context files may appear in `duplicates` because this section is
+factual. Protected-context files are excluded from actionable plan sections by
+default.
 
 Review candidates contain:
 
@@ -87,6 +119,12 @@ Project groups contain:
 `duplicate_review_plan`, `review_candidate_plan`, `organization_suggestions`,
 and `refined_organization_suggestions` contain dry-run `MovePlanItem` data. These
 sections can inform later review, but they do not apply moves.
+
+Actionable plan sections are stricter than factual sections. They exclude
+protected contexts such as dependency folders, Git internals, virtual
+environments, app/framework bundles, protected workspaces, and project/package
+contexts by default. They also exclude generated web/archive assets and
+contextual project-output folders such as browser-saved `*_files/` assets.
 
 Plan items contain:
 
@@ -117,5 +155,9 @@ can produce a warning and leave `refined_organization_suggestions` empty.
 Reports also warn when deterministic organization suggestions are unusually
 broad, either above 1000 suggested moves or above half of the scanned file count.
 This warning is a review guardrail only and does not change apply requirements.
+
+Reports also warn when protected-context exact duplicate facts are omitted from
+the actionable duplicate review plan. The same warning class covers generated
+and project-output contexts.
 
 Warnings do not approve movement and do not change apply-command requirements.

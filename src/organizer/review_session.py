@@ -10,9 +10,12 @@ from typing import Any
 from organizer.duplicates import find_exact_duplicates
 from organizer.grouping import build_organization_suggestions, find_project_groups
 from organizer.models import FileMetadata, MovePlanItem, OrganizationSuggestion, ReviewedPlanItem
+from organizer.organization_rules import load_organization_rules
 from organizer.planner import build_duplicate_review_plan
 from organizer.review import build_review_candidate_plan, detect_review_candidates
 from organizer.safety import validate_under_root
+from organizer.scanner import scan_directory
+from organizer.scope import is_actionable_destination_path, is_actionable_source_path
 
 REVIEW_SESSION_SCHEMA_VERSION = 1
 REVIEW_PLAN_TYPE = "batch_review"
@@ -42,10 +45,15 @@ def build_review_session_items(
     root: Path,
 ) -> list[ReviewedPlanItem]:
     resolved_root = root.resolve()
+    organization_rules = load_organization_rules(resolved_root).rules
     duplicate_groups = find_exact_duplicates(files)
-    duplicate_plan_items = build_duplicate_review_plan(duplicate_groups, resolved_root)
+    duplicate_plan_items = build_duplicate_review_plan(
+        duplicate_groups,
+        resolved_root,
+        all_metadata=files,
+    )
     organization_suggestions = build_organization_suggestions(
-        find_project_groups(files),
+        find_project_groups(files, rules=organization_rules),
         resolved_root,
     )
     organization_plan_items = _flatten_plan_items(organization_suggestions)
@@ -227,12 +235,17 @@ def load_reviewed_plan_move_items(
     except json.JSONDecodeError as error:
         raise ValueError(f"invalid reviewed plan JSON: {error}") from error
 
-    return reviewed_plan_data_to_move_items(data, resolved_root)
+    return reviewed_plan_data_to_move_items(
+        data,
+        resolved_root,
+        _metadata_context_for_root(resolved_root),
+    )
 
 
 def reviewed_plan_data_to_move_items(
     data: object,
     root: Path,
+    all_metadata: list[FileMetadata] | None = None,
 ) -> list[MovePlanItem]:
     if not isinstance(data, dict):
         raise ValueError("reviewed plan must contain a JSON object")
@@ -245,6 +258,11 @@ def reviewed_plan_data_to_move_items(
     if not isinstance(items, list):
         raise ValueError("reviewed plan items must be a list")
 
+    metadata_context = (
+        all_metadata
+        if all_metadata is not None
+        else _metadata_context_for_root(root)
+    )
     reviewed_items: list[ReviewedPlanItem] = []
     for index, item in enumerate(items, start=1):
         if not isinstance(item, dict):
@@ -259,6 +277,7 @@ def reviewed_plan_data_to_move_items(
         destination_path = root / destination
         validate_under_root(source_path.resolve(strict=False), root)
         validate_under_root(destination_path.resolve(strict=False), root)
+        _validate_saved_actionable_paths(source, destination, metadata_context, index)
 
         reviewed_items.append(
             ReviewedPlanItem(
@@ -281,6 +300,28 @@ def reviewed_plan_data_to_move_items(
         )
     validate_no_approved_move_conflicts(reviewed_items, root)
     return approved_plan_items(reviewed_items)
+
+
+def _metadata_context_for_root(root: Path) -> list[FileMetadata]:
+    if not root.exists() or not root.is_dir():
+        return []
+    return scan_directory(root)
+
+
+def _validate_saved_actionable_paths(
+    source: Path,
+    destination: Path,
+    all_metadata: list[FileMetadata],
+    index: int,
+) -> None:
+    if not is_actionable_source_path(source, all_metadata):
+        raise ValueError(
+            f"reviewed plan item {index} source is in a protected context"
+        )
+    if not is_actionable_destination_path(destination, all_metadata):
+        raise ValueError(
+            f"reviewed plan item {index} destination is in a protected context"
+        )
 
 
 def reviewed_plan_to_json_data(

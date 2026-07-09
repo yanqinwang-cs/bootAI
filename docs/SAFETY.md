@@ -33,6 +33,14 @@
 - Reviewed-plan conflicts must block apply until the user rejects conflicting approved rows.
 - Saved reviewed-plan JSON files are untrusted input and must be validated before use.
 - Rejected saved reviewed-plan items must be ignored for movement.
+- Protected-context files are not actionable move candidates by default.
+- Generated web/archive assets are not actionable move candidates by default.
+- Organization suggestions require strong grouping evidence, not confidence alone.
+- Organization rules are read-only in Stage 10.4.4.
+- Locked anchors must not bypass protected/generated/project-output exclusions.
+- Locked anchors should require at least two eligible safe files before producing organization suggestions.
+- Ignored terms win over locked anchors after alias normalization.
+- Exact duplicate facts must remain distinct from duplicate move candidates.
 - Batch review apply requires exact `APPLY_REVIEWED_PLAN` confirmation.
 - `executor.py` is the only movement module.
 - Approved duplicate, organization, and review-candidate moves all use `executor.py`.
@@ -46,6 +54,8 @@
 - Backup or copy files: candidate for review when filename tokens indicate version markers.
 - Project organization candidates: suggested groups based on deterministic course-code or token signals.
 - Orphan code: isolated code files outside detected project contexts, surfaced only as candidates for review.
+- Protected contexts: dependency folders, Git internals, virtual environments, app/framework bundles, protected workspaces, and project/package contexts excluded from actionable plans.
+- Generated asset contexts: browser-saved asset folders, generated web assets, and contextual project-output folders excluded from actionable plans.
 
 ## Language Rules
 

@@ -25,6 +25,12 @@ class HtmlReportRenderingTests(unittest.TestCase):
         self.assertIn('<meta charset="utf-8">', html)
         self.assertIn("<title>bootAI Report</title>", html)
         self.assertIn("Summary", html)
+        self.assertIn("Organization rules", html)
+        self.assertIn("Anchor decisions", html)
+        self.assertIn("Suggested groups", html)
+        self.assertIn("Needs decision", html)
+        self.assertIn("Ignored terms", html)
+        self.assertIn("Locked anchors", html)
         self.assertIn("Warnings", html)
         self.assertIn("Duplicate review plan", html)
         self.assertIn("Review candidates", html)
@@ -69,6 +75,40 @@ class HtmlReportRenderingTests(unittest.TestCase):
         html = render_html_report(report)
 
         self.assertNotIn("secret file body", html)
+
+    def test_html_report_inherits_filtered_actionable_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            protected = root / "node_modules" / "pkg"
+            protected.mkdir(parents=True)
+            (protected / "dep_a.js").write_text("same", encoding="utf-8")
+            (protected / "dep_b.js").write_text("same", encoding="utf-8")
+            (protected / "file.tmp").write_text("temp", encoding="utf-8")
+            generated = root / "Instagram_files"
+            generated.mkdir()
+            (generated / "base.js").write_text("console.log(1)", encoding="utf-8")
+            (root / "a.pdf").write_text("same", encoding="utf-8")
+            (root / "b.pdf").write_text("same", encoding="utf-8")
+
+            html = render_html_report(build_scan_report(root))
+
+            self.assertNotIn("node_modules/pkg/dep_a.js", html)
+            self.assertNotIn("Instagram_files/base.js", html)
+            self.assertNotIn("AI_Review/duplicates/node_modules/pkg/dep_b.js", html)
+            self.assertNotIn("AI_Review/temporary/node_modules/pkg/file.tmp", html)
+            self.assertIn("protected, generated", html)
+
+    def test_html_report_renders_anchor_decisions_with_friendly_labels(self) -> None:
+        report = sample_report()
+
+        html = render_html_report(report)
+
+        self.assertIn("Suggested groups", html)
+        self.assertIn("Needs decision", html)
+        self.assertIn("Ignored terms", html)
+        self.assertIn("Locked anchors", html)
+        self.assertNotIn("ambiguous", html.lower())
+        self.assertNotIn("suppressed", html.lower())
 
 
 class HtmlReportOutputTests(unittest.TestCase):
@@ -256,7 +296,50 @@ def sample_report() -> dict[str, object]:
             "review_candidate_counts_by_category": {"empty": 1, "orphan_code": 1},
             "project_group_count": 1,
             "organization_suggestion_count": 1,
+            "suggested_anchor_count": 1,
+            "needs_decision_anchor_count": 1,
+            "ignored_anchor_count": 1,
             "refinement_status": "not_requested",
+        },
+        "organization_rules": {
+            "status": "defaults",
+            "path": None,
+            "message": "No organization rules file found. Using conservative built-in defaults.",
+            "locked_anchors": [],
+            "ignored_terms": ["summary"],
+            "anchor_aliases": {},
+        },
+        "anchor_decisions": {
+            "suggested_groups": [
+                {
+                    "anchor": "Evosim",
+                    "decision": "suggested",
+                    "reason": "files share strong filename anchor evosim",
+                    "evidence": "named_project",
+                    "file_count": 2,
+                    "examples": ["evosim_notes.txt", "evosim_report.pdf"],
+                }
+            ],
+            "needs_decision": [
+                {
+                    "anchor": "Wang",
+                    "decision": "needs_decision",
+                    "reason": "anchor Wang appears in 2 eligible files and needs a user decision",
+                    "evidence": "needs_decision",
+                    "file_count": 2,
+                    "examples": ["Wang_notes.txt", "Wang_report.pdf"],
+                }
+            ],
+            "ignored_terms": [
+                {
+                    "anchor": "Summary",
+                    "decision": "ignored",
+                    "reason": "anchor Summary is ignored by organization rules or conservative defaults",
+                    "evidence": "named_project",
+                    "file_count": 2,
+                    "examples": ["summary_notes.txt", "summary_report.pdf"],
+                }
+            ],
         },
         "duplicates": [
             {

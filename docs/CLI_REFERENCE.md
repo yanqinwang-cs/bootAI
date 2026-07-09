@@ -33,6 +33,10 @@ python -m organizer.cli <folder> --apply-duplicate-plan --confirm APPLY_DUPLICAT
 
 Duplicate review moves require `--apply-duplicate-plan --confirm APPLY_DUPLICATE_PLAN`. Organization moves have separate exact confirmation strings below.
 
+Exact duplicate groups are factual. Duplicate review plans are actionable candidates and exclude protected contexts such as dependency folders, Git internals, virtual environments, app/framework bundles, protected workspaces, and project/package contexts by default.
+
+Generated web/archive assets and contextual project-output paths are also excluded from actionable duplicate review plans by default.
+
 ## Undo
 
 ```bash
@@ -77,6 +81,8 @@ HTML report mode is also single-purpose. It writes both JSON and HTML reports fr
 
 The report format is documented in [REPORT_FORMAT](REPORT_FORMAT.md). A compact example is available at [sample_report.json](examples/sample_report.json).
 
+Reports include read-only organization-rules status and alias-normalized anchor decisions. If `AI_Review/config/organization_rules.json` exists, it is loaded for reporting and grouping decisions. If it is missing, conservative built-in defaults are used. The CLI does not create or edit this rules file.
+
 ## Grouping
 
 ```bash
@@ -94,6 +100,10 @@ python -m organizer.cli <folder> --apply-organization-plan --confirm APPLY_ORGAN
 Only `--apply-organization-plan --confirm APPLY_ORGANIZATION_PLAN` can apply deterministic organization moves. The move batch writes an operation log under `AI_Review/operation_logs` and can be undone with `--undo-log`.
 
 Organization suggestions are conservative by default. Eligible normal organization files are `.pdf`, `.md`, `.markdown`, `.txt`, `.rtf`, `.doc`, `.docx`, `.ppt`, `.pptx`, `.html`, and `.htm`. HTML files are suggested only when they look like standalone documents, not web-project internals. Code, package, app, framework, dependency, archive, media, and project-context files are excluded from normal organization suggestions. Isolated code may appear as an `orphan_code` candidate for review instead.
+
+Organization groups require strong evidence such as course/module codes or strict repeated named-project anchors. Weak tokens such as `summary`, `report`, `resource`, `index`, `image`, `balanced`, `v1`, and `debug` do not create top-level organization suggestions by default. Role-based subfolders such as `exams`, `recitations`, `lectures`, `practicals`, `slides`, and `notes` are assigned after grouping.
+
+Optional read-only organization rules can be provided manually at `AI_Review/config/organization_rules.json` with `version`, `locked_anchors`, `ignored_terms`, and `anchor_aliases`. Aliases are resolved before anchor decisions are shown, ignored terms win over locked anchors, and locked anchors still require at least two eligible safe files. No CLI command initializes or edits the rules file in this stage.
 
 ## LLM Refinement
 
@@ -152,3 +162,5 @@ Approve, reject, and save commands do not move files. `save` writes both a revie
 Interactive apply may update review-state memory after exact confirmation and before executor apply. That state records review intent only. Operation logs remain authoritative for actual successful moves and undo, and failed moves do not become success records in review state.
 
 Saved reviewed plans are untrusted input. `--apply-reviewed-plan` validates the plan path under the scan root, checks the JSON shape, rejects absolute paths and path traversal, ignores rejected items, blocks approved move conflicts, and converts only approved items back into `MovePlanItem` values. It does not resume or edit review sessions.
+
+Approved saved reviewed-plan items involving protected-context sources are rejected before executor use. Tool-owned destinations under `AI_Review/` and `Organized/` remain valid reviewed-plan destinations.

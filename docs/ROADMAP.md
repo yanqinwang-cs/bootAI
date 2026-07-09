@@ -23,6 +23,9 @@
 | 10.3 | Persistent review state and organization memory | `review_state.py`, `review_session.py`, `cli.py` | `--ignore-review-state` | decision memory only |
 | 10.4 | Automatic HTML report viewer | `html_report.py`, `reports.py`, `cli.py` | `--html-report`, `--html-report-output` | report files only |
 | 10.4.1 | Conservative organization scope and orphan code review | `scope.py`, `grouping.py`, `review.py` | none | scope control only |
+| 10.4.2 | Protected context exclusion across actionable plans | `scope.py`, `planner.py`, `review.py` | none | actionable-plan filtering |
+| 10.4.3 | Strong anchor organization and generated asset suppression | `scope.py`, `grouping.py`, `review.py` | none | stronger actionable-plan filtering |
+| 10.4.4 | Read-only organization rules and anchor decisions | `organization_rules.py`, `grouping.py`, `reports.py` | none | rules are read-only |
 
 ## Future Stages
 

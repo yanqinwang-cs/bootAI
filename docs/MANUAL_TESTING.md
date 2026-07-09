@@ -319,6 +319,87 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --html-report
 
 Expected outcome: normal organization suggestions mostly include document-like files, standalone `article.html` can be suggested, web-project HTML is excluded, code/project files are not normal organization suggestions, isolated `practice.py` appears as an `orphan_code` candidate for review, project code does not appear as `orphan_code`, and no files move.
 
+## Stage 10.4.2 Protected Context Actionable-Plan Check
+
+Use a disposable folder:
+
+```bash
+mkdir -p /path/to/temp-folder/node_modules/pkg
+mkdir -p /path/to/temp-folder/FakeApp.app/Contents
+printf "same-pdf" > /path/to/temp-folder/a.pdf
+printf "same-pdf" > /path/to/temp-folder/b.pdf
+printf "same-js" > /path/to/temp-folder/node_modules/pkg/a.js
+printf "same-js" > /path/to/temp-folder/node_modules/pkg/b.js
+printf "same-app" > /path/to/temp-folder/FakeApp.app/Contents/a.txt
+printf "same-app" > /path/to/temp-folder/FakeApp.app/Contents/b.txt
+printf "temp" > /path/to/temp-folder/node_modules/pkg/file.tmp
+printf "print('practice')" > /path/to/temp-folder/practice.py
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --html-report
+```
+
+Expected outcome: exact duplicate facts may include protected duplicates, duplicate review plan entries exclude `node_modules/` and `.app` paths, review candidate plans exclude protected contexts, ordinary duplicate PDFs still appear as duplicate review candidates, isolated `practice.py` still appears as an `orphan_code` candidate for review, and no files move.
+
+## Stage 10.4.3 Strong Anchor And Generated Asset Check
+
+Use a disposable folder:
+
+```bash
+SMOKE_ROOT="/tmp/bootai_anchor_smoke"
+rm -rf "$SMOKE_ROOT"
+mkdir -p "$SMOKE_ROOT/Instagram_files"
+mkdir -p "$SMOKE_ROOT/SomePage_files"
+mkdir -p "$SMOKE_ROOT/project/resources"
+mkdir -p "$SMOKE_ROOT/project/src"
+
+printf "x\n" > "$SMOKE_ROOT/CS1010X practical exam 2025 questions.pdf"
+printf "x\n" > "$SMOKE_ROOT/CS1010X finals 2026.pdf"
+printf "x\n" > "$SMOKE_ROOT/CS1010X recitation 04.pdf"
+printf "x\n" > "$SMOKE_ROOT/CS1010X-lec12-Object-Oriented Programming.ppt"
+printf "x\n" > "$SMOKE_ROOT/summary_one.pdf"
+printf "x\n" > "$SMOKE_ROOT/summary_two.pdf"
+printf "console.log(1)\n" > "$SMOKE_ROOT/Instagram_files/base.js"
+printf "body{}\n" > "$SMOKE_ROOT/SomePage_files/style.css"
+printf "print('hi')\n" > "$SMOKE_ROOT/practice.py"
+printf "asset\n" > "$SMOKE_ROOT/project/resources/icon.png"
+printf "print('project')\n" > "$SMOKE_ROOT/project/src/main.py"
+
+PYTHONPATH=src python3 -m organizer.cli "$SMOKE_ROOT" --html-report
+```
+
+Expected outcome: `CS1010X` appears as an organization group with role-based subfolders, weak `summary` files do not create a top-level organization group, generated web assets do not appear as `orphan_code`, contextual project-output files are not actionable candidates, loose `practice.py` appears as an `orphan_code` candidate for review, and no files move.
+
+## Stage 10.4.4 Read-Only Organization Rules Check
+
+Use a disposable folder and create the optional rules file manually:
+
+```bash
+RULE_ROOT="/tmp/bootai_rules_smoke"
+rm -rf "$RULE_ROOT"
+mkdir -p "$RULE_ROOT/AI_Review/config"
+
+cat > "$RULE_ROOT/AI_Review/config/organization_rules.json" <<'JSON'
+{
+  "version": 1,
+  "locked_anchors": ["Misc"],
+  "ignored_terms": ["EvoSim"],
+  "anchor_aliases": {
+    "CS1010x": "CS1010X"
+  }
+}
+JSON
+
+printf "x\n" > "$RULE_ROOT/misc_notes.txt"
+printf "x\n" > "$RULE_ROOT/misc_report.pdf"
+printf "x\n" > "$RULE_ROOT/evosim_notes.txt"
+printf "x\n" > "$RULE_ROOT/evosim_report.pdf"
+printf "x\n" > "$RULE_ROOT/CS1010x notes.pdf"
+printf "x\n" > "$RULE_ROOT/CS1010X slides.pptx"
+
+PYTHONPATH=src python3 -m organizer.cli "$RULE_ROOT" --html-report
+```
+
+Expected outcome: the report says organization rules were loaded, `Misc` appears as a suggested group because it has two eligible safe files, `EvoSim` appears under ignored terms and does not produce organization plan items, and aliased `CS1010x`/`CS1010X` is shown as one final anchor decision. No files move, and the CLI does not create or edit the rules file.
+
 ## Stage 10.0 Batch Review
 
 Use a disposable folder and run:

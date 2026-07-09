@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 from organizer.models import FileMetadata, MovePlanItem, ReviewCandidate
-from organizer.scope import is_orphan_code_candidate
+from organizer.scope import is_actionable_plan_eligible, is_orphan_code_candidate
 
 TEMPORARY_EXACT_NAMES = {".DS_Store", "Thumbs.db", "desktop.ini"}
 TEMPORARY_SUFFIXES = {".tmp", ".temp", ".part", ".crdownload", ".swp", ".swo"}
@@ -30,6 +30,8 @@ def detect_review_candidates(
         if metadata.is_dir or metadata.path.is_symlink() or not metadata.path.is_file():
             continue
         if _is_under_review_folder(metadata.relative_path, review_folder_name):
+            continue
+        if not is_actionable_plan_eligible(metadata, files):
             continue
 
         candidate = _detect_candidate(metadata, files)

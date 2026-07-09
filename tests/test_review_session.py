@@ -116,6 +116,51 @@ class ReviewSessionConstructionTests(unittest.TestCase):
             self.assertTrue((root / "file.tmp").exists())
             self.assertFalse((root / "AI_Review").exists())
 
+    def test_protected_contexts_are_not_included_as_review_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            protected = root / "node_modules" / "pkg"
+            protected.mkdir(parents=True)
+            (protected / "dep_a.js").write_text("same", encoding="utf-8")
+            (protected / "dep_b.js").write_text("same", encoding="utf-8")
+            (protected / "file.tmp").write_text("temp", encoding="utf-8")
+            app_file = root / "Fake.app" / "Contents" / "evosim.txt"
+            app_file.parent.mkdir(parents=True)
+            app_file.write_text("evosim", encoding="utf-8")
+            (root / "evosim_notes.txt").write_text("evosim", encoding="utf-8")
+
+            items = build_review_session_items(scan_directory(root), root)
+            sources = {
+                item.plan_item.source.relative_to(root.resolve()).as_posix()
+                for item in items
+            }
+
+            self.assertNotIn("node_modules/pkg/dep_b.js", sources)
+            self.assertNotIn("node_modules/pkg/file.tmp", sources)
+            self.assertNotIn("Fake.app/Contents/evosim.txt", sources)
+
+    def test_generated_contexts_are_not_included_as_review_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            generated = root / "Instagram_files"
+            generated.mkdir()
+            (generated / "dep_a.js").write_text("same", encoding="utf-8")
+            (generated / "dep_b.js").write_text("same", encoding="utf-8")
+            (generated / "file.tmp").write_text("temp", encoding="utf-8")
+            output = root / "project" / "src"
+            output.mkdir(parents=True)
+            (output / "main.py").write_text("print('x')", encoding="utf-8")
+
+            items = build_review_session_items(scan_directory(root), root)
+            sources = {
+                item.plan_item.source.relative_to(root.resolve()).as_posix()
+                for item in items
+            }
+
+            self.assertNotIn("Instagram_files/dep_b.js", sources)
+            self.assertNotIn("Instagram_files/file.tmp", sources)
+            self.assertNotIn("project/src/main.py", sources)
+
     def test_orphan_code_rows_are_built_as_review_candidates(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -1025,6 +1070,79 @@ class SavedReviewedPlanValidationTests(unittest.TestCase):
 
         self.assertEqual(len(plan_items), 1)
         self.assertEqual(plan_items[0].destination, root / "AI_Review" / "orphan_code" / "practice.py")
+
+    def test_approved_saved_plan_item_with_protected_source_is_rejected(self) -> None:
+        protected_sources = [
+            "node_modules/pkg/file.txt",
+            "Fake.app/Contents/file.txt",
+            "Protected_Workspaces/project/file.txt",
+        ]
+        for source in protected_sources:
+            with self.subTest(source=source):
+                data = valid_saved_plan_data()
+                data["items"][0]["source"] = source
+
+                with self.assertRaises(ValueError):
+                    reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+    def test_rejected_saved_plan_item_with_protected_source_is_ignored(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"][0]["decision"] = "rejected"
+        data["items"][0]["source"] = "node_modules/pkg/file.txt"
+
+        plan_items = reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+        self.assertEqual(plan_items, [])
+
+    def test_approved_saved_plan_item_with_project_source_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            (project / "pyproject.toml").write_text("[project]", encoding="utf-8")
+            (project / "file.txt").write_text("content", encoding="utf-8")
+            data = valid_saved_plan_data()
+            data["items"][0]["source"] = "project/file.txt"
+
+            with self.assertRaises(ValueError):
+                reviewed_plan_data_to_move_items(data, root)
+
+    def test_approved_saved_plan_item_with_unowned_protected_destination_is_rejected(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"][0]["destination"] = "node_modules/pkg/file.txt"
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+    def test_approved_saved_plan_item_with_generated_source_is_rejected(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"][0]["source"] = "Instagram_files/base.js"
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+    def test_approved_saved_plan_item_with_generated_destination_is_rejected(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"][0]["destination"] = "SomePage_files/base.js"
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+    def test_approved_saved_plan_item_with_project_output_source_is_rejected(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"][0]["source"] = "project/src/main.py"
+
+        with self.assertRaises(ValueError):
+            reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+    def test_rejected_saved_plan_item_with_generated_source_is_ignored(self) -> None:
+        data = valid_saved_plan_data()
+        data["items"][0]["decision"] = "rejected"
+        data["items"][0]["source"] = "SomePage_files/base.js"
+
+        plan_items = reviewed_plan_data_to_move_items(data, Path("/tmp/root"))
+
+        self.assertEqual(plan_items, [])
 
     def test_saved_plan_source_conflict_is_rejected_before_move_items_return(self) -> None:
         data = valid_saved_plan_data()

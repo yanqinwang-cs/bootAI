@@ -126,6 +126,117 @@ class PlannerTests(unittest.TestCase):
             self.assertEqual(plan[0].operation, "dry-run move")
             self.assertEqual(plan[0].confidence, 100)
 
+    def test_exact_duplicate_facts_can_include_protected_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "a.txt").write_text("same", encoding="utf-8")
+            protected = root / "node_modules" / "pkg"
+            protected.mkdir(parents=True)
+            (protected / "a.txt").write_text("same", encoding="utf-8")
+            metadata = scan_directory(root)
+
+            groups = find_exact_duplicates(metadata)
+
+            self.assertEqual(len(groups), 1)
+            self.assertEqual(
+                [file.relative_path.as_posix() for file in groups[0].files],
+                ["a.txt", "node_modules/pkg/a.txt"],
+            )
+
+    def test_duplicate_review_plan_excludes_node_modules_duplicates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "a.txt").write_text("same", encoding="utf-8")
+            protected = root / "node_modules" / "pkg"
+            protected.mkdir(parents=True)
+            (protected / "a.txt").write_text("same", encoding="utf-8")
+            metadata = scan_directory(root)
+
+            plan = build_duplicate_review_plan(
+                find_exact_duplicates(metadata),
+                root,
+                all_metadata=metadata,
+            )
+
+            self.assertEqual(plan, [])
+
+    def test_duplicate_review_plan_excludes_app_git_and_project_contexts(self) -> None:
+        protected_layouts = [
+            ("Fake.app/Contents/a.txt", None),
+            ("repo/.git/a.txt", None),
+            ("project/a.txt", "project/pyproject.toml"),
+        ]
+        for duplicate_path, marker_path in protected_layouts:
+            with self.subTest(duplicate_path=duplicate_path):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    (root / "a.txt").write_text("same", encoding="utf-8")
+                    protected = root / duplicate_path
+                    protected.parent.mkdir(parents=True, exist_ok=True)
+                    protected.write_text("same", encoding="utf-8")
+                    if marker_path is not None:
+                        marker = root / marker_path
+                        marker.parent.mkdir(parents=True, exist_ok=True)
+                        marker.write_text("[project]", encoding="utf-8")
+                    metadata = scan_directory(root)
+
+                    plan = build_duplicate_review_plan(
+                        find_exact_duplicates(metadata),
+                        root,
+                        all_metadata=metadata,
+                    )
+
+                    self.assertEqual(plan, [])
+
+    def test_mixed_duplicate_group_plans_only_eligible_non_protected_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "a.txt").write_text("same", encoding="utf-8")
+            (root / "b.txt").write_text("same", encoding="utf-8")
+            protected = root / "node_modules" / "pkg"
+            protected.mkdir(parents=True)
+            (protected / "c.txt").write_text("same", encoding="utf-8")
+            metadata = scan_directory(root)
+
+            plan = build_duplicate_review_plan(
+                find_exact_duplicates(metadata),
+                root,
+                all_metadata=metadata,
+            )
+
+            self.assertEqual(len(plan), 1)
+            self.assertEqual(plan[0].source, (root / "b.txt").resolve())
+
+    def test_duplicate_review_plan_excludes_generated_asset_duplicates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            generated = root / "Instagram_files"
+            generated.mkdir()
+            (generated / "a.js").write_text("same", encoding="utf-8")
+            (generated / "b.js").write_text("same", encoding="utf-8")
+            metadata = scan_directory(root)
+
+            groups = find_exact_duplicates(metadata)
+            plan = build_duplicate_review_plan(groups, root, all_metadata=metadata)
+
+            self.assertEqual(len(groups), 1)
+            self.assertEqual(plan, [])
+
+    def test_duplicate_review_plan_excludes_project_output_duplicates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "project" / "src"
+            output.mkdir(parents=True)
+            (output / "a.py").write_text("same", encoding="utf-8")
+            (output / "b.py").write_text("same", encoding="utf-8")
+            metadata = scan_directory(root)
+
+            groups = find_exact_duplicates(metadata)
+            plan = build_duplicate_review_plan(groups, root, all_metadata=metadata)
+
+            self.assertEqual(len(groups), 1)
+            self.assertEqual(plan, [])
+
     def test_planner_does_not_create_directories_or_move_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -39,6 +39,7 @@ Filesystem
 | `planner.py` | duplicate review planning |
 | `review.py` | heuristic review candidate detection and review planning |
 | `scope.py` | deterministic organization-scope and orphan-code classification helpers |
+| `organization_rules.py` | read-only organization rules loading and validation |
 | `grouping.py` | deterministic project grouping and organization suggestions |
 | `llm_refinement.py` | advisory LLM prompt, payload, validation, refined suggestions |
 | `ollama_client.py` | local Ollama client only |
@@ -53,7 +54,7 @@ Filesystem
 
 Facts come from deterministic Python: paths, sizes, hashes, extensions, and inferred deterministic groups. `scanner.py`, `duplicates.py`, `scope.py`, `review.py`, and `grouping.py` produce facts or suggestions.
 
-Suggestions are represented as `MovePlanItem` objects and printed as dry-run plans. Normal organization suggestions are conservative and document-like by default. `scope.py` excludes project/package/application internals from organization suggestions and allows isolated code files to be flagged as `orphan_code` candidates for review. `llm_refinement.py` produces advisory suggestions only and stores them separately from deterministic `ProjectGroup` data.
+Suggestions are represented as `MovePlanItem` objects and printed as dry-run plans. Normal organization suggestions are conservative and document-like by default. `scope.py` excludes protected/project/package/application internals, generated web/archive assets, and contextual project-output files from actionable plans. `organization_rules.py` optionally loads `AI_Review/config/organization_rules.json` read-only; it never creates or modifies the rules file. `grouping.py` uses strong anchors such as course codes and strict named-project evidence, resolves aliases before final anchor decisions, lets ignored terms win over locked anchors, and assigns role-based subfolders after grouping. Exact duplicate groups remain factual; duplicate review plans are stricter actionable candidates. `llm_refinement.py` produces advisory suggestions only and stores them separately from deterministic `ProjectGroup` data.
 
 Reports serialize facts and suggestions into JSON for manual review or external scheduler runs. `reports.py` may write a new report file under the scan root, but it does not execute moves or approve actions. `html_report.py` renders the same report dictionary into a static HTML viewer and may write an HTML report file under the scan root. HTML reports do not approve moves, apply moves, perform review actions, write operation logs, or start a server.
 

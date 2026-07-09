@@ -161,6 +161,72 @@ class ReviewDetectionTests(unittest.TestCase):
 
             self.assertEqual(candidates, [])
 
+    def test_generated_web_assets_are_not_orphan_code_or_review_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = [
+                "Instagram_files/example.js",
+                "Turning Every Battle YouTube_files/base.js",
+                "SavedPage_files/base.js",
+                "SavedPage_files/style.css",
+                "SavedPage_files/image.webp",
+                "SavedPage_files/icon.svg",
+                "SavedPage_files/font.woff",
+            ]
+            for relative_path in paths:
+                path = root / relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("asset", encoding="utf-8")
+
+            candidates = detect_review_candidates(scan_directory(root))
+
+            self.assertEqual(candidates, [])
+
+    def test_contextual_project_output_code_is_not_orphan_code(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for relative_path in ["project/src/main.py", "project/resources/helper.py"]:
+                path = root / relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("print('x')", encoding="utf-8")
+
+            candidates = detect_review_candidates(scan_directory(root))
+
+            self.assertEqual(candidates, [])
+
+    def test_protected_contexts_do_not_create_review_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = [
+                "node_modules/pkg/file.tmp",
+                "Fake.app/Contents/report copy.txt",
+                ".venv/empty.txt",
+                "project/practice.py",
+            ]
+            for relative_path in paths:
+                path = root / relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("" if path.name == "empty.txt" else "content", encoding="utf-8")
+            (root / "project" / "pyproject.toml").write_text("[project]", encoding="utf-8")
+
+            candidates = detect_review_candidates(scan_directory(root))
+
+            self.assertEqual(candidates, [])
+
+    def test_user_files_outside_protected_contexts_are_still_review_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "file.tmp").write_text("temp", encoding="utf-8")
+            (root / "report copy.txt").write_text("copy", encoding="utf-8")
+            (root / "practice.py").write_text("print('x')", encoding="utf-8")
+
+            candidates = detect_review_candidates(scan_directory(root))
+
+            self.assertEqual(
+                {candidate.category for candidate in candidates},
+                {"temporary", "backup_or_copy", "orphan_code"},
+            )
+
 
 class ReviewPlanTests(unittest.TestCase):
     def test_plan_destinations_are_under_review_category_and_preserve_paths(self) -> None:

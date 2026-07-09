@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.4.1 are implemented. The tool can currently:
+Stages 1 through 10.4.4 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -14,6 +14,8 @@ Stages 1 through 10.4.1 are implemented. The tool can currently:
 - Apply approved duplicate review moves with undo logs.
 - Detect review candidates.
 - Group document-like files deterministically.
+- Load optional read-only organization rules from `AI_Review/config/organization_rules.json`.
+- Report alias-normalized anchor decisions for suggested groups, anchors needing a user decision, and ignored terms.
 - Suggest organization plans.
 - Flag isolated code files as candidates for review.
 - Optionally refine organization suggestions with local Ollama.
@@ -26,7 +28,7 @@ Stages 1 through 10.4.1 are implemented. The tool can currently:
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.4.1 makes organization conservative by default. Normal organization suggestions are limited to low-risk document-like files, standalone HTML is handled cautiously, and isolated code files are review candidates instead of organization suggestions. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.4.4 keeps organization rules read-only, resolves aliases before reporting anchor decisions, and lets ignored terms win over locked anchors. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -108,6 +110,12 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Normal organization suggestions are document-only by default.
 - Code/project files are excluded from normal organization suggestions.
 - Isolated code files may appear as `orphan_code` candidates for review.
+- Protected-context files can appear in factual reports but are excluded from actionable move plans by default.
+- Generated web/archive assets and contextual project-output files are excluded from actionable move plans by default.
+- Organization suggestions require strong anchors such as course codes or strict repeated named-project evidence.
+- Organization rules are optional and read-only; create `AI_Review/config/organization_rules.json` manually if you need locked anchors, ignored terms, or aliases.
+- Locked anchors still require at least two eligible safe files and do not bypass protected/generated/project-output exclusions.
+- Reports show anchor decisions after alias normalization: suggested groups, needs decision, and ignored terms.
 - Review mode approve/reject/save commands do not move files.
 - Review mode stores decision memory under `AI_Review/review_state/review_decisions.json`.
 - Review state is decision memory, not an operation log, and does not record filesystem success.

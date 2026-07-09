@@ -6,6 +6,10 @@ import tempfile
 import unittest
 
 from organizer.grouping import (
+    ANCHOR_DECISION_IGNORED,
+    ANCHOR_DECISION_NEEDS_DECISION,
+    ANCHOR_DECISION_SUGGESTED,
+    analyze_anchor_decisions,
     build_organization_suggestions,
     extract_course_code,
     extract_filename_tokens,
@@ -13,6 +17,7 @@ from organizer.grouping import (
     infer_subfolder,
 )
 from organizer.models import FileMetadata, ProjectGroup
+from organizer.organization_rules import OrganizationRules, organization_rules_from_data
 from organizer.scanner import scan_directory
 
 FORBIDDEN_OUTPUT_TERMS = [
@@ -117,7 +122,40 @@ class ProjectGroupingTests(unittest.TestCase):
 
             self.assertEqual(len(groups), 1)
             self.assertEqual(groups[0].group_name, "Evosim")
-            self.assertEqual(groups[0].confidence, 70)
+            self.assertEqual(groups[0].confidence, 80)
+
+    def test_course_code_groups_varied_filenames_under_strong_anchor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            filenames = [
+                "CS1010X practical exam 2025 questions.pdf",
+                "CS1010X recitation 04.pdf",
+                "CS1010X finals 2026.pdf",
+                "CS1010X-lec12-Object-Oriented Programming.ppt",
+            ]
+            for filename in filenames:
+                (root / filename).write_text("course", encoding="utf-8")
+
+            groups = find_project_groups(scan_directory(root))
+
+            self.assertEqual(len(groups), 1)
+            self.assertEqual(groups[0].group_name, "CS1010X")
+            self.assertEqual([file.name for file in groups[0].files], sorted(filenames))
+
+    def test_weak_token_groups_are_suppressed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for filename in [
+                "summary_one.pdf",
+                "summary_two.pdf",
+                "balanced_report.pdf",
+                "balanced_notes.pdf",
+            ]:
+                (root / filename).write_text("weak", encoding="utf-8")
+
+            groups = find_project_groups(scan_directory(root))
+
+            self.assertEqual(groups, [])
 
     def test_does_not_group_below_min_group_size(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -194,8 +232,8 @@ class ProjectGroupingTests(unittest.TestCase):
     def test_standalone_html_is_eligible_but_web_project_html_is_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "article_evosim.html").write_text("<h1>one</h1>", encoding="utf-8")
-            (root / "receipt_evosim.htm").write_text("<h1>two</h1>", encoding="utf-8")
+            (root / "evosim_article.html").write_text("<h1>one</h1>", encoding="utf-8")
+            (root / "evosim_receipt.htm").write_text("<h1>two</h1>", encoding="utf-8")
             web = root / "web_project"
             web.mkdir()
             (web / "index.html").write_text("<html></html>", encoding="utf-8")
@@ -210,8 +248,8 @@ class ProjectGroupingTests(unittest.TestCase):
                 for file in group.files
             }
 
-            self.assertIn("article_evosim.html", grouped_paths)
-            self.assertIn("receipt_evosim.htm", grouped_paths)
+            self.assertIn("evosim_article.html", grouped_paths)
+            self.assertIn("evosim_receipt.htm", grouped_paths)
             self.assertNotIn("web_project/index.html", grouped_paths)
 
     def test_code_media_archive_config_and_protected_contexts_are_excluded(self) -> None:
@@ -225,10 +263,16 @@ class ProjectGroupingTests(unittest.TestCase):
                 "evosim.zip",
                 "evosim.json",
                 "node_modules/pkg/evosim.txt",
+                ".venv/lib/evosim.txt",
+                "venv/lib/evosim.txt",
+                "__pycache__/evosim.txt",
                 "Project.app/Contents/Resources/evosim.txt",
                 "Lib.framework/Resources/evosim.txt",
                 ".git/evosim.txt",
                 "Protected_Workspaces/evosim.txt",
+                "Instagram_files/evosim.html",
+                "project/resources/evosim.pdf",
+                "project/src/evosim.md",
             ]
             for relative_path in excluded_paths:
                 path = root / relative_path
@@ -252,6 +296,120 @@ class ProjectGroupingTests(unittest.TestCase):
 
             self.assertEqual(groups, [])
 
+    def test_locked_anchor_with_two_safe_files_creates_group(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "misc_alpha_notes.txt").write_text("notes", encoding="utf-8")
+            (root / "misc_beta_report.pdf").write_text("report", encoding="utf-8")
+            rules = OrganizationRules(
+                locked_anchors=frozenset({"misc"}),
+                ignored_terms=frozenset(),
+                anchor_aliases={},
+                anchor_display_names={"misc": "Misc"},
+            )
+
+            groups = find_project_groups(scan_directory(root), rules=rules)
+
+            self.assertEqual([group.group_name for group in groups], ["Misc"])
+
+    def test_locked_anchor_with_one_file_does_not_create_group(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "solo_notes.txt").write_text("notes", encoding="utf-8")
+            rules = OrganizationRules(
+                locked_anchors=frozenset({"solo"}),
+                ignored_terms=frozenset(),
+                anchor_aliases={},
+                anchor_display_names={"solo": "Solo"},
+            )
+
+            groups = find_project_groups(scan_directory(root), rules=rules)
+
+            self.assertEqual(groups, [])
+
+    def test_ignored_term_suppresses_locked_and_heuristic_suggestions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "evosim_notes.txt").write_text("notes", encoding="utf-8")
+            (root / "evosim_report.pdf").write_text("report", encoding="utf-8")
+            rules = OrganizationRules(
+                locked_anchors=frozenset({"evosim"}),
+                ignored_terms=frozenset({"evosim"}),
+                anchor_aliases={},
+                anchor_display_names={"evosim": "Evosim"},
+            )
+
+            groups = find_project_groups(scan_directory(root), rules=rules)
+            decisions = analyze_anchor_decisions(scan_directory(root), rules=rules)
+
+            self.assertEqual(groups, [])
+            self.assertEqual(decisions[0].decision, ANCHOR_DECISION_IGNORED)
+
+    def test_alias_normalization_merges_variants_before_grouping(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "CS1010x notes.pdf").write_text("notes", encoding="utf-8")
+            (root / "CS1010X slides.pptx").write_text("slides", encoding="utf-8")
+            rules, warnings = organization_rules_from_data(
+                {
+                    "version": 1,
+                    "locked_anchors": [],
+                    "ignored_terms": [],
+                    "anchor_aliases": {"CS1010x": "CS1010X"},
+                }
+            )
+
+            groups = find_project_groups(scan_directory(root), rules=rules)
+            decisions = analyze_anchor_decisions(scan_directory(root), rules=rules)
+
+            self.assertEqual(warnings, [])
+            self.assertEqual([group.group_name for group in groups], ["CS1010X"])
+            suggested = [
+                decision
+                for decision in decisions
+                if decision.decision == ANCHOR_DECISION_SUGGESTED
+            ]
+            self.assertEqual([decision.anchor for decision in suggested], ["CS1010X"])
+
+    def test_locked_anchor_does_not_bypass_protected_contexts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            protected = root / "node_modules" / "pkg"
+            protected.mkdir(parents=True)
+            (protected / "misc_notes.txt").write_text("notes", encoding="utf-8")
+            (protected / "misc_report.pdf").write_text("report", encoding="utf-8")
+            rules = OrganizationRules(
+                locked_anchors=frozenset({"misc"}),
+                ignored_terms=frozenset(),
+                anchor_aliases={},
+                anchor_display_names={"misc": "Misc"},
+            )
+
+            groups = find_project_groups(scan_directory(root), rules=rules)
+
+            self.assertEqual(groups, [])
+
+    def test_numeric_year_and_generic_anchors_are_not_suggested(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for filename in [
+                "2024_notes.pdf",
+                "2024_report.pdf",
+                "export_notes.pdf",
+                "export_report.pdf",
+            ]:
+                (root / filename).write_text("doc", encoding="utf-8")
+
+            decisions = analyze_anchor_decisions(scan_directory(root))
+
+            self.assertTrue(decisions)
+            self.assertTrue(
+                all(decision.decision != ANCHOR_DECISION_SUGGESTED for decision in decisions)
+            )
+            self.assertTrue(
+                any(decision.decision == ANCHOR_DECISION_IGNORED for decision in decisions)
+            )
+
 
 class OrganizationSuggestionTests(unittest.TestCase):
     def test_suggestions_create_destinations_under_organized_group_subfolder(self) -> None:
@@ -273,6 +431,44 @@ class OrganizationSuggestionTests(unittest.TestCase):
             self.assertEqual(
                 suggestions[0].plan_items[0].destination,
                 root / "Organized" / "Evosim" / "notes" / "evosim_notes.txt",
+            )
+
+    def test_course_code_role_based_subfolders_are_assigned_after_grouping(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            filenames = [
+                "CS1010X practical exam 2025 questions.pdf",
+                "CS1010X recitation 04.pdf",
+                "CS1010X finals 2026.pdf",
+                "CS1010X-lec12-Object-Oriented Programming.ppt",
+            ]
+            for filename in filenames:
+                (root / filename).write_text("course", encoding="utf-8")
+            groups = find_project_groups(scan_directory(root))
+
+            suggestions = build_organization_suggestions(groups, root)
+            destinations = {
+                item.source.name: item.destination.relative_to(
+                    root / "Organized" / "CS1010X"
+                ).as_posix()
+                for item in suggestions[0].plan_items
+            }
+
+            self.assertEqual(
+                destinations["CS1010X practical exam 2025 questions.pdf"],
+                "exams/CS1010X practical exam 2025 questions.pdf",
+            )
+            self.assertEqual(
+                destinations["CS1010X recitation 04.pdf"],
+                "recitations/CS1010X recitation 04.pdf",
+            )
+            self.assertEqual(
+                destinations["CS1010X finals 2026.pdf"],
+                "exams/CS1010X finals 2026.pdf",
+            )
+            self.assertEqual(
+                destinations["CS1010X-lec12-Object-Oriented Programming.ppt"],
+                "slides/CS1010X-lec12-Object-Oriented Programming.ppt",
             )
 
     def test_suggestion_plan_item_fields_are_dry_run_and_group_derived(self) -> None:

@@ -21,6 +21,8 @@ REPORT_TOP_LEVEL_KEYS = {
     "project_groups",
     "organization_suggestions",
     "refined_organization_suggestions",
+    "organization_rules",
+    "anchor_decisions",
     "warnings",
 }
 
@@ -62,10 +64,15 @@ class ReportGenerationTests(unittest.TestCase):
                 "review_candidate_counts_by_category",
                 "project_group_count",
                 "organization_suggestion_count",
+                "suggested_anchor_count",
+                "needs_decision_anchor_count",
+                "ignored_anchor_count",
                 "refinement_status",
             ]:
                 self.assertIn(key, summary)
             for key in [
+                "organization_rules",
+                "anchor_decisions",
                 "duplicates",
                 "duplicate_review_plan",
                 "review_candidates",
@@ -91,6 +98,8 @@ class ReportGenerationTests(unittest.TestCase):
             self.assertGreaterEqual(report["summary"]["project_group_count"], 1)
             self.assertGreaterEqual(report["summary"]["organization_suggestion_count"], 1)
             self.assertEqual(report["summary"]["refinement_status"], "not_requested")
+            self.assertEqual(report["organization_rules"]["status"], "defaults")
+            self.assertIn("suggested_groups", report["anchor_decisions"])
             self.assertEqual(report["duplicates"][0]["files"], ["a.txt", "subdir/b.txt"])
             self.assertIn("source", report["duplicate_review_plan"][0])
             self.assertIn("destination", report["organization_suggestions"][0]["plan_items"][0])
@@ -121,6 +130,128 @@ class ReportGenerationTests(unittest.TestCase):
             self.assertTrue(
                 any("Organization suggestions are unusually broad" in warning for warning in report["warnings"])
             )
+
+    def test_report_keeps_protected_duplicate_facts_but_filters_actionable_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "user_a.pdf").write_text("same-user", encoding="utf-8")
+            (root / "user_b.pdf").write_text("same-user", encoding="utf-8")
+            protected = root / "node_modules" / "pkg"
+            protected.mkdir(parents=True)
+            (protected / "dep_a.js").write_text("same-protected", encoding="utf-8")
+            (protected / "dep_b.js").write_text("same-protected", encoding="utf-8")
+            (protected / "file.tmp").write_text("temp", encoding="utf-8")
+            app_file = root / "Fake.app" / "Contents" / "notes.txt"
+            app_file.parent.mkdir(parents=True)
+            app_file.write_text("evosim", encoding="utf-8")
+            (root / "evosim_notes.txt").write_text("evosim", encoding="utf-8")
+
+            report = build_scan_report(root)
+
+            duplicate_fact_files = {
+                file
+                for group in report["duplicates"]
+                for file in group["files"]
+            }
+            duplicate_plan_sources = {
+                item["source"] for item in report["duplicate_review_plan"]
+            }
+            review_plan_sources = {
+                item["source"] for item in report["review_candidate_plan"]
+            }
+            organization_sources = {
+                item["source"]
+                for suggestion in report["organization_suggestions"]
+                for item in suggestion["plan_items"]
+            }
+
+            self.assertIn("node_modules/pkg/dep_a.js", duplicate_fact_files)
+            self.assertNotIn("node_modules/pkg/dep_b.js", duplicate_plan_sources)
+            self.assertNotIn("node_modules/pkg/file.tmp", review_plan_sources)
+            self.assertNotIn("Fake.app/Contents/notes.txt", organization_sources)
+            self.assertIn("user_b.pdf", duplicate_plan_sources)
+            self.assertTrue(
+                any("protected, generated" in warning for warning in report["warnings"])
+            )
+
+    def test_report_filters_generated_assets_and_keeps_strong_course_group(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            generated = root / "Instagram_files"
+            generated.mkdir()
+            (generated / "a.js").write_text("same", encoding="utf-8")
+            (generated / "b.js").write_text("same", encoding="utf-8")
+            (generated / "file.tmp").write_text("temporary", encoding="utf-8")
+            (root / "CS1010X practical exam 2025 questions.pdf").write_text("course", encoding="utf-8")
+            (root / "CS1010X recitation 04.pdf").write_text("course", encoding="utf-8")
+            (root / "summary_one.pdf").write_text("weak", encoding="utf-8")
+            (root / "summary_two.pdf").write_text("weak", encoding="utf-8")
+
+            report = build_scan_report(root)
+
+            duplicate_fact_files = {
+                file
+                for group in report["duplicates"]
+                for file in group["files"]
+            }
+            actionable_sources = {
+                item["source"]
+                for item in report["duplicate_review_plan"] + report["review_candidate_plan"]
+            }
+            organization_groups = {
+                suggestion["group_name"]
+                for suggestion in report["organization_suggestions"]
+            }
+
+            self.assertIn("Instagram_files/a.js", duplicate_fact_files)
+            self.assertNotIn("Instagram_files/b.js", actionable_sources)
+            self.assertNotIn("Instagram_files/file.tmp", actionable_sources)
+            self.assertIn("CS1010X", organization_groups)
+            self.assertNotIn("Summary", organization_groups)
+
+    def test_report_loads_organization_rules_and_reports_anchor_decisions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "AI_Review" / "config" / "organization_rules.json"
+            config.parent.mkdir(parents=True)
+            config.write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "locked_anchors": ["Misc"],
+                        "ignored_terms": ["EvoSim"],
+                        "anchor_aliases": {"cs1010x": "CS1010X"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "misc_notes.txt").write_text("notes", encoding="utf-8")
+            (root / "misc_report.pdf").write_text("report", encoding="utf-8")
+            (root / "evosim_notes.txt").write_text("notes", encoding="utf-8")
+            (root / "evosim_report.pdf").write_text("report", encoding="utf-8")
+
+            report = build_scan_report(root)
+
+            self.assertEqual(report["organization_rules"]["status"], "loaded")
+            self.assertEqual(
+                report["organization_rules"]["path"],
+                "AI_Review/config/organization_rules.json",
+            )
+            self.assertEqual(report["summary"]["suggested_anchor_count"], 1)
+            self.assertGreaterEqual(report["summary"]["ignored_anchor_count"], 1)
+            suggested_anchors = {
+                item["anchor"] for item in report["anchor_decisions"]["suggested_groups"]
+            }
+            ignored_anchors = {
+                item["anchor"] for item in report["anchor_decisions"]["ignored_terms"]
+            }
+            organization_groups = {
+                suggestion["group_name"] for suggestion in report["organization_suggestions"]
+            }
+            self.assertIn("Misc", suggested_anchors)
+            self.assertIn("EvoSim", ignored_anchors)
+            self.assertIn("Misc", organization_groups)
+            self.assertNotIn("Evosim", organization_groups)
 
 
 class ReportOutputSafetyTests(unittest.TestCase):

@@ -19,6 +19,7 @@ from organizer.models import (
     ReviewedPlanItem,
 )
 from organizer.ollama_client import OllamaClient
+from organizer.organization_rules import load_organization_rules
 from organizer.planner import build_duplicate_review_plan
 from organizer.reports import build_scan_report, default_report_path, write_report
 from organizer.review import build_review_candidate_plan, detect_review_candidates
@@ -124,6 +125,7 @@ def main() -> int:
         return 0
 
     metadata_items = scan_directory(args.folder, max_depth=args.max_depth)
+    organization_rules = load_organization_rules(args.folder).rules
     print(f"Metadata report for {args.folder.resolve()}")
     print(f"Items: {len(metadata_items)}")
 
@@ -155,7 +157,11 @@ def main() -> int:
     if args.plan_duplicates or args.apply_duplicate_plan:
         if duplicate_groups is None:
             duplicate_groups = find_exact_duplicates(metadata_items)
-        plan_items = build_duplicate_review_plan(duplicate_groups, args.folder)
+        plan_items = build_duplicate_review_plan(
+            duplicate_groups,
+            args.folder,
+            all_metadata=metadata_items,
+        )
         _print_duplicate_review_plan(plan_items)
         if not plan_items:
             return 0
@@ -189,12 +195,12 @@ def main() -> int:
     project_groups = None
 
     if args.project_groups:
-        project_groups = find_project_groups(metadata_items)
+        project_groups = find_project_groups(metadata_items, rules=organization_rules)
         _print_project_groups(project_groups)
 
     if args.plan_organization or args.apply_organization_plan:
         if project_groups is None:
-            project_groups = find_project_groups(metadata_items)
+            project_groups = find_project_groups(metadata_items, rules=organization_rules)
         suggestions = build_organization_suggestions(project_groups, args.folder)
         _print_organization_suggestions(suggestions)
         plan_items = _flatten_plan_items(suggestions)
@@ -222,7 +228,7 @@ def main() -> int:
     ):
         _validate_llm_args(parser, args.llm_provider, args.llm_model)
         if project_groups is None:
-            project_groups = find_project_groups(metadata_items)
+            project_groups = find_project_groups(metadata_items, rules=organization_rules)
         client = OllamaClient(
             model=args.llm_model,
             host=args.ollama_host,

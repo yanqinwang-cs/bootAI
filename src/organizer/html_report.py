@@ -25,6 +25,8 @@ def render_html_report(report: dict[str, object]) -> str:
             "    <p class=\"lede\">Read-only report. Suggested moves are dry-run plan items and are not approved or applied by this HTML file.</p>",
             _metadata_section(report),
             _summary_section(report.get("summary")),
+            _organization_rules_section(report.get("organization_rules")),
+            _anchor_decisions_section(report.get("anchor_decisions")),
             _warnings_section(report.get("warnings")),
             _plan_section(
                 "Duplicate review plan",
@@ -112,6 +114,56 @@ def _warnings_section(warnings: object) -> str:
         return _section("Warnings", _empty_message())
     items = "".join(f"<li>{_escape(warning)}</li>" for warning in warnings)
     return _section("Warnings", f"<ul class=\"warnings\">{items}</ul>")
+
+
+def _organization_rules_section(rules: object) -> str:
+    if not isinstance(rules, dict) or not rules:
+        return _section("Organization rules", _empty_message())
+    locked_anchors = rules.get("locked_anchors", [])
+    locked_text = ", ".join(str(anchor) for anchor in locked_anchors) if isinstance(locked_anchors, list) and locked_anchors else "None"
+    rows = [
+        ["Status", rules.get("status", "")],
+        ["Path", rules.get("path", "") or "(built-in defaults)"],
+        ["Message", rules.get("message", "")],
+        ["Locked anchors", locked_text],
+    ]
+    return _section("Organization rules", _table(["Field", "Value"], rows))
+
+
+def _anchor_decisions_section(anchor_decisions: object) -> str:
+    if not isinstance(anchor_decisions, dict) or not anchor_decisions:
+        return _section("Anchor decisions", _empty_message())
+    blocks = [
+        _anchor_decision_table("Suggested groups", anchor_decisions.get("suggested_groups")),
+        _anchor_decision_table("Needs decision", anchor_decisions.get("needs_decision")),
+        _anchor_decision_table("Ignored terms", anchor_decisions.get("ignored_terms")),
+    ]
+    return _section("Anchor decisions", "".join(blocks))
+
+
+def _anchor_decision_table(title: str, decisions: object) -> str:
+    if not isinstance(decisions, list) or not decisions:
+        return f"<h3>{_escape(title)}</h3>{_empty_message()}"
+    rows = []
+    for decision in decisions:
+        if not isinstance(decision, dict):
+            continue
+        examples = decision.get("examples", [])
+        rows.append(
+            [
+                decision.get("anchor", ""),
+                decision.get("file_count", ""),
+                decision.get("evidence", ""),
+                decision.get("reason", ""),
+                ", ".join(str(example) for example in examples) if isinstance(examples, list) else "",
+            ]
+        )
+    if not rows:
+        return f"<h3>{_escape(title)}</h3>{_empty_message()}"
+    return (
+        f"<h3>{_escape(title)}</h3>"
+        + _table(["Anchor", "Files", "Evidence", "Reason", "Examples"], rows)
+    )
 
 
 def _review_candidates_section(candidates: object) -> str:

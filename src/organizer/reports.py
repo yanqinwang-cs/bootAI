@@ -7,7 +7,15 @@ from pathlib import Path
 from typing import Any
 
 from organizer.duplicates import find_exact_duplicates
-from organizer.grouping import build_organization_suggestions, find_project_groups
+from organizer.grouping import (
+    ANCHOR_DECISION_IGNORED,
+    ANCHOR_DECISION_NEEDS_DECISION,
+    ANCHOR_DECISION_SUGGESTED,
+    AnchorDecision,
+    analyze_anchor_decisions,
+    build_organization_suggestions,
+    find_project_groups,
+)
 from organizer.llm_refinement import (
     build_refined_organization_suggestion,
     refine_project_groups_with_ollama,
@@ -20,10 +28,12 @@ from organizer.models import (
     ProjectGroup,
     ReviewCandidate,
 )
+from organizer.organization_rules import OrganizationRulesLoadResult, load_organization_rules
 from organizer.planner import build_duplicate_review_plan
 from organizer.review import build_review_candidate_plan, detect_review_candidates
 from organizer.safety import validate_under_root
 from organizer.scanner import scan_directory
+from organizer.scope import is_actionable_plan_eligible
 
 REPORT_SCHEMA_VERSION = 1
 
@@ -37,24 +47,44 @@ def build_scan_report(
     resolved_root = root.resolve()
     metadata_items = scan_directory(resolved_root, max_depth=max_depth)
     file_items = [item for item in metadata_items if not item.is_dir]
+    organization_rules = load_organization_rules(resolved_root)
 
     duplicate_groups = find_exact_duplicates(metadata_items)
     duplicate_review_plan = build_duplicate_review_plan(
         duplicate_groups,
         resolved_root,
+        all_metadata=metadata_items,
     )
     review_candidates = detect_review_candidates(metadata_items)
     review_candidate_plan = build_review_candidate_plan(
         review_candidates,
         resolved_root,
     )
-    project_groups = find_project_groups(metadata_items)
+    anchor_decisions = analyze_anchor_decisions(
+        metadata_items,
+        rules=organization_rules.rules,
+    )
+    project_groups = find_project_groups(
+        metadata_items,
+        rules=organization_rules.rules,
+    )
     organization_suggestions = build_organization_suggestions(
         project_groups,
         resolved_root,
     )
 
     warnings: list[str] = []
+    warnings.extend(organization_rules.warnings)
+    protected_duplicate_candidate_count = _protected_duplicate_candidate_count(
+        duplicate_groups,
+        metadata_items,
+    )
+    if protected_duplicate_candidate_count:
+        warnings.append(
+            f"{protected_duplicate_candidate_count} exact duplicate file(s) are in "
+            "protected, generated, or project-output contexts and were not included "
+            "as actionable duplicate review plan candidates."
+        )
     refinement_status = "not_requested"
     refined_suggestions: list[OrganizationSuggestion] = []
 
@@ -114,8 +144,22 @@ def build_scan_report(
             ),
             "project_group_count": len(project_groups),
             "organization_suggestion_count": organization_suggestion_count,
+            "suggested_anchor_count": _anchor_decision_count(
+                anchor_decisions,
+                ANCHOR_DECISION_SUGGESTED,
+            ),
+            "needs_decision_anchor_count": _anchor_decision_count(
+                anchor_decisions,
+                ANCHOR_DECISION_NEEDS_DECISION,
+            ),
+            "ignored_anchor_count": _anchor_decision_count(
+                anchor_decisions,
+                ANCHOR_DECISION_IGNORED,
+            ),
             "refinement_status": refinement_status,
         },
+        "organization_rules": _organization_rules_to_report(organization_rules, resolved_root),
+        "anchor_decisions": _anchor_decisions_to_report(anchor_decisions),
         "duplicates": [
             _duplicate_group_to_report(group)
             for group in duplicate_groups
@@ -220,6 +264,66 @@ def _duplicate_group_to_report(group: DuplicateGroup) -> dict[str, Any]:
     }
 
 
+def _organization_rules_to_report(
+    load_result: OrganizationRulesLoadResult,
+    root: Path,
+) -> dict[str, Any]:
+    source_path = None
+    if load_result.source_path is not None:
+        source_path = load_result.source_path.relative_to(root).as_posix()
+    return {
+        "status": load_result.status,
+        "path": source_path,
+        "message": load_result.message,
+        "locked_anchors": sorted(
+            load_result.rules.anchor_display_names.get(anchor, anchor)
+            for anchor in load_result.rules.locked_anchors
+        ),
+        "ignored_terms": sorted(load_result.rules.ignored_terms),
+        "anchor_aliases": dict(sorted(load_result.rules.anchor_aliases.items())),
+    }
+
+
+def _anchor_decisions_to_report(
+    anchor_decisions: list[AnchorDecision],
+) -> dict[str, list[dict[str, Any]]]:
+    return {
+        "suggested_groups": [
+            _anchor_decision_to_report(decision)
+            for decision in anchor_decisions
+            if decision.decision == ANCHOR_DECISION_SUGGESTED
+        ],
+        "needs_decision": [
+            _anchor_decision_to_report(decision)
+            for decision in anchor_decisions
+            if decision.decision == ANCHOR_DECISION_NEEDS_DECISION
+        ],
+        "ignored_terms": [
+            _anchor_decision_to_report(decision)
+            for decision in anchor_decisions
+            if decision.decision == ANCHOR_DECISION_IGNORED
+        ],
+    }
+
+
+def _anchor_decision_to_report(decision: AnchorDecision) -> dict[str, Any]:
+    return {
+        "anchor": decision.anchor,
+        "decision": decision.decision,
+        "reason": decision.reason,
+        "evidence": decision.evidence,
+        "file_count": decision.file_count,
+        "examples": decision.examples,
+    }
+
+
+def _anchor_decision_count(
+    anchor_decisions: list[AnchorDecision],
+    decision: str,
+) -> int:
+    return sum(1 for item in anchor_decisions if item.decision == decision)
+
+
 def _organization_suggestions_are_unusually_broad(
     organization_suggestion_count: int,
     file_count: int,
@@ -227,6 +331,18 @@ def _organization_suggestions_are_unusually_broad(
     if organization_suggestion_count > 1000:
         return True
     return file_count > 0 and organization_suggestion_count / file_count > 0.5
+
+
+def _protected_duplicate_candidate_count(
+    duplicate_groups: list[DuplicateGroup],
+    metadata_items: list[FileMetadata],
+) -> int:
+    return sum(
+        1
+        for group in duplicate_groups
+        for metadata in group.files
+        if not is_actionable_plan_eligible(metadata, metadata_items)
+    )
 
 
 def _review_candidate_to_report(candidate: ReviewCandidate) -> dict[str, Any]:

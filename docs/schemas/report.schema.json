@@ -17,6 +17,8 @@
     "project_groups",
     "organization_suggestions",
     "refined_organization_suggestions",
+    "organization_rules",
+    "anchor_decisions",
     "warnings"
   ],
   "properties": {
@@ -41,6 +43,9 @@
         "review_candidate_counts_by_category",
         "project_group_count",
         "organization_suggestion_count",
+        "suggested_anchor_count",
+        "needs_decision_anchor_count",
+        "ignored_anchor_count",
         "refinement_status"
       ],
       "properties": {
@@ -76,6 +81,18 @@
           "minimum": 0
         },
         "organization_suggestion_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "suggested_anchor_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "needs_decision_anchor_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ignored_anchor_count": {
           "type": "integer",
           "minimum": 0
         },
@@ -129,6 +146,12 @@
       "items": {
         "$ref": "#/$defs/organization_suggestion"
       }
+    },
+    "organization_rules": {
+      "$ref": "#/$defs/organization_rules"
+    },
+    "anchor_decisions": {
+      "$ref": "#/$defs/anchor_decisions"
     },
     "warnings": {
       "type": "array",
@@ -236,6 +259,115 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/plan_item"
+          }
+        }
+      }
+    },
+    "organization_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "path",
+        "message",
+        "locked_anchors",
+        "ignored_terms",
+        "anchor_aliases"
+      ],
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "locked_anchors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ignored_terms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "anchor_aliases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "anchor_decisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "suggested_groups",
+        "needs_decision",
+        "ignored_terms"
+      ],
+      "properties": {
+        "suggested_groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/anchor_decision"
+          }
+        },
+        "needs_decision": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/anchor_decision"
+          }
+        },
+        "ignored_terms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/anchor_decision"
+          }
+        }
+      }
+    },
+    "anchor_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "anchor",
+        "decision",
+        "reason",
+        "evidence",
+        "file_count",
+        "examples"
+      ],
+      "properties": {
+        "anchor": {
+          "type": "string"
+        },
+        "decision": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "file_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }

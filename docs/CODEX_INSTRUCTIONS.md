@@ -17,7 +17,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.4.1 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
+Stages 1 through 10.4.4 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, protected/generated/project-output exclusion from actionable plans, strong-anchor organization, read-only organization rules and anchor-decision reporting, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
 
 ## Reuse Before Create
 
@@ -30,6 +30,7 @@ Stages 1 through 10.4.1 are complete. Current code supports scanning, duplicate 
 - `duplicates.py` owns hashing and exact duplicate grouping.
 - `review.py` owns heuristic review candidates.
 - `scope.py` owns deterministic organization-scope and orphan-code classification helpers only.
+- `organization_rules.py` owns read-only organization-rules loading and validation.
 - `grouping.py` owns deterministic project grouping.
 - `llm_refinement.py` owns prompt, payload, and validation for LLM group refinement.
 - `reports.py` owns read-only report assembly and JSON report writing.
@@ -79,6 +80,11 @@ Answer these before editing:
 - Stage 10.4 HTML reports must not include approval buttons, apply buttons, review actions, server behavior, or operation-log behavior.
 - Stage 10.4.1 normal organization scope is conservative and document-like by default.
 - Stage 10.4.1 orphan code is a candidate for review only and must not be broadly organized.
+- Stage 10.4.2 protected-context files must not become actionable move candidates by default.
+- Stage 10.4.2 exact duplicate facts must remain distinct from duplicate review candidates.
+- Stage 10.4.3 generated web/archive assets and contextual project-output files must not become actionable move candidates by default.
+- Stage 10.4.3 organization suggestions must use strong grouping evidence, not confidence alone.
+- Stage 10.4.4 organization rules are read-only; aliases resolve before decisions, ignored terms win over locked anchors, and locked anchors do not bypass scope exclusions.
 - Stage 10.5 static HTML review export remains future work.
 - Stage 10.6 filtering, sorting, and pagination remain future work.
 - Stage 10.7 saved-session resume and editing remain future work.
