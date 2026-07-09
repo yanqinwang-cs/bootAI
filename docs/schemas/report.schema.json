@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/bootai/report.schema.json",
-  "title": "bootAI Stage 9 Report",
-  "description": "Documentation-only schema reference for Stage 9 JSON reports. Runtime code does not import or enforce this schema.",
+  "title": "bootAI JSON Report",
+  "description": "Documentation-only schema reference for bootAI JSON reports. Runtime code does not import or enforce this schema.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -19,6 +19,7 @@
     "refined_organization_suggestions",
     "organization_rules",
     "anchor_decisions",
+    "organization_pattern_inference",
     "warnings"
   ],
   "properties": {
@@ -46,6 +47,8 @@
         "suggested_anchor_count",
         "needs_decision_anchor_count",
         "ignored_anchor_count",
+        "organization_pattern_count",
+        "inferred_rule_candidate_count",
         "refinement_status"
       ],
       "properties": {
@@ -93,6 +96,14 @@
           "minimum": 0
         },
         "ignored_anchor_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "organization_pattern_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "inferred_rule_candidate_count": {
           "type": "integer",
           "minimum": 0
         },
@@ -152,6 +163,9 @@
     },
     "anchor_decisions": {
       "$ref": "#/$defs/anchor_decisions"
+    },
+    "organization_pattern_inference": {
+      "$ref": "#/$defs/organization_pattern_inference"
     },
     "warnings": {
       "type": "array",
@@ -365,6 +379,135 @@
           "minimum": 0
         },
         "examples": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pattern_evidence": {
+          "$ref": "#/$defs/pattern_evidence"
+        }
+      }
+    },
+    "pattern_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "priority",
+        "matched_patterns",
+        "reason"
+      ],
+      "properties": {
+        "priority": {
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "none"
+          ]
+        },
+        "matched_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "organization_pattern_inference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "patterns",
+        "rule_candidates"
+      ],
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/organization_pattern"
+          }
+        },
+        "rule_candidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inferred_rule_candidate"
+          }
+        }
+      }
+    },
+    "organization_pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pattern_type",
+        "confidence",
+        "reason",
+        "examples",
+        "affected_anchors",
+        "supported_anchors"
+      ],
+      "properties": {
+        "pattern_type": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "reason": {
+          "type": "string"
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "affected_anchors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supported_anchors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "inferred_rule_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_type",
+        "value",
+        "confidence",
+        "reason",
+        "evidence_paths"
+      ],
+      "properties": {
+        "rule_type": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "reason": {
+          "type": "string"
+        },
+        "evidence_paths": {
           "type": "array",
           "items": {
             "type": "string"

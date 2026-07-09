@@ -27,6 +27,7 @@ class HtmlReportRenderingTests(unittest.TestCase):
         self.assertIn("Summary", html)
         self.assertIn("Organization rules", html)
         self.assertIn("Anchor decisions", html)
+        self.assertIn("Inferred organization patterns", html)
         self.assertIn("Suggested groups", html)
         self.assertIn("Needs decision", html)
         self.assertIn("Ignored terms", html)
@@ -41,6 +42,7 @@ class HtmlReportRenderingTests(unittest.TestCase):
         self.assertIn("dry-run plan item", html)
         self.assertIn("candidate for review", html.lower())
         self.assertIn("suggested move", html)
+        self.assertIn("suggestions only", html)
 
     def test_empty_sections_show_clear_empty_message(self) -> None:
         report = sample_report()
@@ -107,8 +109,17 @@ class HtmlReportRenderingTests(unittest.TestCase):
         self.assertIn("Needs decision", html)
         self.assertIn("Ignored terms", html)
         self.assertIn("Locked anchors", html)
+        self.assertIn("high: course_code_foldering", html)
         self.assertNotIn("ambiguous", html.lower())
         self.assertNotIn("suppressed", html.lower())
+
+    def test_html_report_renders_pattern_inference(self) -> None:
+        html = render_html_report(sample_report())
+
+        self.assertIn("Inferred organization patterns", html)
+        self.assertIn("course_code_foldering", html)
+        self.assertIn("preferred_granularity_candidate", html)
+        self.assertIn("do not change rules or move files automatically", html)
 
 
 class HtmlReportOutputTests(unittest.TestCase):
@@ -299,6 +310,8 @@ def sample_report() -> dict[str, object]:
             "suggested_anchor_count": 1,
             "needs_decision_anchor_count": 1,
             "ignored_anchor_count": 1,
+            "organization_pattern_count": 1,
+            "inferred_rule_candidate_count": 1,
             "refinement_status": "not_requested",
         },
         "organization_rules": {
@@ -328,6 +341,11 @@ def sample_report() -> dict[str, object]:
                     "evidence": "needs_decision",
                     "file_count": 2,
                     "examples": ["Wang_notes.txt", "Wang_report.pdf"],
+                    "pattern_evidence": {
+                        "priority": "high",
+                        "matched_patterns": ["course_code_foldering"],
+                        "reason": "Existing folders suggest this root may group course materials by module code.",
+                    },
                 }
             ],
             "ignored_terms": [
@@ -338,6 +356,26 @@ def sample_report() -> dict[str, object]:
                     "evidence": "named_project",
                     "file_count": 2,
                     "examples": ["summary_notes.txt", "summary_report.pdf"],
+                }
+            ],
+        },
+        "organization_pattern_inference": {
+            "patterns": [
+                {
+                    "pattern_type": "course_code_foldering",
+                    "confidence": 82,
+                    "reason": "Existing folders contain files whose names match their course-code folder names.",
+                    "examples": ["CS1010X/CS1010X finals.pdf"],
+                    "affected_anchors": ["Wang"],
+                }
+            ],
+            "rule_candidates": [
+                {
+                    "rule_type": "preferred_granularity_candidate",
+                    "value": "course_code",
+                    "confidence": 82,
+                    "reason": "Course-code folders are already used in this root.",
+                    "evidence_paths": ["CS1010X"],
                 }
             ],
         },

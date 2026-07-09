@@ -83,6 +83,11 @@ The report format is documented in [REPORT_FORMAT](REPORT_FORMAT.md). A compact 
 
 Reports include read-only organization-rules status and alias-normalized anchor decisions. If `AI_Review/config/organization_rules.json` exists, it is loaded for reporting and grouping decisions. If it is missing, conservative built-in defaults are used. The CLI does not create or edit this rules file.
 
+Reports also include existing organization pattern inference. This is report-only
+weak preference evidence from existing eligible folders. It can rank
+`Needs decision` anchors and suggest manual rule candidates, but it does not
+write rules, create move plans directly, or apply moves.
+
 ## Grouping
 
 ```bash

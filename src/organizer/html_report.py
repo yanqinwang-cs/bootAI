@@ -27,6 +27,9 @@ def render_html_report(report: dict[str, object]) -> str:
             _summary_section(report.get("summary")),
             _organization_rules_section(report.get("organization_rules")),
             _anchor_decisions_section(report.get("anchor_decisions")),
+            _organization_pattern_inference_section(
+                report.get("organization_pattern_inference")
+            ),
             _warnings_section(report.get("warnings")),
             _plan_section(
                 "Duplicate review plan",
@@ -159,6 +162,7 @@ def _anchor_decision_table(title: str, decisions: object) -> str:
                 decision.get("anchor", ""),
                 decision.get("file_count", ""),
                 decision.get("evidence", ""),
+                _pattern_evidence_summary(decision.get("pattern_evidence")),
                 decision.get("reason", ""),
                 ", ".join(str(example) for example in examples) if isinstance(examples, list) else "",
             ]
@@ -167,8 +171,89 @@ def _anchor_decision_table(title: str, decisions: object) -> str:
         return f"<h3>{_escape(title)}</h3>{_empty_message()}"
     return (
         f"<h3>{_escape(title)}</h3>"
-        + _table(["Anchor", "Files", "Evidence", "Reason", "Examples"], rows)
+        + _table(["Anchor", "Files", "Evidence", "Pattern evidence", "Reason", "Examples"], rows)
     )
+
+
+def _organization_pattern_inference_section(inference: object) -> str:
+    if not isinstance(inference, dict) or not inference:
+        return _section("Inferred organization patterns", _empty_message())
+    patterns = inference.get("patterns")
+    rule_candidates = inference.get("rule_candidates")
+    blocks = [
+        (
+            "<p>bootAI found existing folder patterns that may reflect how this "
+            "root is already organized. These are suggestions only. They do not "
+            "change rules or move files automatically.</p>"
+        ),
+        _pattern_table(patterns),
+        _rule_candidate_table(rule_candidates),
+    ]
+    return _section("Inferred organization patterns", "".join(blocks))
+
+
+def _pattern_table(patterns: object) -> str:
+    if not isinstance(patterns, list) or not patterns:
+        return "<h3>Patterns</h3>" + _empty_message()
+    rows = []
+    for pattern in patterns:
+        if not isinstance(pattern, dict):
+            continue
+        rows.append(
+            [
+                pattern.get("pattern_type", ""),
+                pattern.get("confidence", ""),
+                pattern.get("reason", ""),
+                pattern.get("examples", []),
+                pattern.get("affected_anchors", []),
+            ]
+        )
+    if not rows:
+        return "<h3>Patterns</h3>" + _empty_message()
+    return (
+        "<h3>Patterns</h3>"
+        + _table(
+            ["Pattern type", "Confidence", "Reason", "Examples", "Affected anchors"],
+            rows,
+        )
+    )
+
+
+def _rule_candidate_table(rule_candidates: object) -> str:
+    if not isinstance(rule_candidates, list) or not rule_candidates:
+        return "<h3>Suggested rule candidates</h3>" + _empty_message()
+    rows = []
+    for candidate in rule_candidates:
+        if not isinstance(candidate, dict):
+            continue
+        rows.append(
+            [
+                candidate.get("rule_type", ""),
+                candidate.get("value", ""),
+                candidate.get("confidence", ""),
+                candidate.get("reason", ""),
+                candidate.get("evidence_paths", []),
+            ]
+        )
+    if not rows:
+        return "<h3>Suggested rule candidates</h3>" + _empty_message()
+    return (
+        "<h3>Suggested rule candidates</h3>"
+        + _table(
+            ["Rule type", "Value", "Confidence", "Reason", "Evidence paths"],
+            rows,
+        )
+    )
+
+
+def _pattern_evidence_summary(pattern_evidence: object) -> str:
+    if not isinstance(pattern_evidence, dict):
+        return ""
+    priority = pattern_evidence.get("priority", "")
+    reason = pattern_evidence.get("reason", "")
+    matched = pattern_evidence.get("matched_patterns", [])
+    matched_text = ", ".join(str(pattern) for pattern in matched) if isinstance(matched, list) else str(matched)
+    return f"{priority}: {matched_text}. {reason}".strip()
 
 
 def _review_candidates_section(candidates: object) -> str:

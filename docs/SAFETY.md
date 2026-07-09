@@ -39,6 +39,8 @@
 - Broad course/name/project/organization anchors are non-actionable by default.
 - Concrete organization suggestions require narrow repeated document-set evidence or an explicit locked anchor.
 - Organization rules are read-only in Stage 10.4.4.
+- Existing organization pattern inference is report-only and must not write organization rules.
+- Existing folder patterns must not create `MovePlanItem` values directly or approve broad organization.
 - Locked anchors must not bypass protected/generated/project-output exclusions.
 - Locked anchors should require at least two eligible safe files before producing organization suggestions.
 - Ignored terms win over locked anchors after alias normalization.

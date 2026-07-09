@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.4.4 are implemented. The tool can currently:
+Stages 1 through 10.5 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -16,6 +16,7 @@ Stages 1 through 10.4.4 are implemented. The tool can currently:
 - Group document-like files deterministically.
 - Load optional read-only organization rules from `AI_Review/config/organization_rules.json`.
 - Report alias-normalized anchor decisions for suggested groups, anchors needing a user decision, and ignored terms.
+- Infer existing organization patterns for reports without writing rules.
 - Suggest organization plans.
 - Flag isolated code files as candidates for review.
 - Optionally refine organization suggestions with local Ollama.
@@ -28,7 +29,7 @@ Stages 1 through 10.4.4 are implemented. The tool can currently:
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.4.4 keeps organization rules read-only, resolves aliases before reporting anchor decisions, and lets ignored terms win over locked anchors. Broad anchors such as course codes, project names, personal names, and organization-like terms are reported as needing a decision unless locked; concrete suggestions are reserved for narrow repeated document sets. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.5 adds report-only existing organization pattern inference. Existing folders can raise the priority of related `Needs decision` anchors and suggest manual rule candidates, but they do not create or edit `organization_rules.json`, create move plans directly, or approve broad organization. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -117,6 +118,9 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Organization rules are optional and read-only; create `AI_Review/config/organization_rules.json` manually if you need locked anchors, ignored terms, or aliases.
 - Locked anchors still require at least two eligible safe files and do not bypass protected/generated/project-output exclusions.
 - Reports show anchor decisions after alias normalization: suggested narrow groups, broad anchors needing a decision, and ignored terms.
+- Reports show inferred organization patterns as weak preference evidence only.
+- Compound folders such as `cs1010x finals/` or `EvoSim images/` can provide report-only evidence.
+- Inferred rule candidates are suggestions for manual review; they are not written automatically.
 - Review mode approve/reject/save commands do not move files.
 - Review mode stores decision memory under `AI_Review/review_state/review_decisions.json`.
 - Review state is decision memory, not an operation log, and does not record filesystem success.

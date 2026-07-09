@@ -1,6 +1,6 @@
 # Release Notes
 
-## Current Status Through Stage 10.4.4
+## Current Status Through Stage 10.5
 
 Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the existing JSON report and a browser-openable HTML rendering from the same report data without approving or applying moves.
 
@@ -11,6 +11,8 @@ Stage 10.4.2 excludes protected contexts from actionable move plans. Exact dupli
 Stage 10.4.3 requires strong organization anchors, suppresses weak top-level token groups, assigns role-based subfolders after grouping, and excludes generated web/archive and contextual project-output assets from actionable plans.
 
 Stage 10.4.4 adds optional read-only organization rules loaded from `AI_Review/config/organization_rules.json` when present. It reports alias-normalized anchor decisions as suggested narrow groups, broad anchors needing a user decision, and ignored terms. Ignored terms win over locked anchors, locked anchors still require at least two eligible safe files, and broad anchors are non-actionable by default unless locked.
+
+Stage 10.5 adds report-only existing organization pattern inference. Existing folders can provide weak local preference evidence for course-code, project, person/student, role, year, or format foldering. Reports can rank related `Needs decision` anchors and show inferred rule candidates, but no rules file is written, no move plans are created directly from inference, and no files move.
 
 ## Stage Summary
 
@@ -37,6 +39,7 @@ Stage 10.4.4 adds optional read-only organization rules loaded from `AI_Review/c
 - Stage 10.4.2: protected-context exclusion across actionable plans.
 - Stage 10.4.3: strong anchor organization, role-based subfolders, and generated asset suppression.
 - Stage 10.4.4: read-only organization rules and anchor-decision reporting.
+- Stage 10.5: existing organization pattern inference for JSON and HTML reports.
 
 ## Safety Model
 
@@ -66,6 +69,7 @@ Stage 10.4.4 adds optional read-only organization rules loaded from `AI_Review/c
 - Organization rules are read-only; the CLI does not create or edit `AI_Review/config/organization_rules.json`.
 - Anchor aliases are resolved before reporting; ignored terms win over locked anchors.
 - Broad course/name/project/organization anchors are reported for decision instead of becoming concrete organization suggestions by default.
+- Existing folder patterns are weak preference evidence in reports only; inferred rule candidates are not written automatically.
 - Exact duplicate facts remain distinct from duplicate move candidates.
 
 ## Current CLI Capabilities

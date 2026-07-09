@@ -29,6 +29,14 @@ from organizer.models import (
     ReviewCandidate,
 )
 from organizer.organization_rules import OrganizationRulesLoadResult, load_organization_rules
+from organizer.pattern_inference import (
+    InferredRuleCandidate,
+    OrganizationPattern,
+    PatternInferenceResult,
+    infer_organization_patterns,
+    pattern_evidence_for_anchor,
+    pattern_priority_for_anchor,
+)
 from organizer.planner import build_duplicate_review_plan
 from organizer.review import build_review_candidate_plan, detect_review_candidates
 from organizer.safety import validate_under_root
@@ -63,6 +71,10 @@ def build_scan_report(
     anchor_decisions = analyze_anchor_decisions(
         metadata_items,
         rules=organization_rules.rules,
+    )
+    pattern_inference = infer_organization_patterns(
+        metadata_items,
+        anchor_decisions,
     )
     project_groups = find_project_groups(
         metadata_items,
@@ -156,10 +168,16 @@ def build_scan_report(
                 anchor_decisions,
                 ANCHOR_DECISION_IGNORED,
             ),
+            "organization_pattern_count": len(pattern_inference.patterns),
+            "inferred_rule_candidate_count": len(pattern_inference.rule_candidates),
             "refinement_status": refinement_status,
         },
         "organization_rules": _organization_rules_to_report(organization_rules, resolved_root),
-        "anchor_decisions": _anchor_decisions_to_report(anchor_decisions),
+        "anchor_decisions": _anchor_decisions_to_report(
+            anchor_decisions,
+            pattern_inference,
+        ),
+        "organization_pattern_inference": _pattern_inference_to_report(pattern_inference),
         "duplicates": [
             _duplicate_group_to_report(group)
             for group in duplicate_groups
@@ -286,34 +304,103 @@ def _organization_rules_to_report(
 
 def _anchor_decisions_to_report(
     anchor_decisions: list[AnchorDecision],
+    pattern_inference: PatternInferenceResult | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
+    needs_decision_items = [
+        decision
+        for decision in anchor_decisions
+        if decision.decision == ANCHOR_DECISION_NEEDS_DECISION
+    ]
+    if pattern_inference is not None:
+        needs_decision_items = sorted(
+            needs_decision_items,
+            key=lambda decision: (
+                _pattern_priority_rank(pattern_priority_for_anchor(decision.anchor, pattern_inference)),
+                -decision.file_count,
+                decision.anchor,
+            ),
+        )
     return {
         "suggested_groups": [
-            _anchor_decision_to_report(decision)
+            _anchor_decision_to_report(decision, pattern_inference)
             for decision in anchor_decisions
             if decision.decision == ANCHOR_DECISION_SUGGESTED
         ],
         "needs_decision": [
-            _anchor_decision_to_report(decision)
-            for decision in anchor_decisions
-            if decision.decision == ANCHOR_DECISION_NEEDS_DECISION
+            _anchor_decision_to_report(decision, pattern_inference)
+            for decision in needs_decision_items
         ],
         "ignored_terms": [
-            _anchor_decision_to_report(decision)
+            _anchor_decision_to_report(decision, pattern_inference)
             for decision in anchor_decisions
             if decision.decision == ANCHOR_DECISION_IGNORED
         ],
     }
 
 
-def _anchor_decision_to_report(decision: AnchorDecision) -> dict[str, Any]:
-    return {
+def _anchor_decision_to_report(
+    decision: AnchorDecision,
+    pattern_inference: PatternInferenceResult | None = None,
+) -> dict[str, Any]:
+    item: dict[str, Any] = {
         "anchor": decision.anchor,
         "decision": decision.decision,
         "reason": decision.reason,
         "evidence": decision.evidence,
         "file_count": decision.file_count,
         "examples": decision.examples,
+    }
+    if pattern_inference is not None and decision.decision == ANCHOR_DECISION_NEEDS_DECISION:
+        evidence = pattern_evidence_for_anchor(decision.anchor, pattern_inference)
+        if evidence is not None:
+            item["pattern_evidence"] = evidence
+    return item
+
+
+def _pattern_priority_rank(priority: str) -> int:
+    return {
+        "high": 0,
+        "medium": 1,
+        "low": 2,
+        "none": 3,
+    }.get(priority, 99)
+
+
+def _pattern_inference_to_report(
+    inference: PatternInferenceResult,
+) -> dict[str, list[dict[str, Any]]]:
+    return {
+        "patterns": [
+            _organization_pattern_to_report(pattern)
+            for pattern in inference.patterns
+        ],
+        "rule_candidates": [
+            _inferred_rule_candidate_to_report(candidate)
+            for candidate in inference.rule_candidates
+        ],
+    }
+
+
+def _organization_pattern_to_report(pattern: OrganizationPattern) -> dict[str, Any]:
+    return {
+        "pattern_type": pattern.pattern_type,
+        "confidence": pattern.confidence,
+        "reason": pattern.reason,
+        "examples": list(pattern.examples),
+        "affected_anchors": list(pattern.affected_anchors),
+        "supported_anchors": list(pattern.supported_anchors),
+    }
+
+
+def _inferred_rule_candidate_to_report(
+    candidate: InferredRuleCandidate,
+) -> dict[str, Any]:
+    return {
+        "rule_type": candidate.rule_type,
+        "value": candidate.value,
+        "confidence": candidate.confidence,
+        "reason": candidate.reason,
+        "evidence_paths": list(candidate.evidence_paths),
     }
 
 

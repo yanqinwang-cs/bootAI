@@ -599,6 +599,38 @@ Expected outcome: rows start from current suggestions, not remembered decisions.
 
 If a source file changes after a decision is remembered, run review mode again. Expected outcome: the row is marked as a stale prior decision and keeps the current default decision until reviewed again.
 
+## Stage 10.5 Existing Organization Pattern Inference
+
+Use a disposable folder:
+
+```bash
+SMOKE_ROOT="/tmp/bootai_pattern_inference_smoke"
+rm -rf "$SMOKE_ROOT"
+mkdir -p "$SMOKE_ROOT/CS1010X"
+mkdir -p "$SMOKE_ROOT/Submissions/Wang"
+mkdir -p "$SMOKE_ROOT/Submissions/Tan"
+
+printf "x\n" > "$SMOKE_ROOT/CS1010X/CS1010X finals.pdf"
+printf "x\n" > "$SMOKE_ROOT/CS1010X/CS1010X recitation 01.pdf"
+printf "x\n" > "$SMOKE_ROOT/CS2020 finals.pdf"
+printf "x\n" > "$SMOKE_ROOT/CS2020 recitation 01.pdf"
+printf "x\n" > "$SMOKE_ROOT/Submissions/Wang/assignment 1.pdf"
+printf "x\n" > "$SMOKE_ROOT/Submissions/Wang/assignment 2.pdf"
+printf "x\n" > "$SMOKE_ROOT/Submissions/Tan/assignment 1.pdf"
+printf "x\n" > "$SMOKE_ROOT/Submissions/Tan/assignment 2.pdf"
+printf "x\n" > "$SMOKE_ROOT/Aisha assignment 1.pdf"
+printf "x\n" > "$SMOKE_ROOT/Aisha assignment 2.pdf"
+
+PYTHONPATH=src python3 -m organizer.cli "$SMOKE_ROOT" --html-report
+```
+
+Expected outcome: the HTML report includes `Inferred organization patterns`,
+course-code foldering, and person/student foldering. `CS2020` appears as a
+needs-decision anchor with course-code pattern evidence, and `Aisha` appears as
+a needs-decision anchor with person/student pattern evidence. The command writes
+report files only, does not create `AI_Review/config/organization_rules.json`,
+and does not move scanned files.
+
 ## Final Git Hygiene Check
 
 From the repository root:

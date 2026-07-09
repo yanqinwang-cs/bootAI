@@ -23,6 +23,7 @@ REPORT_TOP_LEVEL_KEYS = {
     "refined_organization_suggestions",
     "organization_rules",
     "anchor_decisions",
+    "organization_pattern_inference",
     "warnings",
 }
 
@@ -67,12 +68,15 @@ class ReportGenerationTests(unittest.TestCase):
                 "suggested_anchor_count",
                 "needs_decision_anchor_count",
                 "ignored_anchor_count",
+                "organization_pattern_count",
+                "inferred_rule_candidate_count",
                 "refinement_status",
             ]:
                 self.assertIn(key, summary)
             for key in [
                 "organization_rules",
                 "anchor_decisions",
+                "organization_pattern_inference",
                 "duplicates",
                 "duplicate_review_plan",
                 "review_candidates",
@@ -100,9 +104,38 @@ class ReportGenerationTests(unittest.TestCase):
             self.assertEqual(report["summary"]["refinement_status"], "not_requested")
             self.assertEqual(report["organization_rules"]["status"], "defaults")
             self.assertIn("suggested_groups", report["anchor_decisions"])
+            self.assertIn("patterns", report["organization_pattern_inference"])
+            self.assertIn("rule_candidates", report["organization_pattern_inference"])
             self.assertEqual(report["duplicates"][0]["files"], ["a.txt", "subdir/b.txt"])
             self.assertIn("source", report["duplicate_review_plan"][0])
             self.assertIn("destination", report["organization_suggestions"][0]["plan_items"][0])
+
+    def test_report_includes_pattern_inference_and_needs_decision_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            course = root / "CS1010X"
+            course.mkdir()
+            (course / "CS1010X finals.pdf").write_text("x", encoding="utf-8")
+            (course / "CS1010X recitation 01.pdf").write_text("x", encoding="utf-8")
+            (root / "CS2020 finals.pdf").write_text("x", encoding="utf-8")
+            (root / "CS2020 recitation 01.pdf").write_text("x", encoding="utf-8")
+
+            report = build_scan_report(root)
+
+            self.assertEqual(report["summary"]["organization_pattern_count"], 1)
+            self.assertGreaterEqual(report["summary"]["inferred_rule_candidate_count"], 1)
+            patterns = report["organization_pattern_inference"]["patterns"]
+            candidates = report["organization_pattern_inference"]["rule_candidates"]
+            needs_decision = report["anchor_decisions"]["needs_decision"]
+
+            self.assertEqual(patterns[0]["pattern_type"], "course_code_foldering")
+            self.assertTrue(
+                any(candidate["value"] == "course_code" for candidate in candidates)
+            )
+            cs1010x = next(item for item in needs_decision if item["anchor"] == "CS1010X")
+            self.assertEqual(cs1010x["pattern_evidence"]["priority"], "high")
+            cs2020 = next(item for item in needs_decision if item["anchor"] == "CS2020")
+            self.assertNotIn("pattern_evidence", cs2020)
 
     def test_report_includes_orphan_code_candidate_counts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -23,6 +23,13 @@
           "CS2103/report.md"
         ],
         "file_count": 2,
+        "pattern_evidence": {
+          "matched_patterns": [
+            "course_code_foldering"
+          ],
+          "priority": "high",
+          "reason": "Existing folders suggest this root may group course materials by module code."
+        },
         "reason": "Broad course/module anchor. Lock CS2103 if you want all matching files grouped together."
       },
       {
@@ -81,6 +88,36 @@
     "message": "No organization rules file found. Using conservative built-in defaults.",
     "path": null,
     "status": "defaults"
+  },
+  "organization_pattern_inference": {
+    "patterns": [
+      {
+        "affected_anchors": [
+          "CS2103"
+        ],
+        "confidence": 82,
+        "examples": [
+          "CS1010X/CS1010X finals.pdf",
+          "CS1010X/CS1010X recitation 01.pdf"
+        ],
+        "pattern_type": "course_code_foldering",
+        "reason": "Existing folders contain files whose names match their course-code folder names.",
+        "supported_anchors": [
+          "CS2103"
+        ]
+      }
+    ],
+    "rule_candidates": [
+      {
+        "confidence": 82,
+        "evidence_paths": [
+          "CS1010X"
+        ],
+        "reason": "Course-code folders are already used in this root.",
+        "rule_type": "preferred_granularity_candidate",
+        "value": "course_code"
+      }
+    ]
   },
   "organization_suggestions": [
     {
@@ -142,6 +179,8 @@
     "duplicate_candidate_count": 1,
     "duplicate_group_count": 1,
     "file_count": 5,
+    "inferred_rule_candidate_count": 1,
+    "organization_pattern_count": 1,
     "organization_suggestion_count": 2,
     "project_group_count": 1,
     "refinement_status": "not_requested",

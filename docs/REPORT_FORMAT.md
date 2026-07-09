@@ -39,6 +39,7 @@ operation logs, or start a server.
 | `refined_organization_suggestions` | Dry-run local-LLM refined suggestions, if requested and valid. | array |
 | `organization_rules` | Read-only organization-rules status and resolved rule metadata. | object |
 | `anchor_decisions` | Alias-normalized anchor decisions used for grouping reports. | object |
+| `organization_pattern_inference` | Report-only inferred foldering patterns and manual rule candidates. | object |
 | `warnings` | Non-fatal report-generation warnings. | array |
 
 ## `summary`
@@ -56,6 +57,8 @@ operation logs, or start a server.
 - `suggested_anchor_count`: number of final suggested organization anchors.
 - `needs_decision_anchor_count`: number of anchors reported for manual decision.
 - `ignored_anchor_count`: number of final ignored anchors.
+- `organization_pattern_count`: number of inferred foldering patterns.
+- `inferred_rule_candidate_count`: number of report-only rule candidates.
 - `refinement_status`: `not_requested`, `completed`, or `failed`.
 
 ## Organization Rules And Anchor Decisions
@@ -82,6 +85,36 @@ do not bypass protected/generated/project-output exclusions.
   `MovePlanItem` values unless later rules lock them or narrower evidence is
   detected.
 - `ignored_terms`: anchors ignored by rules or conservative defaults.
+
+Needs-decision entries may include `pattern_evidence` when existing folders
+suggest that the anchor matches a local organization habit. This evidence is
+report-only and contains:
+
+- `priority`: `high`, `medium`, `low`, or `none`.
+- `matched_patterns`: pattern types that matched.
+- `reason`: a short explanation of the inferred local preference evidence.
+
+## Existing Organization Pattern Inference
+
+`organization_pattern_inference` contains weak local preference evidence from
+existing folders. It is included automatically in JSON and HTML reports.
+
+The section has:
+
+- `patterns`: detected organization habits such as `course_code_foldering`,
+  `project_foldering`, `person_or_student_foldering`, `role_foldering`,
+  `year_foldering`, or `format_foldering`.
+- `rule_candidates`: manual rule candidates such as
+  `preferred_granularity_candidate` or `lock_anchor_candidate`.
+
+Folder evidence can come from exact folder names such as `CS1010X/` or compound
+folders such as `cs1010x finals/`, `CS1010x PE/`, `EvoSim images/`, or
+`ourdream/` when the folder contains eligible document-like files. This evidence
+can enrich `Needs decision` anchors but does not make broad anchors actionable.
+
+Pattern inference ignores tool-owned, protected, dependency, generated, and
+project-output contexts. It does not write `organization_rules.json`, create
+`MovePlanItem` values directly, approve moves, or change apply behavior.
 
 ## Fact Sections
 
