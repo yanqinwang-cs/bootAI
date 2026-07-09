@@ -486,13 +486,18 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "candidate_id",
         "rule_type",
         "value",
         "confidence",
         "reason",
-        "evidence_paths"
+        "evidence_paths",
+        "suggested_action"
       ],
       "properties": {
+        "candidate_id": {
+          "type": "string"
+        },
         "rule_type": {
           "type": "string"
         },
@@ -512,6 +517,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "suggested_action": {
+          "type": "string"
         }
       }
     },

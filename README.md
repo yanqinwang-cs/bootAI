@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.5 are implemented. The tool can currently:
+Stages 1 through 10.6 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -17,6 +17,8 @@ Stages 1 through 10.5 are implemented. The tool can currently:
 - Load optional read-only organization rules from `AI_Review/config/organization_rules.json`.
 - Report alias-normalized anchor decisions for suggested groups, anchors needing a user decision, and ignored terms.
 - Infer existing organization patterns for reports without writing rules.
+- Export inferred organization rule candidates for manual review.
+- Apply accepted organization rule decisions only after exact confirmation.
 - Suggest organization plans.
 - Flag isolated code files as candidates for review.
 - Optionally refine organization suggestions with local Ollama.
@@ -29,7 +31,7 @@ Stages 1 through 10.5 are implemented. The tool can currently:
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.5 adds report-only existing organization pattern inference. Existing folders can raise the priority of related `Needs decision` anchors and suggest manual rule candidates, but they do not create or edit `organization_rules.json`, create move plans directly, or approve broad organization. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.6 adds a confirmed rule-review workflow. Inferred rule candidates can be exported to JSON, manually reviewed, and applied to `AI_Review/config/organization_rules.json` only with exact `APPLY ORGANIZATION RULES` confirmation. Accepted rules affect future grouping/report behavior; they do not move files. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -51,6 +53,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --html-report
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans --ignore-review-state
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --export-rule-candidates
 ```
 
 Apply commands require exact confirmation:
@@ -81,6 +84,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report --report-output
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --html-report
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --html-report --html-report-output /path/to/folder/AI_Review/reports/manual_report.html
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --export-rule-candidates
 ```
 
 Approved move commands:
@@ -89,6 +93,7 @@ Approved move commands:
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-duplicate-plan --confirm APPLY_DUPLICATE_PLAN
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-organization-plan --confirm APPLY_ORGANIZATION_PLAN
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-reviewed-plan AI_Review/review_sessions/reviewed_plan.json --confirm APPLY_REVIEWED_PLAN
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-rule-decisions AI_Review/rules/organization_rule_candidates.reviewed.json --confirm "APPLY ORGANIZATION RULES"
 ```
 
 Local Ollama refinement:
@@ -121,6 +126,9 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Reports show inferred organization patterns as weak preference evidence only.
 - Compound folders such as `cs1010x finals/` or `EvoSim images/` can provide report-only evidence.
 - Inferred rule candidates are suggestions for manual review; they are not written automatically.
+- Rule candidate export writes review JSON only and does not create `organization_rules.json`.
+- Rule decisions update `organization_rules.json` only through `--apply-rule-decisions` with exact `APPLY ORGANIZATION RULES` confirmation.
+- Accepted organization rules do not move files and do not write operation logs.
 - Review mode approve/reject/save commands do not move files.
 - Review mode stores decision memory under `AI_Review/review_state/review_decisions.json`.
 - Review state is decision memory, not an operation log, and does not record filesystem success.

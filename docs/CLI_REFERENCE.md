@@ -88,6 +88,23 @@ weak preference evidence from existing eligible folders. It can rank
 `Needs decision` anchors and suggest manual rule candidates, but it does not
 write rules, create move plans directly, or apply moves.
 
+## Organization Rule Review
+
+```bash
+python -m organizer.cli <folder> --export-rule-candidates
+python -m organizer.cli <folder> --export-rule-candidates --rule-candidates-output AI_Review/rules/manual_candidates.json
+python -m organizer.cli <folder> --apply-rule-decisions AI_Review/rules/organization_rule_candidates.reviewed.json --confirm "APPLY ORGANIZATION RULES"
+```
+
+- `--export-rule-candidates`: scans read-only and writes a manually reviewable JSON file under `AI_Review/rules/`.
+- `--rule-candidates-output <path>`: writes exported candidates to a specific new path under the scan root.
+- `--apply-rule-decisions <path>`: validates a reviewed candidate file and applies accepted decisions to `AI_Review/config/organization_rules.json`.
+- `--confirm "APPLY ORGANIZATION RULES"`: required exactly before any organization-rules file is written.
+
+Candidate export is advisory and does not write `organization_rules.json`. If the default candidate output already exists, export writes a collision-safe sibling rather than overwriting it. A custom output path must not already exist.
+
+Applying rule decisions treats the reviewed JSON file as the source of truth. It does not rescan, infer new candidates, create move plans, call the executor, move files, or write operation logs. Rejected, ignored, and undecided candidates are recorded in the apply result log but do not update rules. `preferred_granularities` are stored as advisory configuration only in this stage.
+
 ## Grouping
 
 ```bash

@@ -1,0 +1,35 @@
+{
+  "candidates": [
+    {
+      "candidate_id": "lock-anchor-cs1010x",
+      "confidence": 85,
+      "decision": "undecided",
+      "evidence_paths": [
+        "cs1010x finals",
+        "CS1010x PE"
+      ],
+      "note": "",
+      "reason": "CS1010X matches existing course_code_foldering evidence, but locking it is a manual rule decision.",
+      "rule_type": "lock_anchor_candidate",
+      "suggested_action": "review",
+      "value": "CS1010X"
+    },
+    {
+      "candidate_id": "preferred-granularity-document-role",
+      "confidence": 70,
+      "decision": "undecided",
+      "evidence_paths": [
+        "lectures",
+        "tutorials"
+      ],
+      "note": "",
+      "reason": "Role folders are already used in this root.",
+      "rule_type": "preferred_granularity_candidate",
+      "suggested_action": "review",
+      "value": "document_role"
+    }
+  ],
+  "instructions": "Review each candidate. Set decision to accept, reject, ignore_candidate, or undecided. Applying accepted decisions requires a separate explicit confirmation step.",
+  "schema_version": 1,
+  "source": "bootAI Stage 10.6 organization rule candidates"
+}

@@ -51,6 +51,7 @@ class OrganizationRules:
     ignored_terms: frozenset[str]
     anchor_aliases: dict[str, str]
     anchor_display_names: dict[str, str]
+    preferred_granularities: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,7 @@ def default_organization_rules() -> OrganizationRules:
         ignored_terms=DEFAULT_IGNORED_TERMS,
         anchor_aliases={},
         anchor_display_names={},
+        preferred_granularities=frozenset(),
     )
 
 
@@ -141,6 +143,11 @@ def organization_rules_from_data(data: object) -> tuple[OrganizationRules, list[
     aliases, alias_display = _aliases_from_data(data.get("anchor_aliases", {}), warnings)
     aliases = _reject_alias_cycles(aliases, warnings)
     aliases = _resolve_alias_chains(aliases, warnings)
+    preferred_granularities = _string_list_to_plain_set(
+        data.get("preferred_granularities", []),
+        "preferred_granularities",
+        warnings,
+    )
 
     normalized_ignored = {_resolve_anchor(term, aliases) for term in ignored}
     normalized_locked = {_resolve_anchor(term, aliases) for term in locked}
@@ -180,9 +187,22 @@ def organization_rules_from_data(data: object) -> tuple[OrganizationRules, list[
             ignored_terms=frozenset(normalized_ignored),
             anchor_aliases=dict(sorted(aliases.items())),
             anchor_display_names=dict(sorted(display_names.items())),
+            preferred_granularities=frozenset(preferred_granularities),
         ),
         warnings,
     )
+
+
+def organization_rules_to_data(rules: OrganizationRules) -> dict[str, Any]:
+    return {
+        "version": ORGANIZATION_RULES_VERSION,
+        "locked_anchors": sorted(rules.locked_anchors),
+        "ignored_terms": sorted(
+            term for term in rules.ignored_terms if term not in DEFAULT_IGNORED_TERMS
+        ),
+        "anchor_aliases": dict(sorted(rules.anchor_aliases.items())),
+        "preferred_granularities": sorted(rules.preferred_granularities),
+    }
 
 
 def normalize_anchor(text: str) -> str:
@@ -222,6 +242,30 @@ def _string_list_to_anchor_set(
         anchors.add(normalized)
         display_names.setdefault(normalized, item.strip())
     return frozenset(anchors), display_names
+
+
+def _string_list_to_plain_set(
+    value: object,
+    field_name: str,
+    warnings: list[str],
+) -> frozenset[str]:
+    if value is None:
+        return frozenset()
+    if not isinstance(value, list):
+        warnings.append(f"{field_name} must be a list; ignoring this section")
+        return frozenset()
+
+    items: set[str] = set()
+    for index, item in enumerate(value, start=1):
+        if not isinstance(item, str):
+            warnings.append(f"{field_name}[{index}] must be a string and was ignored")
+            continue
+        normalized = normalize_anchor(item)
+        if not _valid_anchor(normalized):
+            warnings.append(f"{field_name}[{index}] is not valid and was ignored")
+            continue
+        items.add(normalized)
+    return frozenset(items)
 
 
 def _aliases_from_data(value: object, warnings: list[str]) -> tuple[dict[str, str], dict[str, str]]:

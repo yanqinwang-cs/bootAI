@@ -106,6 +106,8 @@ The section has:
   `year_foldering`, or `format_foldering`.
 - `rule_candidates`: manual rule candidates such as
   `preferred_granularity_candidate` or `lock_anchor_candidate`.
+  Each candidate includes `candidate_id`, `rule_type`, `value`, `confidence`,
+  `reason`, `evidence_paths`, and `suggested_action`.
 
 Folder evidence can come from exact folder names such as `CS1010X/` or compound
 folders such as `cs1010x finals/`, `CS1010x PE/`, `EvoSim images/`, or
@@ -115,6 +117,10 @@ can enrich `Needs decision` anchors but does not make broad anchors actionable.
 Pattern inference ignores tool-owned, protected, dependency, generated, and
 project-output contexts. It does not write `organization_rules.json`, create
 `MovePlanItem` values directly, approve moves, or change apply behavior.
+
+Rule candidates are advisory. Exporting them for review writes a separate JSON
+file under `AI_Review/rules/`; applying accepted decisions requires exact
+`APPLY ORGANIZATION RULES` confirmation and updates configuration only.
 
 ## Fact Sections
 

@@ -1,6 +1,6 @@
 # Release Notes
 
-## Current Status Through Stage 10.5
+## Current Status Through Stage 10.6
 
 Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the existing JSON report and a browser-openable HTML rendering from the same report data without approving or applying moves.
 
@@ -13,6 +13,8 @@ Stage 10.4.3 requires strong organization anchors, suppresses weak top-level tok
 Stage 10.4.4 adds optional read-only organization rules loaded from `AI_Review/config/organization_rules.json` when present. It reports alias-normalized anchor decisions as suggested narrow groups, broad anchors needing a user decision, and ignored terms. Ignored terms win over locked anchors, locked anchors still require at least two eligible safe files, and broad anchors are non-actionable by default unless locked.
 
 Stage 10.5 adds report-only existing organization pattern inference. Existing folders can provide weak local preference evidence for course-code, project, person/student, role, year, or format foldering. Reports can rank related `Needs decision` anchors and show inferred rule candidates, but no rules file is written, no move plans are created directly from inference, and no files move.
+
+Stage 10.6 adds a confirmed organization-rule review workflow. Inferred rule candidates can be exported to manually editable JSON, reviewed as accepted, rejected, ignored, or undecided, and applied to `AI_Review/config/organization_rules.json` only with exact `APPLY ORGANIZATION RULES` confirmation. Rule updates are configuration changes for future reports/grouping only; they do not move files.
 
 ## Stage Summary
 
@@ -40,6 +42,7 @@ Stage 10.5 adds report-only existing organization pattern inference. Existing fo
 - Stage 10.4.3: strong anchor organization, role-based subfolders, and generated asset suppression.
 - Stage 10.4.4: read-only organization rules and anchor-decision reporting.
 - Stage 10.5: existing organization pattern inference for JSON and HTML reports.
+- Stage 10.6: organization rule candidate export and confirmed rule-decision apply.
 
 ## Safety Model
 
@@ -66,10 +69,11 @@ Stage 10.5 adds report-only existing organization pattern inference. Existing fo
 - Orphan code is a candidate for review only.
 - Protected-context files are excluded from actionable move plans by default.
 - Generated web/archive and contextual project-output files are excluded from actionable move plans by default.
-- Organization rules are read-only; the CLI does not create or edit `AI_Review/config/organization_rules.json`.
+- Organization rules are written only by the explicit rule-decision apply flow after exact confirmation.
 - Anchor aliases are resolved before reporting; ignored terms win over locked anchors.
 - Broad course/name/project/organization anchors are reported for decision instead of becoming concrete organization suggestions by default.
 - Existing folder patterns are weak preference evidence in reports only; inferred rule candidates are not written automatically.
+- Rule-review apply result logs are configuration-update audit records, not movement operation logs.
 - Exact duplicate facts remain distinct from duplicate move candidates.
 
 ## Current CLI Capabilities
@@ -80,6 +84,7 @@ Stage 10.5 adds report-only existing organization pattern inference. Existing fo
 - Project grouping: `--project-groups`, `--plan-organization`, `--apply-organization-plan`; normal organization suggestions are conservative and document-like by default.
 - Local LLM refinement: `--refine-groups`, `--plan-refined-organization`, `--apply-refined-organization-plan`.
 - Reports: `--report`, `--report-output <path>`, `--html-report`, `--html-report-output <path>`.
+- Organization rule review: `--export-rule-candidates`, `--rule-candidates-output <path>`, `--apply-rule-decisions <path>`.
 - Batch review: `--review-plans` for duplicate, organization, and review-candidate move candidates.
 - Review state bypass: `--review-plans --ignore-review-state`.
 - Saved reviewed-plan apply: `--apply-reviewed-plan <path> --confirm APPLY_REVIEWED_PLAN`.
@@ -92,6 +97,7 @@ Apply commands require one of:
 - `--confirm APPLY_REFINED_ORGANIZATION_PLAN`
 - interactive `APPLY_REVIEWED_PLAN` inside `--review-plans`
 - `--confirm APPLY_REVIEWED_PLAN`
+- `--confirm "APPLY ORGANIZATION RULES"`
 
 ## Known Limitations
 
@@ -107,4 +113,4 @@ Apply commands require one of:
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.5 and later remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10.7 and later remain future work.

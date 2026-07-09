@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -86,3 +87,30 @@ class ReviewedPlanItem:
     review_category: str | None = None
     memory_status: str = "new_suggestion"
     remembered_decision: str | None = None
+
+
+@dataclass(frozen=True)
+class RuleCandidate:
+    candidate_id: str
+    rule_type: str
+    value: str | dict[str, Any]
+    confidence: int
+    reason: str
+    evidence_paths: tuple[str, ...] = ()
+    suggested_action: str = "review"
+
+
+@dataclass(frozen=True)
+class RuleDecision:
+    candidate_id: str
+    decision: str
+    note: str = ""
+
+
+@dataclass(frozen=True)
+class RuleReviewResult:
+    accepted: tuple[RuleDecision, ...]
+    rejected: tuple[RuleDecision, ...]
+    ignored: tuple[RuleDecision, ...]
+    undecided: tuple[RuleDecision, ...]
+    warnings: tuple[str, ...]

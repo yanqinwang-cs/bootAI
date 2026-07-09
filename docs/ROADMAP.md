@@ -27,28 +27,29 @@
 | 10.4.3 | Strong anchor organization and generated asset suppression | `scope.py`, `grouping.py`, `review.py` | none | stronger actionable-plan filtering |
 | 10.4.4 | Read-only organization rules and anchor decisions | `organization_rules.py`, `grouping.py`, `reports.py` | none | rules are read-only |
 | 10.5 | Existing organization pattern inference | `pattern_inference.py`, `reports.py`, `html_report.py` | none | report-only preference evidence |
+| 10.6 | Organization rule review workflow | `rule_review.py`, `organization_rules.py`, `cli.py` | `--export-rule-candidates`, `--apply-rule-decisions` | exact confirmation required for config updates |
 
 ## Future Stages
 
-### Stage 10.6: Static HTML Review Export
+### Stage 10.7: Static HTML Review Export
 
 Goal: explore static export of reviewed-plan context for review workflows.
 
 Non-goals: no HTML approval or apply behavior without a separately reviewed safety stage.
 
-### Stage 10.7: Filtering, Sorting, Or Pagination
+### Stage 10.8: Filtering, Sorting, Or Pagination
 
 Goal: make large batch review sessions easier to inspect.
 
 Non-goals: no bypass of exact confirmation or executor movement rules.
 
-### Stage 10.8: Resume Or Edit Saved Review Sessions
+### Stage 10.9: Resume Or Edit Saved Review Sessions
 
 Goal: load a saved reviewed-plan JSON file for continued review.
 
 Non-goals: no bypass of saved-plan validation.
 
-### Stage 10.9: UI Or Richer Review Interface
+### Stage 10.10: UI Or Richer Review Interface
 
 Goal: provide a safer review surface for candidates, groups, plans, and logs.
 

@@ -41,6 +41,10 @@
 - Organization rules are read-only in Stage 10.4.4.
 - Existing organization pattern inference is report-only and must not write organization rules.
 - Existing folder patterns must not create `MovePlanItem` values directly or approve broad organization.
+- Inferred rule candidates are advisory until manually reviewed.
+- Rule decisions must not write `organization_rules.json` without exact `APPLY ORGANIZATION RULES` confirmation.
+- Rule-review config updates must not create `MovePlanItem` values, call `executor.py`, move files, or write movement operation logs.
+- `preferred_granularities` are advisory only in Stage 10.6.
 - Locked anchors must not bypass protected/generated/project-output exclusions.
 - Locked anchors should require at least two eligible safe files before producing organization suggestions.
 - Ignored terms win over locked anchors after alias normalization.

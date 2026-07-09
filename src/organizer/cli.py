@@ -23,6 +23,11 @@ from organizer.organization_rules import load_organization_rules
 from organizer.planner import build_duplicate_review_plan
 from organizer.reports import build_scan_report, default_report_path, write_report
 from organizer.review import build_review_candidate_plan, detect_review_candidates
+from organizer.rule_review import (
+    apply_rule_decisions,
+    export_rule_candidates,
+    rule_candidates_from_report,
+)
 from organizer.review_session import (
     approve_items,
     approved_plan_items,
@@ -47,6 +52,7 @@ CONFIRM_APPLY_DUPLICATE_PLAN = "APPLY_DUPLICATE_PLAN"
 CONFIRM_APPLY_ORGANIZATION_PLAN = "APPLY_ORGANIZATION_PLAN"
 CONFIRM_APPLY_REFINED_ORGANIZATION_PLAN = "APPLY_REFINED_ORGANIZATION_PLAN"
 CONFIRM_APPLY_REVIEWED_PLAN = "APPLY_REVIEWED_PLAN"
+CONFIRM_APPLY_ORGANIZATION_RULES = "APPLY ORGANIZATION RULES"
 
 
 def main() -> int:
@@ -62,6 +68,9 @@ def main() -> int:
     parser.add_argument("--report-output", type=Path, default=None)
     parser.add_argument("--html-report", action="store_true")
     parser.add_argument("--html-report-output", type=Path, default=None)
+    parser.add_argument("--export-rule-candidates", action="store_true")
+    parser.add_argument("--rule-candidates-output", type=Path, default=None)
+    parser.add_argument("--apply-rule-decisions", type=Path, default=None)
     parser.add_argument("--review-plans", action="store_true")
     parser.add_argument("--ignore-review-state", action="store_true")
     parser.add_argument("--apply-reviewed-plan", type=Path, default=None)
@@ -82,8 +91,16 @@ def main() -> int:
         parser.error("--report-output requires --report")
     if args.html_report_output is not None and not args.html_report:
         parser.error("--html-report-output requires --html-report")
+    if args.rule_candidates_output is not None and not args.export_rule_candidates:
+        parser.error("--rule-candidates-output requires --export-rule-candidates")
     if args.ignore_review_state and not args.review_plans:
         parser.error("--ignore-review-state requires --review-plans")
+
+    if args.export_rule_candidates:
+        return _handle_export_rule_candidates(parser, args)
+
+    if args.apply_rule_decisions is not None:
+        return _handle_apply_rule_decisions(parser, args)
 
     if args.html_report:
         return _handle_html_report(parser, args)
@@ -107,6 +124,9 @@ def main() -> int:
             or args.html_report
             or args.html_report_output is not None
             or args.apply_reviewed_plan is not None
+            or args.export_rule_candidates
+            or args.rule_candidates_output is not None
+            or args.apply_rule_decisions is not None
             or args.confirm is not None
             or args.review_candidates
             or args.plan_review_candidates
@@ -288,6 +308,9 @@ def _handle_review_plans(
         or args.apply_organization_plan
         or args.apply_refined_organization_plan
         or args.apply_reviewed_plan is not None
+        or args.export_rule_candidates
+        or args.rule_candidates_output is not None
+        or args.apply_rule_decisions is not None
         or args.report
         or args.report_output is not None
         or args.confirm is not None
@@ -416,6 +439,9 @@ def _handle_apply_reviewed_plan(
         or args.apply_duplicate_plan
         or args.apply_organization_plan
         or args.apply_refined_organization_plan
+        or args.export_rule_candidates
+        or args.rule_candidates_output is not None
+        or args.apply_rule_decisions is not None
         or args.report
         or args.report_output is not None
         or args.undo_log is not None
@@ -451,6 +477,104 @@ def _handle_apply_reviewed_plan(
         return _apply_plan_items(plan_items, args.folder)
     except ValueError as error:
         parser.error(str(error))
+
+
+def _handle_export_rule_candidates(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.apply_reviewed_plan is not None
+        or args.apply_rule_decisions is not None
+        or args.report
+        or args.report_output is not None
+        or args.html_report
+        or args.html_report_output is not None
+        or args.confirm is not None
+        or args.undo_log is not None
+        or args.review_plans
+        or args.ignore_review_state
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.refine_groups
+        or args.plan_refined_organization
+        or args.llm_provider is not None
+        or args.llm_model is not None
+    ):
+        parser.error("--export-rule-candidates cannot be combined with other report, planning, apply, review, undo, LLM, or confirmation flags")
+
+    try:
+        report = build_scan_report(args.folder, max_depth=args.max_depth)
+        candidates = rule_candidates_from_report(report)
+        output_path = export_rule_candidates(
+            candidates,
+            args.folder,
+            args.rule_candidates_output,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+
+    print(f"Rule candidates exported: {output_path}")
+    print(f"Candidates: {len(candidates)}")
+    print("Review the file manually, then apply accepted decisions with exact confirmation.")
+    return 0
+
+
+def _handle_apply_rule_decisions(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.max_depth is not None
+        or args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.apply_reviewed_plan is not None
+        or args.export_rule_candidates
+        or args.rule_candidates_output is not None
+        or args.report
+        or args.report_output is not None
+        or args.html_report
+        or args.html_report_output is not None
+        or args.undo_log is not None
+        or args.review_plans
+        or args.ignore_review_state
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.refine_groups
+        or args.plan_refined_organization
+        or args.llm_provider is not None
+        or args.llm_model is not None
+    ):
+        parser.error("--apply-rule-decisions cannot be combined with scan, display, planning, apply, review, undo, report, or LLM flags")
+
+    if args.confirm != CONFIRM_APPLY_ORGANIZATION_RULES:
+        print(
+            'Rule decision apply refused: pass --confirm "APPLY ORGANIZATION RULES" '
+            "to update organization_rules.json."
+        )
+        return 0
+
+    try:
+        result_path = apply_rule_decisions(args.apply_rule_decisions, args.folder)
+    except ValueError as error:
+        parser.error(str(error))
+
+    print("Organization rule decisions applied.")
+    print(f"Apply result log: {result_path}")
+    print("No files were moved by this command.")
+    return 0
 
 
 def _save_review_state_for_items(

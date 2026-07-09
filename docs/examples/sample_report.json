@@ -109,12 +109,14 @@
     ],
     "rule_candidates": [
       {
+        "candidate_id": "preferred-granularity-course-code",
         "confidence": 82,
         "evidence_paths": [
           "CS1010X"
         ],
         "reason": "Course-code folders are already used in this root.",
         "rule_type": "preferred_granularity_candidate",
+        "suggested_action": "review",
         "value": "course_code"
       }
     ]

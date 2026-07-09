@@ -228,11 +228,13 @@ def _rule_candidate_table(rule_candidates: object) -> str:
             continue
         rows.append(
             [
+                candidate.get("candidate_id", ""),
                 candidate.get("rule_type", ""),
                 candidate.get("value", ""),
                 candidate.get("confidence", ""),
                 candidate.get("reason", ""),
                 candidate.get("evidence_paths", []),
+                candidate.get("suggested_action", ""),
             ]
         )
     if not rows:
@@ -240,7 +242,15 @@ def _rule_candidate_table(rule_candidates: object) -> str:
     return (
         "<h3>Suggested rule candidates</h3>"
         + _table(
-            ["Rule type", "Value", "Confidence", "Reason", "Evidence paths"],
+            [
+                "Candidate ID",
+                "Rule type",
+                "Value",
+                "Confidence",
+                "Reason",
+                "Evidence paths",
+                "Suggested action",
+            ],
             rows,
         )
     )

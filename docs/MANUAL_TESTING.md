@@ -400,6 +400,52 @@ PYTHONPATH=src python3 -m organizer.cli "$RULE_ROOT" --html-report
 
 Expected outcome: the report says organization rules were loaded, `Misc` appears as a suggested group because it has two eligible safe files, `EvoSim` appears under ignored terms and does not produce organization plan items, and aliased `CS1010x`/`CS1010X` is shown as one final anchor decision. No files move, and the CLI does not create or edit the rules file.
 
+## Stage 10.6 Organization Rule Review Check
+
+Use a disposable folder:
+
+```bash
+RULE_ROOT="/tmp/bootai_rule_review_smoke"
+rm -rf "$RULE_ROOT"
+mkdir -p "$RULE_ROOT/cs1010x finals" "$RULE_ROOT/EvoSim images" "$RULE_ROOT/ourdream"
+
+printf "x\n" > "$RULE_ROOT/cs1010x finals/cs1010x-final-jun21.pdf"
+printf "x\n" > "$RULE_ROOT/cs1010x finals/cs1010x-final-solutions-jun21.pdf"
+printf "x\n" > "$RULE_ROOT/EvoSim images/EvoSim_project_slides.pptx"
+printf "x\n" > "$RULE_ROOT/EvoSim images/EvoSim_fixed_google_slides.pptx"
+printf "x\n" > "$RULE_ROOT/ourdream/OurDream_Character_Guide.pdf"
+printf "x\n" > "$RULE_ROOT/ourdream/OurDream_Image_Generation_Rules_v2.md"
+
+PYTHONPATH=src python3 -m organizer.cli "$RULE_ROOT" --export-rule-candidates
+```
+
+Expected outcome: `AI_Review/rules/organization_rule_candidates.json` exists, candidates have `decision: "undecided"`, and `AI_Review/config/organization_rules.json` does not exist.
+
+Copy and edit the candidate file, setting a small number of selected `decision` fields to `accept`:
+
+```bash
+cp "$RULE_ROOT/AI_Review/rules/organization_rule_candidates.json" \
+  "$RULE_ROOT/AI_Review/rules/organization_rule_candidates.reviewed.json"
+```
+
+Wrong confirmation should refuse:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli "$RULE_ROOT" \
+  --apply-rule-decisions "$RULE_ROOT/AI_Review/rules/organization_rule_candidates.reviewed.json" \
+  --confirm "WRONG"
+```
+
+Exact confirmation can update rules:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli "$RULE_ROOT" \
+  --apply-rule-decisions "$RULE_ROOT/AI_Review/rules/organization_rule_candidates.reviewed.json" \
+  --confirm "APPLY ORGANIZATION RULES"
+```
+
+Expected outcome: only accepted rule decisions are written to `AI_Review/config/organization_rules.json`, a rule apply result log is written under `AI_Review/rules/`, and no files move.
+
 ## Stage 10.0 Batch Review
 
 Use a disposable folder and run:

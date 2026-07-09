@@ -39,6 +39,7 @@ from organizer.pattern_inference import (
 )
 from organizer.planner import build_duplicate_review_plan
 from organizer.review import build_review_candidate_plan, detect_review_candidates
+from organizer.rule_review import rule_candidates_from_inferred
 from organizer.safety import validate_under_root
 from organizer.scanner import scan_directory
 from organizer.scope import is_actionable_plan_eligible
@@ -369,6 +370,7 @@ def _pattern_priority_rank(priority: str) -> int:
 def _pattern_inference_to_report(
     inference: PatternInferenceResult,
 ) -> dict[str, list[dict[str, Any]]]:
+    rule_candidates = rule_candidates_from_inferred(inference.rule_candidates)
     return {
         "patterns": [
             _organization_pattern_to_report(pattern)
@@ -376,7 +378,7 @@ def _pattern_inference_to_report(
         ],
         "rule_candidates": [
             _inferred_rule_candidate_to_report(candidate)
-            for candidate in inference.rule_candidates
+            for candidate in rule_candidates
         ],
     }
 
@@ -393,14 +395,16 @@ def _organization_pattern_to_report(pattern: OrganizationPattern) -> dict[str, A
 
 
 def _inferred_rule_candidate_to_report(
-    candidate: InferredRuleCandidate,
+    candidate: Any,
 ) -> dict[str, Any]:
     return {
+        "candidate_id": getattr(candidate, "candidate_id", ""),
         "rule_type": candidate.rule_type,
         "value": candidate.value,
         "confidence": candidate.confidence,
         "reason": candidate.reason,
         "evidence_paths": list(candidate.evidence_paths),
+        "suggested_action": getattr(candidate, "suggested_action", "review"),
     }
 
 
