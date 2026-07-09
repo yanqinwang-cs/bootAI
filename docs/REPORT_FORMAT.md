@@ -7,11 +7,19 @@ facts and dry-run suggestions only.
 Reports do not approve moves. Reports do not move files. Apply commands remain
 separate and require exact confirmation.
 
+Stage 10.4 adds `--html-report`, which writes the same JSON report plus a static
+HTML rendering of that report dictionary. The JSON report remains the
+machine-readable source of truth. The HTML report is a browser-openable viewer
+only: it does not approve moves, apply moves, perform review actions, write
+operation logs, or start a server.
+
 ## Path Rules
 
 - Paths inside report sections are relative to the selected scan root.
 - `scan_root` is currently `"."` to avoid storing absolute local paths.
 - Report output paths are validated under the scan root.
+- HTML report output paths are validated under the scan root and are refused if
+  they already exist.
 - Reports do not contain full file contents or previews.
 
 ## Top-Level Fields

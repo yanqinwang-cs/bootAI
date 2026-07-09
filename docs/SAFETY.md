@@ -17,6 +17,8 @@
 - Full file contents are not sent to the LLM by default.
 - Planner, review, grouping, and LLM modules must not move files.
 - Report generation must not move files and may only create a new report file.
+- HTML report generation must not move files and may only create JSON/HTML report files.
+- HTML reports must not approve moves, apply moves, perform review actions, write operation logs, or start a server.
 - Review approve/reject/save commands must not move files.
 - Review-candidate rows are candidates for review and must not be described as disposal targets.
 - Review state records human decisions only.

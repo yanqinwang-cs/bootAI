@@ -1,8 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.3
+## Current Status Through Stage 10.4
 
-Stage 10.3 adds persistent review decision memory. Batch review can remember prior approved or rejected decisions, flag stale prior decisions when source metadata changes, and still requires exact confirmation before any approved move can be applied.
+Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the existing JSON report and a browser-openable HTML rendering from the same report data without approving or applying moves.
 
 ## Stage Summary
 
@@ -24,6 +24,7 @@ Stage 10.3 adds persistent review decision memory. Batch review can remember pri
 - Stage 10.2: review-candidate rows in batch review.
 - Stage 10.2.1: reviewed-plan source and destination conflict detection.
 - Stage 10.3: persistent review state and organization memory.
+- Stage 10.4: automatic static HTML report viewer.
 
 ## Safety Model
 
@@ -38,6 +39,7 @@ Stage 10.3 adds persistent review decision memory. Batch review can remember pri
 - Deterministic Python remains the source of truth for facts.
 - LLM output is advisory and separately validated.
 - Report generation may create a new report file but does not move scanned files.
+- HTML report generation may create JSON and HTML report files but does not move scanned files, approve moves, apply moves, write operation logs, or start a server.
 - Batch review approve/reject/save commands do not move files.
 - Review-candidate rows are candidates for review and use `R` IDs in batch review.
 - Reviewed-plan apply is blocked when approved rows conflict on source or destination.
@@ -53,7 +55,7 @@ Stage 10.3 adds persistent review decision memory. Batch review can remember pri
 - Review candidates: `--review-candidates`, `--plan-review-candidates`.
 - Project grouping: `--project-groups`, `--plan-organization`, `--apply-organization-plan`.
 - Local LLM refinement: `--refine-groups`, `--plan-refined-organization`, `--apply-refined-organization-plan`.
-- Reports: `--report`, `--report-output <path>`.
+- Reports: `--report`, `--report-output <path>`, `--html-report`, `--html-report-output <path>`.
 - Batch review: `--review-plans` for duplicate, organization, and review-candidate move candidates.
 - Review state bypass: `--review-plans --ignore-review-state`.
 - Saved reviewed-plan apply: `--apply-reviewed-plan <path> --confirm APPLY_REVIEWED_PLAN`.
@@ -71,6 +73,7 @@ Apply commands require one of:
 
 - No built-in scheduler daemon or background service.
 - No GUI yet.
+- No HTML report review actions or apply buttons.
 - No cloud LLM APIs.
 - No filtering/sorting/pagination in batch review yet.
 - No saved review-session resume or editing yet.
@@ -80,4 +83,4 @@ Apply commands require one of:
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.4 and later remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10.5 and later remain future work.

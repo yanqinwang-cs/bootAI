@@ -17,7 +17,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.3 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
+Stages 1 through 10.4 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, deterministic grouping, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
 
 ## Reuse Before Create
 
@@ -32,6 +32,7 @@ Stages 1 through 10.3 are complete. Current code supports scanning, duplicate de
 - `grouping.py` owns deterministic project grouping.
 - `llm_refinement.py` owns prompt, payload, and validation for LLM group refinement.
 - `reports.py` owns read-only report assembly and JSON report writing.
+- `html_report.py` owns read-only static HTML rendering from report dictionaries.
 - `review_session.py` owns batch review-session construction, decisions, reviewed-plan JSON writing, saved-plan validation, and conversion back to `MovePlanItem` values.
 - `review_state.py` owns persistent human review decision memory.
 - `executor.py` owns moving and undo.
@@ -74,8 +75,10 @@ Answer these before editing:
 - Stage 10.2.1 reviewed-plan conflicts must be surfaced and must block apply.
 - Stage 10.3 review state records human decisions only; it is not an operation log and must not record filesystem success.
 - Stage 10.3 remembered decisions must not bypass exact confirmation.
-- Stage 10.4 filtering, sorting, and pagination remain future work.
-- Stage 10.5 saved-session resume and editing remain future work.
+- Stage 10.4 HTML reports must not include approval buttons, apply buttons, review actions, server behavior, or operation-log behavior.
+- Stage 10.5 static HTML review export remains future work.
+- Stage 10.6 filtering, sorting, and pagination remain future work.
+- Stage 10.7 saved-session resume and editing remain future work.
 
 ## Testing And Git Hygiene
 

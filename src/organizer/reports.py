@@ -146,12 +146,12 @@ def write_report(
 ) -> Path:
     resolved_root = root.resolve()
     if output_path is None:
-        destination = _default_report_path(resolved_root)
+        destination = default_report_path(resolved_root)
     elif output_path.is_absolute():
         destination = output_path
     else:
         destination = resolved_root / output_path
-    resolved_destination = _validate_report_output_path(destination, resolved_root)
+    resolved_destination = validate_report_output_path(destination, resolved_root)
 
     resolved_destination.parent.mkdir(parents=True, exist_ok=True)
     with resolved_destination.open("x", encoding="utf-8") as file:
@@ -160,7 +160,7 @@ def write_report(
     return resolved_destination
 
 
-def _default_report_path(root: Path) -> Path:
+def default_report_path(root: Path) -> Path:
     reports_dir = root / "AI_Review" / "reports"
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     candidate = reports_dir / f"{timestamp}_report.json"
@@ -171,7 +171,7 @@ def _default_report_path(root: Path) -> Path:
     return candidate
 
 
-def _validate_report_output_path(path: Path, root: Path) -> Path:
+def validate_report_output_path(path: Path, root: Path) -> Path:
     if os.path.lexists(path):
         raise ValueError(f"report output already exists: {path}")
 
@@ -184,6 +184,10 @@ def _validate_report_output_path(path: Path, root: Path) -> Path:
     if not existing_parent.is_dir():
         raise ValueError(f"report output parent is not a directory: {existing_parent}")
     return resolved_path
+
+
+_default_report_path = default_report_path
+_validate_report_output_path = validate_report_output_path
 
 
 def _nearest_existing_parent(path: Path) -> Path:

@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.3 are implemented. The tool can currently:
+Stages 1 through 10.4 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -19,19 +19,20 @@ Stages 1 through 10.3 are implemented. The tool can currently:
 - Apply approved organization plans with undo logs.
 - Undo logged move operations.
 - Generate read-only JSON reports for manual review or external scheduler runs.
+- Generate static HTML report viewers from the same report data.
 - Review duplicate, organization, and review-candidate move candidates in a batch CLI session.
 - Detect reviewed-plan conflicts before approved batch apply.
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.3 adds persistent review decision memory. Resume/editing saved review sessions, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.4 adds a static HTML report viewer. HTML review export with actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
 Use Python 3 and the standard library. No third-party dependencies are required for the current test suite.
 
 ```bash
-PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_state
+PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_state tests.test_html_report
 ```
 
 ## Quickstart
@@ -43,6 +44,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --duplicates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-organization
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --html-report
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans --ignore-review-state
 ```
@@ -72,6 +74,8 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-review-candidates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --plan-duplicates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --report --report-output /path/to/folder/AI_Review/reports/manual_report.json
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --html-report
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --html-report --html-report-output /path/to/folder/AI_Review/reports/manual_report.html
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans
 ```
 
@@ -98,6 +102,8 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Keep operation logs when testing undo.
 - Do not run apply commands on important folders while testing.
 - Report mode writes a JSON report file but does not move scanned files.
+- HTML report mode writes JSON and HTML report files but does not move scanned files.
+- HTML reports do not approve moves, apply moves, perform review actions, write operation logs, or start a server.
 - Review mode approve/reject/save commands do not move files.
 - Review mode stores decision memory under `AI_Review/review_state/review_decisions.json`.
 - Review state is decision memory, not an operation log, and does not record filesystem success.

@@ -14,6 +14,7 @@ Filesystem
      -> llm_refinement.py
   -> reports
      -> reports.py
+     -> html_report.py
   -> batch review
      -> review_session.py
   -> decision memory
@@ -40,6 +41,7 @@ Filesystem
 | `llm_refinement.py` | advisory LLM prompt, payload, validation, refined suggestions |
 | `ollama_client.py` | local Ollama client only |
 | `reports.py` | read-only report assembly and JSON report writing |
+| `html_report.py` | read-only static HTML rendering from report dictionaries |
 | `review_session.py` | batch review-session construction, decisions, reviewed-plan JSON writing, and saved-plan validation |
 | `review_state.py` | persistent human review decision memory |
 | `executor.py` | approved move execution and undo logs |
@@ -51,7 +53,7 @@ Facts come from deterministic Python: paths, sizes, hashes, extensions, and infe
 
 Suggestions are represented as `MovePlanItem` objects and printed as dry-run plans. `llm_refinement.py` produces advisory suggestions only and stores them separately from deterministic `ProjectGroup` data.
 
-Reports serialize facts and suggestions into JSON for manual review or external scheduler runs. `reports.py` may write a new report file under the scan root, but it does not execute moves or approve actions.
+Reports serialize facts and suggestions into JSON for manual review or external scheduler runs. `reports.py` may write a new report file under the scan root, but it does not execute moves or approve actions. `html_report.py` renders the same report dictionary into a static HTML viewer and may write an HTML report file under the scan root. HTML reports do not approve moves, apply moves, perform review actions, write operation logs, or start a server.
 
 Batch review sessions collect duplicate, deterministic organization, and review-candidate `MovePlanItem` values for command-line review. Review-candidate rows keep `category = "review_candidate"` separate from `review_category` metadata such as `empty`, `temporary`, or `backup_or_copy`. Approve/reject decisions and reviewed-plan JSON records do not execute moves. Approved rows are checked for source and destination conflicts before apply. Saved reviewed-plan JSON is treated as untrusted input when loaded later; `review_session.py` validates it, rejects approved move conflicts, and converts only approved records back into `MovePlanItem` values. Final apply still uses `executor.py`.
 
