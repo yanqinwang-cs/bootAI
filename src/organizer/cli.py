@@ -4,6 +4,7 @@ from pathlib import Path
 from organizer.duplicates import find_exact_duplicates
 from organizer.executor import apply_move_plan, undo_operation_log
 from organizer.grouping import build_organization_suggestions, find_project_groups
+from organizer.html_report import html_report_output_path, write_html_report
 from organizer.llm_refinement import (
     build_refined_organization_suggestion,
     refine_project_groups_with_ollama,
@@ -19,7 +20,7 @@ from organizer.models import (
 )
 from organizer.ollama_client import OllamaClient
 from organizer.planner import build_duplicate_review_plan
-from organizer.reports import build_scan_report, write_report
+from organizer.reports import build_scan_report, default_report_path, write_report
 from organizer.review import build_review_candidate_plan, detect_review_candidates
 from organizer.review_session import (
     approve_items,
@@ -58,6 +59,8 @@ def main() -> int:
     parser.add_argument("--apply-refined-organization-plan", action="store_true")
     parser.add_argument("--report", action="store_true")
     parser.add_argument("--report-output", type=Path, default=None)
+    parser.add_argument("--html-report", action="store_true")
+    parser.add_argument("--html-report-output", type=Path, default=None)
     parser.add_argument("--review-plans", action="store_true")
     parser.add_argument("--ignore-review-state", action="store_true")
     parser.add_argument("--apply-reviewed-plan", type=Path, default=None)
@@ -76,8 +79,13 @@ def main() -> int:
 
     if args.report_output is not None and not args.report:
         parser.error("--report-output requires --report")
+    if args.html_report_output is not None and not args.html_report:
+        parser.error("--html-report-output requires --html-report")
     if args.ignore_review_state and not args.review_plans:
         parser.error("--ignore-review-state requires --review-plans")
+
+    if args.html_report:
+        return _handle_html_report(parser, args)
 
     if args.apply_reviewed_plan is not None:
         return _handle_apply_reviewed_plan(parser, args)
@@ -95,6 +103,8 @@ def main() -> int:
             or args.apply_duplicate_plan
             or args.apply_organization_plan
             or args.apply_refined_organization_plan
+            or args.html_report
+            or args.html_report_output is not None
             or args.apply_reviewed_plan is not None
             or args.confirm is not None
             or args.review_candidates
@@ -603,6 +613,8 @@ def _handle_report(
         or args.apply_refined_organization_plan
         or args.confirm is not None
         or args.undo_log is not None
+        or args.html_report
+        or args.html_report_output is not None
         or args.review_plans
         or args.review_candidates
         or args.plan_review_candidates
@@ -638,6 +650,79 @@ def _handle_report(
         print(f"Report written with warnings: {report_path}")
     else:
         print(f"Report written: {report_path}")
+    return 0
+
+
+def _handle_html_report(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.report
+        or args.report_output is not None
+        or args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.apply_reviewed_plan is not None
+        or args.confirm is not None
+        or args.undo_log is not None
+        or args.review_plans
+        or args.ignore_review_state
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.plan_refined_organization
+    ):
+        parser.error(
+            "--html-report cannot be combined with display, planning, apply, "
+            "review, undo, report, or confirmation flags"
+        )
+
+    if args.refine_groups:
+        _validate_llm_args(parser, args.llm_provider, args.llm_model)
+        client = OllamaClient(
+            model=args.llm_model,
+            host=args.ollama_host,
+        )
+    else:
+        if args.llm_provider is not None or args.llm_model is not None:
+            parser.error("--llm-provider and --llm-model require --refine-groups in HTML report mode")
+        client = None
+
+    try:
+        resolved_root = args.folder.resolve()
+        json_report_path = default_report_path(resolved_root)
+        html_report_path = html_report_output_path(
+            resolved_root,
+            json_report_path=json_report_path,
+            output_path=args.html_report_output,
+        )
+        if html_report_path == json_report_path:
+            raise ValueError("HTML report output must be different from JSON report output")
+        report = build_scan_report(
+            args.folder,
+            max_depth=args.max_depth,
+            refine_groups=args.refine_groups,
+            llm_client=client,
+        )
+        written_json_path = write_report(report, args.folder, json_report_path)
+        written_html_path = write_html_report(
+            report,
+            args.folder,
+            json_report_path=written_json_path,
+            output_path=html_report_path,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+
+    if report["warnings"]:
+        print(f"HTML report written with warnings: {written_html_path}")
+    else:
+        print(f"HTML report written: {written_html_path}")
+    print(f"JSON report written: {written_json_path}")
     return 0
 
 

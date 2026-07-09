@@ -250,6 +250,48 @@ Also confirm:
 
 Reference: [REPORT_FORMAT](REPORT_FORMAT.md) and [sample_report.json](examples/sample_report.json).
 
+## Stage 10.4 HTML Report Viewer
+
+Use a disposable folder:
+
+```bash
+mkdir -p /path/to/temp-folder/subdir
+printf "same" > /path/to/temp-folder/a.txt
+printf "same" > /path/to/temp-folder/subdir/b.txt
+printf "notes" > /path/to/temp-folder/evosim_notes.txt
+printf "report" > /path/to/temp-folder/evosim_report.pdf
+printf "" > /path/to/temp-folder/empty_candidate.txt
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --html-report
+```
+
+Expected outcome: a JSON report and an HTML report appear under `AI_Review/reports/`, both paths are printed, and no scanned files move.
+
+Open the generated HTML report in a browser and confirm:
+
+- the summary is readable
+- warnings are visible when present
+- duplicate, review-candidate, project-group, and organization sections are visible
+- empty sections show a clear empty message
+- there are no approval buttons, apply buttons, or review actions
+- no operation log is written
+
+Test a custom HTML output path:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --html-report --html-report-output /path/to/temp-folder/AI_Review/reports/manual_report.html
+```
+
+Expected outcome: the custom HTML report is created under the scan root, and a JSON report is still created under `AI_Review/reports/`.
+
+Try incompatible and unsafe commands:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --html-report --review-plans
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder --html-report --html-report-output /path/to/outside_report.html
+```
+
+Expected outcome: both commands refuse. Reusing the same `--html-report-output` path also refuses to overwrite the existing HTML report.
+
 ## Stage 10.0 Batch Review
 
 Use a disposable folder and run:

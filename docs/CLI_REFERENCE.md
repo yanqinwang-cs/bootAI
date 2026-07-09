@@ -60,13 +60,20 @@ python -m organizer.cli <folder> --report
 python -m organizer.cli <folder> --report --max-depth 2
 python -m organizer.cli <folder> --report --report-output <path-under-folder>
 python -m organizer.cli <folder> --report --refine-groups --llm-provider ollama --llm-model qwen2.5:7b
+python -m organizer.cli <folder> --html-report
+python -m organizer.cli <folder> --html-report --html-report-output <path-under-folder>
+python -m organizer.cli <folder> --html-report --refine-groups --llm-provider ollama --llm-model qwen2.5:7b
 ```
 
 - `--report`: read-only; writes a JSON report and prints the report path.
 - `--report-output <path>`: read-only; writes the report to a specific path under the scan root.
-- `--refine-groups`: optional local LLM-assisted report section when combined with `--report`, `--llm-provider ollama`, and `--llm-model <model>`.
+- `--html-report`: read-only; writes a JSON report and a static HTML report viewer.
+- `--html-report-output <path>`: read-only; writes the HTML report to a specific path under the scan root.
+- `--refine-groups`: optional local LLM-assisted report section when combined with `--report` or `--html-report`, `--llm-provider ollama`, and `--llm-model <model>`.
 
 Report mode is single-purpose. It rejects display, planning, apply, undo, and confirmation flags to avoid ambiguous output. It writes a report file only; it does not move scanned files, approve moves, or apply moves. `--report-output` must point under the scan root and must not already exist.
+
+HTML report mode is also single-purpose. It writes both JSON and HTML reports from the same in-memory report data, rejects display, planning, apply, review, undo, report, and confirmation flags, and does not start a server. The HTML report is a browser-openable static viewer only. It has no approval buttons, apply buttons, or review actions, and it does not write operation logs. `--html-report-output` must point under the scan root and must not already exist.
 
 The report format is documented in [REPORT_FORMAT](REPORT_FORMAT.md). A compact example is available at [sample_report.json](examples/sample_report.json).
 

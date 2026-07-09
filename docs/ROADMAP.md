@@ -21,22 +21,29 @@
 | 10.2 | Review-candidate rows in batch review | `review_session.py`, `cli.py` | `--review-plans` | final exact confirmation required |
 | 10.2.1 | Reviewed-plan conflict detection | `review_session.py`, `cli.py` | `conflicts` inside `--review-plans` | conflicts block apply |
 | 10.3 | Persistent review state and organization memory | `review_state.py`, `review_session.py`, `cli.py` | `--ignore-review-state` | decision memory only |
+| 10.4 | Automatic HTML report viewer | `html_report.py`, `reports.py`, `cli.py` | `--html-report`, `--html-report-output` | report files only |
 
 ## Future Stages
 
-### Stage 10.4: Filtering, Sorting, Or Pagination
+### Stage 10.5: Static HTML Review Export
+
+Goal: explore static export of reviewed-plan context for review workflows.
+
+Non-goals: no HTML approval or apply behavior without a separately reviewed safety stage.
+
+### Stage 10.6: Filtering, Sorting, Or Pagination
 
 Goal: make large batch review sessions easier to inspect.
 
 Non-goals: no bypass of exact confirmation or executor movement rules.
 
-### Stage 10.5: Resume Or Edit Saved Review Sessions
+### Stage 10.7: Resume Or Edit Saved Review Sessions
 
 Goal: load a saved reviewed-plan JSON file for continued review.
 
 Non-goals: no bypass of saved-plan validation.
 
-### Stage 10.6: UI Or Richer Review Interface
+### Stage 10.8: UI Or Richer Review Interface
 
 Goal: provide a safer review surface for candidates, groups, plans, and logs.
 
