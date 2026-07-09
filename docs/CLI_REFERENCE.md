@@ -93,6 +93,8 @@ python -m organizer.cli <folder> --apply-organization-plan --confirm APPLY_ORGAN
 
 Only `--apply-organization-plan --confirm APPLY_ORGANIZATION_PLAN` can apply deterministic organization moves. The move batch writes an operation log under `AI_Review/operation_logs` and can be undone with `--undo-log`.
 
+Organization suggestions are conservative by default. Eligible normal organization files are `.pdf`, `.md`, `.markdown`, `.txt`, `.rtf`, `.doc`, `.docx`, `.ppt`, `.pptx`, `.html`, and `.htm`. HTML files are suggested only when they look like standalone documents, not web-project internals. Code, package, app, framework, dependency, archive, media, and project-context files are excluded from normal organization suggestions. Isolated code may appear as an `orphan_code` candidate for review instead.
+
 ## LLM Refinement
 
 ```bash
@@ -145,7 +147,7 @@ Inside the review session:
 
 By default, `--review-plans` loads review decision memory from `AI_Review/review_state/review_decisions.json`. Matching rows can be pre-marked as remembered approvals or remembered rejections, and stale prior decisions are shown when the source path still matches but file size or modified time changed. `--ignore-review-state` skips this memory for the current session. Review state is decision memory only. It is not an operation log, does not record filesystem success, and does not replace undo logs.
 
-Approve, reject, and save commands do not move files. `save` writes both a reviewed-plan JSON record and review-state decision memory. Review-candidate rows are candidates for review, use `R` IDs, and keep `category = "review_candidate"` separate from the review candidate category such as `temporary`, `empty`, or `backup_or_copy`. If one source or destination path has multiple approved moves, `summary` reports the conflict count and `apply` is blocked until the conflict is resolved. Resolve a source conflict by rejecting all but one approved move for that source. Resolve a destination conflict by rejecting all but one approved move targeting that destination. Only `apply` with exact `APPLY_REVIEWED_PLAN` confirmation can move approved files, and movement still goes through `executor.py`. Reviewed-plan JSON files are review records, not operation logs. Undo uses the operation log printed after a real apply.
+Approve, reject, and save commands do not move files. `save` writes both a reviewed-plan JSON record and review-state decision memory. Review-candidate rows are candidates for review, use `R` IDs, and keep `category = "review_candidate"` separate from the review candidate category such as `temporary`, `empty`, `backup_or_copy`, or `orphan_code`. If one source or destination path has multiple approved moves, `summary` reports the conflict count and `apply` is blocked until the conflict is resolved. Resolve a source conflict by rejecting all but one approved move for that source. Resolve a destination conflict by rejecting all but one approved move targeting that destination. Only `apply` with exact `APPLY_REVIEWED_PLAN` confirmation can move approved files, and movement still goes through `executor.py`. Reviewed-plan JSON files are review records, not operation logs. Undo uses the operation log printed after a real apply.
 
 Interactive apply may update review-state memory after exact confirmation and before executor apply. That state records review intent only. Operation logs remain authoritative for actual successful moves and undo, and failed moves do not become success records in review state.
 

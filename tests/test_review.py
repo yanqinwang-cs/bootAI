@@ -129,6 +129,38 @@ class ReviewDetectionTests(unittest.TestCase):
                 ["a.tmp", "z.tmp"],
             )
 
+    def test_detects_isolated_orphan_code_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ["practice.py", "Example.java", "analysis.ipynb"]:
+                (root / name).write_text("code", encoding="utf-8")
+
+            candidates = detect_review_candidates(scan_directory(root))
+
+            self.assertEqual(
+                {candidate.file.name for candidate in candidates},
+                {"practice.py", "Example.java", "analysis.ipynb"},
+            )
+            self.assertEqual({candidate.category for candidate in candidates}, {"orphan_code"})
+
+    def test_project_and_dependency_code_are_not_orphan_code_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            (project / "pyproject.toml").write_text("[project]", encoding="utf-8")
+            (project / "app.py").write_text("print('x')", encoding="utf-8")
+            node_file = root / "node_modules" / "pkg" / "index.js"
+            node_file.parent.mkdir(parents=True)
+            node_file.write_text("console.log('x')", encoding="utf-8")
+            app_file = root / "Example.app" / "Contents" / "script.py"
+            app_file.parent.mkdir(parents=True)
+            app_file.write_text("print('x')", encoding="utf-8")
+
+            candidates = detect_review_candidates(scan_directory(root))
+
+            self.assertEqual(candidates, [])
+
 
 class ReviewPlanTests(unittest.TestCase):
     def test_plan_destinations_are_under_review_category_and_preserve_paths(self) -> None:
@@ -145,6 +177,22 @@ class ReviewPlanTests(unittest.TestCase):
             self.assertEqual(
                 plan[0].destination,
                 root / "AI_Review" / "temporary" / "subdir" / "file.tmp",
+            )
+
+    def test_orphan_code_plan_destination_uses_orphan_code_category(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            nested = root / "practice"
+            nested.mkdir()
+            (nested / "script.py").write_text("print('x')", encoding="utf-8")
+            candidates = detect_review_candidates(scan_directory(root))
+
+            plan = build_review_candidate_plan(candidates, root)
+
+            self.assertEqual(len(plan), 1)
+            self.assertEqual(
+                plan[0].destination,
+                root / "AI_Review" / "orphan_code" / "practice" / "script.py",
             )
 
     def test_plan_operation_reason_and_confidence_are_copied(self) -> None:

@@ -169,6 +169,13 @@ class ReviewStateMatchingTests(unittest.TestCase):
             self.assertEqual(remembered[0].decision, "approved")
             self.assertEqual(remembered[0].memory_status, "new_suggestion")
 
+    def test_review_state_accepts_orphan_code_review_category(self) -> None:
+        data = valid_state_data(category="review_candidate", review_category="orphan_code")
+
+        state = review_state_from_json_data(data)
+
+        self.assertEqual(state.decisions[0].review_category, "orphan_code")
+
     def test_non_matching_destination_does_not_apply(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

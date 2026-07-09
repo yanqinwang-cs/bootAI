@@ -71,6 +71,10 @@ Review candidates contain:
 - `reason`
 - `confidence`
 
+Current review candidate categories include `temporary`, `empty`, `backup_or_copy`,
+and `orphan_code`. `orphan_code` means an isolated code file outside detected
+project/package/application contexts; it is still only a candidate for review.
+
 Project groups contain:
 
 - `group_name`
@@ -109,5 +113,9 @@ remains the source of truth for facts.
 
 `warnings` is a list of strings. For example, invalid local LLM refinement output
 can produce a warning and leave `refined_organization_suggestions` empty.
+
+Reports also warn when deterministic organization suggestions are unusually
+broad, either above 1000 suggested moves or above half of the scanned file count.
+This warning is a review guardrail only and does not change apply requirements.
 
 Warnings do not approve movement and do not change apply-command requirements.

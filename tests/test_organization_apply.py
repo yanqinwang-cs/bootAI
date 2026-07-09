@@ -175,8 +175,8 @@ class DeterministicOrganizationApplyTests(unittest.TestCase):
     def test_destination_collisions_do_not_overwrite(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            first = root / "a" / "evosim.py"
-            second = root / "b" / "evosim.py"
+            first = root / "a" / "evosim.txt"
+            second = root / "b" / "evosim.txt"
             first.parent.mkdir()
             second.parent.mkdir()
             first.write_text("a", encoding="utf-8")
@@ -190,9 +190,9 @@ class DeterministicOrganizationApplyTests(unittest.TestCase):
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            destination = root / "Organized" / "Evosim" / "code"
-            self.assertEqual((destination / "evosim.py").read_text(encoding="utf-8"), "a")
-            self.assertEqual((destination / "b_evosim.py").read_text(encoding="utf-8"), "b")
+            destination = root / "Organized" / "Evosim" / "notes"
+            self.assertEqual((destination / "evosim.txt").read_text(encoding="utf-8"), "a")
+            self.assertEqual((destination / "b_evosim.txt").read_text(encoding="utf-8"), "b")
 
     def test_ai_review_files_are_not_reorganized_accidentally(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

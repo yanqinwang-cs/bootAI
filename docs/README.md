@@ -6,7 +6,7 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.4 are implemented. Stage 10.4 adds a static HTML report viewer generated from the JSON report data. Built-in scheduler daemons, saved review-session resume/editing, filtering/sorting/pagination, HTML review actions, and GUI work remain future work.
+Stages 1 through 10.4.1 are implemented. Stage 10.4 adds a static HTML report viewer generated from the JSON report data. Stage 10.4.1 makes normal organization conservative by default: document-like files may be suggested for organization, standalone HTML is handled cautiously, and isolated code files may be flagged as `orphan_code` candidates for review. Built-in scheduler daemons, broad code organization, saved review-session resume/editing, filtering/sorting/pagination, HTML review actions, and GUI work remain future work.
 
 ## Quick Navigation
 
@@ -26,4 +26,4 @@ Stages 1 through 10.4 are implemented. Stage 10.4 adds a static HTML report view
 
 ## Safety Philosophy
 
-The system separates facts, suggestions, reviewed decisions, approved moves, execution, and undo. Scanners and detectors collect facts. Planners build suggested dry-run actions. Review state remembers human decisions only. Execution requires explicit approval and writes an operation log. No module should permanently delete files.
+The system separates facts, suggestions, reviewed decisions, approved moves, execution, and undo. Scanners and detectors collect facts. Planners build suggested dry-run actions. Review state remembers human decisions only. Execution requires explicit approval and writes an operation log. Never permanently delete files.

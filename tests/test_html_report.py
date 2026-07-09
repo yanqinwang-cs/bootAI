@@ -253,7 +253,7 @@ def sample_report() -> dict[str, object]:
             "duplicate_group_count": 1,
             "duplicate_candidate_count": 1,
             "review_candidate_count": 1,
-            "review_candidate_counts_by_category": {"empty": 1},
+            "review_candidate_counts_by_category": {"empty": 1, "orphan_code": 1},
             "project_group_count": 1,
             "organization_suggestion_count": 1,
             "refinement_status": "not_requested",
@@ -281,6 +281,12 @@ def sample_report() -> dict[str, object]:
                 "category": "empty",
                 "reason": "file is 0 bytes and is not a known intentional placeholder",
                 "confidence": 80,
+            },
+            {
+                "path": "practice.py",
+                "category": "orphan_code",
+                "reason": "isolated code file is outside a detected project context",
+                "confidence": 65,
             }
         ],
         "review_candidate_plan": [

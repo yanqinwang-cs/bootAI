@@ -10,6 +10,7 @@ Filesystem
   -> suggestions
      -> planner.py
      -> review.py
+     -> scope.py
      -> grouping.py
      -> llm_refinement.py
   -> reports
@@ -37,6 +38,7 @@ Filesystem
 | `duplicates.py` | SHA-256 hashing and exact duplicate grouping |
 | `planner.py` | duplicate review planning |
 | `review.py` | heuristic review candidate detection and review planning |
+| `scope.py` | deterministic organization-scope and orphan-code classification helpers |
 | `grouping.py` | deterministic project grouping and organization suggestions |
 | `llm_refinement.py` | advisory LLM prompt, payload, validation, refined suggestions |
 | `ollama_client.py` | local Ollama client only |
@@ -49,9 +51,9 @@ Filesystem
 
 ## Facts, Suggestions, Approved Moves, Execution, Undo
 
-Facts come from deterministic Python: paths, sizes, hashes, extensions, and inferred deterministic groups. `scanner.py`, `duplicates.py`, `review.py`, and `grouping.py` produce facts or suggestions.
+Facts come from deterministic Python: paths, sizes, hashes, extensions, and inferred deterministic groups. `scanner.py`, `duplicates.py`, `scope.py`, `review.py`, and `grouping.py` produce facts or suggestions.
 
-Suggestions are represented as `MovePlanItem` objects and printed as dry-run plans. `llm_refinement.py` produces advisory suggestions only and stores them separately from deterministic `ProjectGroup` data.
+Suggestions are represented as `MovePlanItem` objects and printed as dry-run plans. Normal organization suggestions are conservative and document-like by default. `scope.py` excludes project/package/application internals from organization suggestions and allows isolated code files to be flagged as `orphan_code` candidates for review. `llm_refinement.py` produces advisory suggestions only and stores them separately from deterministic `ProjectGroup` data.
 
 Reports serialize facts and suggestions into JSON for manual review or external scheduler runs. `reports.py` may write a new report file under the scan root, but it does not execute moves or approve actions. `html_report.py` renders the same report dictionary into a static HTML viewer and may write an HTML report file under the scan root. HTML reports do not approve moves, apply moves, perform review actions, write operation logs, or start a server.
 

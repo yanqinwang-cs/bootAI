@@ -8,6 +8,7 @@ from organizer.models import (
     ProjectGroup,
 )
 from organizer.review import detect_review_candidates
+from organizer.scope import is_allowed_organization_file
 
 WEAK_TOKENS = {
     "final",
@@ -132,6 +133,8 @@ def build_organization_suggestions(
         used_destinations: set[Path] = set()
 
         for file in _sort_files(group.files):
+            if not is_allowed_organization_file(file, group.files):
+                continue
             subfolder = infer_subfolder(file)
             destination = suggested_root / subfolder / file.name
             destination = _avoid_destination_collision(
@@ -151,13 +154,14 @@ def build_organization_suggestions(
                 )
             )
 
-        suggestions.append(
-            OrganizationSuggestion(
-                group=group,
-                suggested_root=suggested_root,
-                plan_items=plan_items,
+        if plan_items:
+            suggestions.append(
+                OrganizationSuggestion(
+                    group=group,
+                    suggested_root=suggested_root,
+                    plan_items=plan_items,
+                )
             )
-        )
 
     return suggestions
 
@@ -177,6 +181,8 @@ def _eligible_files(
         if _is_under_folder(file.relative_path, review_folder_name):
             continue
         if file.relative_path in review_candidate_paths:
+            continue
+        if not is_allowed_organization_file(file, files):
             continue
         eligible.append(file)
     return _sort_files(eligible)

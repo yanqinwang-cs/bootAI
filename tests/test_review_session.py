@@ -116,6 +116,22 @@ class ReviewSessionConstructionTests(unittest.TestCase):
             self.assertTrue((root / "file.tmp").exists())
             self.assertFalse((root / "AI_Review").exists())
 
+    def test_orphan_code_rows_are_built_as_review_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "practice.py").write_text("print('x')", encoding="utf-8")
+
+            items = build_review_session_items(scan_directory(root), root)
+
+            self.assertEqual(len(items), 1)
+            self.assertEqual(items[0].id, "R1")
+            self.assertEqual(items[0].category, "review_candidate")
+            self.assertEqual(items[0].review_category, "orphan_code")
+            self.assertEqual(
+                items[0].plan_item.destination,
+                root.resolve() / "AI_Review" / "orphan_code" / "practice.py",
+            )
+
     def test_review_candidate_construction_preserves_stage_5_heuristics(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -986,6 +1002,29 @@ class SavedReviewedPlanValidationTests(unittest.TestCase):
         self.assertEqual(len(plan_items), 1)
         self.assertEqual(plan_items[0].source, root / "file.tmp")
         self.assertEqual(plan_items[0].destination, root / "AI_Review" / "temporary" / "file.tmp")
+
+    def test_saved_orphan_code_review_candidate_is_accepted(self) -> None:
+        root = Path("/tmp/root")
+        data = valid_saved_plan_data()
+        data["items"] = [
+            {
+                "id": "R1",
+                "category": "review_candidate",
+                "review_category": "orphan_code",
+                "decision": "approved",
+                "source": "practice.py",
+                "destination": "AI_Review/orphan_code/practice.py",
+                "reason": "isolated code file is outside a detected project context",
+                "confidence": 65,
+                "operation": "dry-run move",
+                "overwrite_risk": False,
+            }
+        ]
+
+        plan_items = reviewed_plan_data_to_move_items(data, root)
+
+        self.assertEqual(len(plan_items), 1)
+        self.assertEqual(plan_items[0].destination, root / "AI_Review" / "orphan_code" / "practice.py")
 
     def test_saved_plan_source_conflict_is_rejected_before_move_items_return(self) -> None:
         data = valid_saved_plan_data()

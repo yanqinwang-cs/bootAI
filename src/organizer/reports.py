@@ -86,6 +86,18 @@ def build_scan_report(
         review_candidate_counts_by_category[candidate.category] = (
             review_candidate_counts_by_category.get(candidate.category, 0) + 1
         )
+    organization_suggestion_count = sum(
+        len(suggestion.plan_items)
+        for suggestion in organization_suggestions
+    )
+    if _organization_suggestions_are_unusually_broad(
+        organization_suggestion_count,
+        len(file_items),
+    ):
+        warnings.append(
+            "Organization suggestions are unusually broad. Consider using --max-depth "
+            "or narrowing the organization scope before applying reviewed moves."
+        )
 
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
@@ -101,10 +113,7 @@ def build_scan_report(
                 sorted(review_candidate_counts_by_category.items())
             ),
             "project_group_count": len(project_groups),
-            "organization_suggestion_count": sum(
-                len(suggestion.plan_items)
-                for suggestion in organization_suggestions
-            ),
+            "organization_suggestion_count": organization_suggestion_count,
             "refinement_status": refinement_status,
         },
         "duplicates": [
@@ -209,6 +218,15 @@ def _duplicate_group_to_report(group: DuplicateGroup) -> dict[str, Any]:
             for file in group.files
         ],
     }
+
+
+def _organization_suggestions_are_unusually_broad(
+    organization_suggestion_count: int,
+    file_count: int,
+) -> bool:
+    if organization_suggestion_count > 1000:
+        return True
+    return file_count > 0 and organization_suggestion_count / file_count > 0.5
 
 
 def _review_candidate_to_report(candidate: ReviewCandidate) -> dict[str, Any]:
