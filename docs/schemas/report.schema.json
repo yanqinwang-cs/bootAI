@@ -18,6 +18,7 @@
     "organization_suggestions",
     "refined_organization_suggestions",
     "organization_rules",
+    "rule_audit",
     "anchor_decisions",
     "organization_pattern_inference",
     "warnings"
@@ -161,6 +162,9 @@
     "organization_rules": {
       "$ref": "#/$defs/organization_rules"
     },
+    "rule_audit": {
+      "$ref": "#/$defs/rule_audit"
+    },
     "anchor_decisions": {
       "$ref": "#/$defs/anchor_decisions"
     },
@@ -286,7 +290,8 @@
         "message",
         "locked_anchors",
         "ignored_terms",
-        "anchor_aliases"
+        "anchor_aliases",
+        "preferred_granularities"
       ],
       "properties": {
         "status": {
@@ -318,6 +323,133 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "preferred_granularities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rule_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rules_loaded",
+        "rules_path",
+        "locked_anchors",
+        "ignored_terms",
+        "anchor_aliases",
+        "preferred_granularities",
+        "before_after_counts",
+        "rule_effects",
+        "warnings"
+      ],
+      "properties": {
+        "rules_loaded": {
+          "type": "boolean"
+        },
+        "rules_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "locked_anchors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ignored_terms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "anchor_aliases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "preferred_granularities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "before_after_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "rule_effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule_effect"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rule_effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_type",
+        "value",
+        "effect",
+        "matched_file_count",
+        "affected_anchors",
+        "before_decision",
+        "after_decision",
+        "risk_level",
+        "warning"
+      ],
+      "properties": {
+        "rule_type": {
+          "type": "string"
+        },
+        "value": {},
+        "effect": {
+          "type": "string"
+        },
+        "matched_file_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "affected_anchors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "before_decision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "after_decision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "risk_level": {
+          "type": "string"
+        },
+        "warning": {
+          "type": "string"
         }
       }
     },

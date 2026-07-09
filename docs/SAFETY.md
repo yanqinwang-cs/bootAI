@@ -45,6 +45,9 @@
 - Rule decisions must not write `organization_rules.json` without exact `APPLY ORGANIZATION RULES` confirmation.
 - Rule-review config updates must not create `MovePlanItem` values, call `executor.py`, move files, or write movement operation logs.
 - `preferred_granularities` are advisory only in Stage 10.6.
+- Rule-aware audit is read-only and must not write or modify organization rules.
+- Rule-aware audit must not create movement-plan items, call `executor.py`, move files, or write operation logs.
+- Preferred granularities remain advisory and non-behavior-changing in Stage 10.7.
 - Locked anchors must not bypass protected/generated/project-output exclusions.
 - Locked anchors should require at least two eligible safe files before producing organization suggestions.
 - Ignored terms win over locked anchors after alias normalization.

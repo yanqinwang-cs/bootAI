@@ -114,3 +114,29 @@ class RuleReviewResult:
     ignored: tuple[RuleDecision, ...]
     undecided: tuple[RuleDecision, ...]
     warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RuleEffect:
+    rule_type: str
+    value: object
+    effect: str
+    matched_file_count: int = 0
+    affected_anchors: tuple[str, ...] = ()
+    before_decision: str | None = None
+    after_decision: str | None = None
+    risk_level: str = "none"
+    warning: str = ""
+
+
+@dataclass(frozen=True)
+class RuleAudit:
+    rules_loaded: bool
+    rules_path: str | None
+    locked_anchors: tuple[str, ...]
+    ignored_terms: tuple[str, ...]
+    anchor_aliases: dict[str, str]
+    preferred_granularities: tuple[str, ...]
+    before_after_counts: dict[str, int]
+    rule_effects: tuple[RuleEffect, ...]
+    warnings: tuple[str, ...]

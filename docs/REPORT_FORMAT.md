@@ -38,6 +38,7 @@ operation logs, or start a server.
 | `organization_suggestions` | Dry-run deterministic organization suggestions. | array |
 | `refined_organization_suggestions` | Dry-run local-LLM refined suggestions, if requested and valid. | array |
 | `organization_rules` | Read-only organization-rules status and resolved rule metadata. | object |
+| `rule_audit` | Read-only audit of how loaded organization rules affect report output. | object |
 | `anchor_decisions` | Alias-normalized anchor decisions used for grouping reports. | object |
 | `organization_pattern_inference` | Report-only inferred foldering patterns and manual rule candidates. | object |
 | `warnings` | Non-fatal report-generation warnings. | array |
@@ -121,6 +122,28 @@ project-output contexts. It does not write `organization_rules.json`, create
 Rule candidates are advisory. Exporting them for review writes a separate JSON
 file under `AI_Review/rules/`; applying accepted decisions requires exact
 `APPLY ORGANIZATION RULES` confirmation and updates configuration only.
+
+## Rule-Aware Organization Audit
+
+`rule_audit` is included automatically in JSON and HTML reports.
+
+When no valid rules file is loaded, `rules_loaded` is `false`, rule effects are
+empty, and warnings explain that the audit was skipped. Report generation does
+not create, repair, or modify `organization_rules.json`.
+
+When rules are loaded, the audit compares conservative built-in defaults against
+the loaded rule-aware output in memory. It reports:
+
+- `before_after_counts`: deterministic counts for needs-decision anchors,
+  suggested anchors, ignored anchors, and organization suggestion counts.
+- `rule_effects`: per-rule effects for locked anchors, ignored terms, aliases,
+  and advisory preferred granularities.
+- `warnings`: cautious report-only warnings for broad locked anchors or large
+  suggestion-count increases.
+
+Risk thresholds are deterministic: 0 to 10 matched files is `low`, 11 to 50 is
+`medium`, and 51 or more is `high`. Preferred granularities remain advisory and
+do not change organization behavior in Stage 10.7.
 
 ## Fact Sections
 

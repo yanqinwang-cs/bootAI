@@ -26,6 +26,7 @@ def render_html_report(report: dict[str, object]) -> str:
             _metadata_section(report),
             _summary_section(report.get("summary")),
             _organization_rules_section(report.get("organization_rules")),
+            _rule_audit_section(report.get("rule_audit")),
             _anchor_decisions_section(report.get("anchor_decisions")),
             _organization_pattern_inference_section(
                 report.get("organization_pattern_inference")
@@ -131,6 +132,85 @@ def _organization_rules_section(rules: object) -> str:
         ["Locked anchors", locked_text],
     ]
     return _section("Organization rules", _table(["Field", "Value"], rows))
+
+
+def _rule_audit_section(rule_audit: object) -> str:
+    if not isinstance(rule_audit, dict) or not rule_audit:
+        return _section("Rule-aware organization audit", _empty_message())
+    rows = [
+        ["Rules loaded", rule_audit.get("rules_loaded", False)],
+        ["Rules path", rule_audit.get("rules_path", "") or "(none)"],
+        ["Locked anchors", rule_audit.get("locked_anchors", [])],
+        ["Ignored terms", rule_audit.get("ignored_terms", [])],
+        ["Anchor aliases", rule_audit.get("anchor_aliases", {})],
+        ["Preferred granularities", rule_audit.get("preferred_granularities", [])],
+    ]
+    blocks = [
+        (
+            "<p>Rule-aware audit is read-only. It shows how accepted "
+            "organization rules affect report suggestions; it does not move files.</p>"
+        ),
+        _table(["Field", "Value"], rows),
+        _rule_audit_counts_table(rule_audit.get("before_after_counts")),
+        _rule_effect_table(rule_audit.get("rule_effects")),
+        _rule_audit_warnings(rule_audit.get("warnings")),
+    ]
+    return _section("Rule-aware organization audit", "".join(blocks))
+
+
+def _rule_audit_counts_table(counts: object) -> str:
+    if not isinstance(counts, dict) or not counts:
+        return "<h3>Before/after counts</h3>" + _empty_message()
+    rows = [[key, counts[key]] for key in sorted(counts)]
+    return "<h3>Before/after counts</h3>" + _table(["Metric", "Value"], rows)
+
+
+def _rule_effect_table(effects: object) -> str:
+    if not isinstance(effects, list) or not effects:
+        return "<h3>Rule effects</h3>" + _empty_message()
+    rows = []
+    for effect in effects:
+        if not isinstance(effect, dict):
+            continue
+        rows.append(
+            [
+                effect.get("rule_type", ""),
+                effect.get("value", ""),
+                effect.get("matched_file_count", ""),
+                effect.get("affected_anchors", []),
+                effect.get("before_decision", ""),
+                effect.get("after_decision", ""),
+                effect.get("risk_level", ""),
+                effect.get("warning", ""),
+                effect.get("effect", ""),
+            ]
+        )
+    if not rows:
+        return "<h3>Rule effects</h3>" + _empty_message()
+    return (
+        "<h3>Rule effects</h3>"
+        + _table(
+            [
+                "Rule type",
+                "Value",
+                "Matched files",
+                "Affected anchors",
+                "Before",
+                "After",
+                "Risk",
+                "Warning",
+                "Effect",
+            ],
+            rows,
+        )
+    )
+
+
+def _rule_audit_warnings(warnings: object) -> str:
+    if not isinstance(warnings, list) or not warnings:
+        return "<h3>Audit warnings</h3>" + _empty_message()
+    items = "".join(f"<li>{_escape(warning)}</li>" for warning in warnings)
+    return f"<h3>Audit warnings</h3><ul class=\"warnings\">{items}</ul>"
 
 
 def _anchor_decisions_section(anchor_decisions: object) -> str:

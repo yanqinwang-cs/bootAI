@@ -446,6 +446,49 @@ PYTHONPATH=src python3 -m organizer.cli "$RULE_ROOT" \
 
 Expected outcome: only accepted rule decisions are written to `AI_Review/config/organization_rules.json`, a rule apply result log is written under `AI_Review/rules/`, and no files move.
 
+## Stage 10.7 Rule-Aware Audit Check
+
+Use a disposable folder:
+
+```bash
+AUDIT_ROOT="/tmp/bootai_rule_audit_smoke"
+rm -rf "$AUDIT_ROOT"
+mkdir -p "$AUDIT_ROOT/AI_Review/config"
+
+cat > "$AUDIT_ROOT/AI_Review/config/organization_rules.json" <<'JSON'
+{
+  "version": 1,
+  "locked_anchors": ["CS1010X"],
+  "ignored_terms": ["Python"],
+  "anchor_aliases": {
+    "programming methodology": "CS1010X"
+  },
+  "preferred_granularities": ["course_code"]
+}
+JSON
+
+printf "x\n" > "$AUDIT_ROOT/CS1010X-lec1.pdf"
+printf "x\n" > "$AUDIT_ROOT/CS1010X-lec2.pdf"
+printf "x\n" > "$AUDIT_ROOT/Python notes.pdf"
+printf "x\n" > "$AUDIT_ROOT/Python slides.pdf"
+
+PYTHONPATH=src python3 -m organizer.cli "$AUDIT_ROOT" --html-report
+```
+
+Expected outcome: JSON and HTML reports include `rule_audit`, `rules_loaded` is true, locked anchors and ignored terms are listed, per-rule effects are shown, preferred granularities are described as advisory, `organization_rules.json` is unchanged, and no files move.
+
+No-rules check:
+
+```bash
+AUDIT_ROOT="/tmp/bootai_rule_audit_no_rules_smoke"
+rm -rf "$AUDIT_ROOT"
+mkdir -p "$AUDIT_ROOT"
+printf "x\n" > "$AUDIT_ROOT/CS1010X-lec1.pdf"
+
+PYTHONPATH=src python3 -m organizer.cli "$AUDIT_ROOT" --html-report
+test ! -f "$AUDIT_ROOT/AI_Review/config/organization_rules.json" && echo "OK: report did not create rules"
+```
+
 ## Stage 10.0 Batch Review
 
 Use a disposable folder and run:

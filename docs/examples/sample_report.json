@@ -87,7 +87,21 @@
     "locked_anchors": [],
     "message": "No organization rules file found. Using conservative built-in defaults.",
     "path": null,
+    "preferred_granularities": [],
     "status": "defaults"
+  },
+  "rule_audit": {
+    "anchor_aliases": {},
+    "before_after_counts": {},
+    "ignored_terms": [],
+    "locked_anchors": [],
+    "preferred_granularities": [],
+    "rule_effects": [],
+    "rules_loaded": false,
+    "rules_path": null,
+    "warnings": [
+      "No organization rules file found. Rule-aware audit was skipped."
+    ]
   },
   "organization_pattern_inference": {
     "patterns": [

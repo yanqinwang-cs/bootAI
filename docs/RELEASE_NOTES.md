@@ -1,6 +1,6 @@
 # Release Notes
 
-## Current Status Through Stage 10.6
+## Current Status Through Stage 10.7
 
 Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the existing JSON report and a browser-openable HTML rendering from the same report data without approving or applying moves.
 
@@ -15,6 +15,8 @@ Stage 10.4.4 adds optional read-only organization rules loaded from `AI_Review/c
 Stage 10.5 adds report-only existing organization pattern inference. Existing folders can provide weak local preference evidence for course-code, project, person/student, role, year, or format foldering. Reports can rank related `Needs decision` anchors and show inferred rule candidates, but no rules file is written, no move plans are created directly from inference, and no files move.
 
 Stage 10.6 adds a confirmed organization-rule review workflow. Inferred rule candidates can be exported to manually editable JSON, reviewed as accepted, rejected, ignored, or undecided, and applied to `AI_Review/config/organization_rules.json` only with exact `APPLY ORGANIZATION RULES` confirmation. Rule updates are configuration changes for future reports/grouping only; they do not move files.
+
+Stage 10.7 adds a read-only rule-aware organization audit to JSON and HTML reports. Reports compare conservative defaults with loaded explicit organization rules, show per-rule effects, and warn about broad-impact rules or large suggestion-count increases. The audit does not write rules, create movement-plan items, call `executor.py`, or move files.
 
 ## Stage Summary
 
@@ -43,6 +45,7 @@ Stage 10.6 adds a confirmed organization-rule review workflow. Inferred rule can
 - Stage 10.4.4: read-only organization rules and anchor-decision reporting.
 - Stage 10.5: existing organization pattern inference for JSON and HTML reports.
 - Stage 10.6: organization rule candidate export and confirmed rule-decision apply.
+- Stage 10.7: rule-aware organization audit in JSON and HTML reports.
 
 ## Safety Model
 

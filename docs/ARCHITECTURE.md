@@ -44,6 +44,7 @@ Filesystem
 | `grouping.py` | deterministic project grouping and organization suggestions |
 | `pattern_inference.py` | report-only inference of existing folder organization patterns |
 | `rule_review.py` | organization rule candidate export, reviewed-decision validation, and confirmed config updates |
+| `rule_audit.py` | read-only audit of organization-rule effects in reports |
 | `llm_refinement.py` | advisory LLM prompt, payload, validation, refined suggestions |
 | `ollama_client.py` | local Ollama client only |
 | `reports.py` | read-only report assembly and JSON report writing |
@@ -62,6 +63,8 @@ Suggestions are represented as `MovePlanItem` objects and printed as dry-run pla
 Reports serialize facts and suggestions into JSON for manual review or external scheduler runs. `pattern_inference.py` enriches reports with weak evidence from existing user folders, such as course-code foldering or person/student foldering. This evidence can rank `Needs decision` anchors and suggest manual rule candidates, but it does not write `organization_rules.json`, create `MovePlanItem` values directly, or approve broad organization. `reports.py` may write a new report file under the scan root, but it does not execute moves or approve actions. `html_report.py` renders the same report dictionary into a static HTML viewer and may write an HTML report file under the scan root. HTML reports do not approve moves, apply moves, perform review actions, write operation logs, or start a server.
 
 Rule review is a configuration workflow, not a movement workflow. `rule_review.py` exports inferred rule candidates to manually editable JSON, validates reviewed decisions as untrusted input, and writes `organization_rules.json` only after exact `APPLY ORGANIZATION RULES` confirmation through the CLI. It does not create `MovePlanItem` values, import `executor.py`, write operation logs, or move files. Rule apply result files are configuration-update audit records only.
+
+Rule-aware audit is report-only. `rule_audit.py` compares conservative defaults with loaded explicit organization rules in memory, reports per-rule effects and broad-impact warnings, and does not create movement-plan items, write rules, import `executor.py`, or move files.
 
 Batch review sessions collect duplicate, deterministic organization, and review-candidate `MovePlanItem` values for command-line review. Review-candidate rows keep `category = "review_candidate"` separate from `review_category` metadata such as `empty`, `temporary`, or `backup_or_copy`. Approve/reject decisions and reviewed-plan JSON records do not execute moves. Approved rows are checked for source and destination conflicts before apply. Saved reviewed-plan JSON is treated as untrusted input when loaded later; `review_session.py` validates it, rejects approved move conflicts, and converts only approved records back into `MovePlanItem` values. Final apply still uses `executor.py`.
 

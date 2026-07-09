@@ -61,6 +61,7 @@ class OrganizationRulesLoadResult:
     status: str
     message: str
     warnings: list[str]
+    raw_data: dict[str, Any] | None = None
 
 
 def default_organization_rules() -> OrganizationRules:
@@ -112,6 +113,7 @@ def load_organization_rules(root: Path) -> OrganizationRulesLoadResult:
         status=status,
         message=f"Loaded organization rules from {ORGANIZATION_RULES_RELATIVE_PATH.as_posix()}.",
         warnings=warnings,
+        raw_data=data,
     )
 
 

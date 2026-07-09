@@ -39,6 +39,7 @@ from organizer.pattern_inference import (
 )
 from organizer.planner import build_duplicate_review_plan
 from organizer.review import build_review_candidate_plan, detect_review_candidates
+from organizer.rule_audit import build_rule_audit, rule_audit_to_report
 from organizer.rule_review import rule_candidates_from_inferred
 from organizer.safety import validate_under_root
 from organizer.scanner import scan_directory
@@ -76,6 +77,11 @@ def build_scan_report(
     pattern_inference = infer_organization_patterns(
         metadata_items,
         anchor_decisions,
+    )
+    rule_audit = build_rule_audit(
+        metadata_items,
+        resolved_root,
+        organization_rules,
     )
     project_groups = find_project_groups(
         metadata_items,
@@ -174,6 +180,7 @@ def build_scan_report(
             "refinement_status": refinement_status,
         },
         "organization_rules": _organization_rules_to_report(organization_rules, resolved_root),
+        "rule_audit": rule_audit_to_report(rule_audit),
         "anchor_decisions": _anchor_decisions_to_report(
             anchor_decisions,
             pattern_inference,
@@ -300,6 +307,7 @@ def _organization_rules_to_report(
         ),
         "ignored_terms": sorted(load_result.rules.ignored_terms),
         "anchor_aliases": dict(sorted(load_result.rules.anchor_aliases.items())),
+        "preferred_granularities": sorted(load_result.rules.preferred_granularities),
     }
 
 

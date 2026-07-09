@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.6 are implemented. The tool can currently:
+Stages 1 through 10.7 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -19,6 +19,7 @@ Stages 1 through 10.6 are implemented. The tool can currently:
 - Infer existing organization patterns for reports without writing rules.
 - Export inferred organization rule candidates for manual review.
 - Apply accepted organization rule decisions only after exact confirmation.
+- Audit how accepted organization rules affect report output.
 - Suggest organization plans.
 - Flag isolated code files as candidates for review.
 - Optionally refine organization suggestions with local Ollama.
@@ -31,7 +32,7 @@ Stages 1 through 10.6 are implemented. The tool can currently:
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.6 adds a confirmed rule-review workflow. Inferred rule candidates can be exported to JSON, manually reviewed, and applied to `AI_Review/config/organization_rules.json` only with exact `APPLY ORGANIZATION RULES` confirmation. Accepted rules affect future grouping/report behavior; they do not move files. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.7 adds a read-only rule-aware audit to JSON and HTML reports. It compares conservative defaults with loaded organization rules, shows per-rule effects, and warns about broad-impact rules. It does not write rules or move files. Broad code organization, HTML review actions, saved-session resume/editing, filtering/sorting/pagination, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
@@ -129,6 +130,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Rule candidate export writes review JSON only and does not create `organization_rules.json`.
 - Rule decisions update `organization_rules.json` only through `--apply-rule-decisions` with exact `APPLY ORGANIZATION RULES` confirmation.
 - Accepted organization rules do not move files and do not write operation logs.
+- Reports include a rule-aware audit when organization rules exist and explain when rules are missing or invalid.
 - Review mode approve/reject/save commands do not move files.
 - Review mode stores decision memory under `AI_Review/review_state/review_decisions.json`.
 - Review state is decision memory, not an operation log, and does not record filesystem success.

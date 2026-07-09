@@ -88,6 +88,12 @@ weak preference evidence from existing eligible folders. It can rank
 `Needs decision` anchors and suggest manual rule candidates, but it does not
 write rules, create move plans directly, or apply moves.
 
+Reports also include a rule-aware organization audit. When a valid
+`AI_Review/config/organization_rules.json` exists, the audit compares
+conservative defaults with loaded explicit rules and reports per-rule effects.
+When no valid rules file exists, the audit reports `rules_loaded: false`. The
+audit does not write rules, create movement-plan items, or move files.
+
 ## Organization Rule Review
 
 ```bash
