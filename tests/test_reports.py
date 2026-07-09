@@ -22,6 +22,7 @@ REPORT_TOP_LEVEL_KEYS = {
     "organization_suggestions",
     "refined_organization_suggestions",
     "organization_rules",
+    "rule_audit",
     "anchor_decisions",
     "organization_pattern_inference",
     "warnings",
@@ -75,6 +76,7 @@ class ReportGenerationTests(unittest.TestCase):
                 self.assertIn(key, summary)
             for key in [
                 "organization_rules",
+                "rule_audit",
                 "anchor_decisions",
                 "organization_pattern_inference",
                 "duplicates",

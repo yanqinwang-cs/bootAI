@@ -26,6 +26,7 @@ class HtmlReportRenderingTests(unittest.TestCase):
         self.assertIn("<title>bootAI Report</title>", html)
         self.assertIn("Summary", html)
         self.assertIn("Organization rules", html)
+        self.assertIn("Rule-aware organization audit", html)
         self.assertIn("Anchor decisions", html)
         self.assertIn("Inferred organization patterns", html)
         self.assertIn("Suggested groups", html)
