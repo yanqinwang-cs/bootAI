@@ -14,9 +14,8 @@
     <p class="root-note">This folder is locked for the lifetime of this process.</p>
   </div>
 
-  <div class="status-message" role="status">
-    <h2>No scan has run yet.</h2>
-    <p>No files have been moved. Scanning will be added in Stage 11.3.</p>
+  <div id="scan-panel">
+    {% include "scan_panel.html" %}
   </div>
 </section>
 {% endblock %}

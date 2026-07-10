@@ -175,10 +175,11 @@ class WebAppTests(unittest.IsolatedAsyncioTestCase):
             for route in _application_routes(self.app.routes)
             if hasattr(route, "path") and hasattr(route, "methods")
         }
-        self.assertTrue(all("POST" not in methods for methods in methods_by_path.values()))
         self.assertEqual(methods_by_path["/healthz"], {"GET"})
         self.assertEqual(methods_by_path["/launch/{token}"], {"GET"})
         self.assertEqual(methods_by_path["/"], {"GET"})
+        self.assertEqual(methods_by_path["/scan"], {"POST"})
+        self.assertEqual(methods_by_path["/scan/status"], {"GET"})
 
         async with _client(self.app) as client:
             for path in ("/docs", "/redoc", "/openapi.json"):
@@ -201,14 +202,13 @@ class WebAppTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("No files have been moved", html)
         self.assertIn(str(self.root), html)
         self.assertNotIn("/tmp/attacker", html)
-        self.assertNotIn("<form", html)
-        self.assertNotIn("<button", html)
+        self.assertIn("<form", html)
+        self.assertIn("Scan folder", html)
         self.assertNotIn("onclick=", html)
         self.assertNotIn("<script>", html)
         self.assertNotIn("https://", html)
         self.assertNotIn("http://", html)
         for unfinished_control in (
-            "Start scan",
             "Review plans",
             "Apply changes",
             "Restore files",

@@ -5,7 +5,7 @@ from typing import Any
 
 from organizer.application.view_models import ScanApplicationResult, ScanSummary
 from organizer.ollama_client import OllamaClient
-from organizer.reports import build_scan_report
+from organizer.reports import build_scan_report, write_report
 
 
 def scan_root(
@@ -48,6 +48,11 @@ def scan_root(
         ),
         warnings=warnings,
     )
+
+
+def write_scan_report(result: ScanApplicationResult) -> Path:
+    """Persist an authoritative scan result using the existing report writer."""
+    return write_report(result.report, result.root)
 
 
 def _potential_duplicate_bytes(duplicates: list[object]) -> int:

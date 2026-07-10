@@ -24,7 +24,7 @@ from organizer.application.review_service import (
     update_review_page_size,
     update_review_sort,
 )
-from organizer.application.scan_service import scan_root
+from organizer.application.scan_service import scan_root, write_scan_report
 from organizer.application.view_models import (
     ArtifactLoadResult,
     ArtifactSummary,
@@ -61,6 +61,7 @@ __all__ = [
     "resume_review_session",
     "save_review_session",
     "scan_root",
+    "write_scan_report",
     "summarize_review_session",
     "update_review_filter",
     "update_review_page",

@@ -74,6 +74,34 @@ main {
   color: var(--bootai-muted);
 }
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.summary-grid div {
+  padding: 1rem;
+  border: 1px solid var(--bootai-border);
+  border-radius: 0.5rem;
+}
+
+.summary-grid dt {
+  color: var(--bootai-muted);
+  font-size: 0.9rem;
+}
+
+.summary-grid dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.failure-message {
+  border-color: #a53d2f;
+}
+
 .skip-link {
   position: absolute;
   top: 0;

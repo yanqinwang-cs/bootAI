@@ -131,14 +131,19 @@ class WebDependencyHygieneTests(unittest.TestCase):
             for path in sorted(WEB_ROOT.rglob("*.py"))
         ).lower()
         for forbidden in (
-            "organizer.application",
             "organizer.executor",
-            "scan_root",
+            "organizer.scanner",
+            "organizer.duplicates",
+            "organizer.planner",
+            "organizer.review",
+            "organizer.grouping",
+            "organizer.reports",
             "create_review_session",
             "restore",
             "sqlite",
         ):
             self.assertNotIn(forbidden, combined)
+        self.assertIn("organizer.application.scan_service", combined)
         self.assertIn("from organizer.safety import validate_under_root", combined)
 
     def test_core_and_web_config_import_without_optional_dependencies(self) -> None:

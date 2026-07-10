@@ -14,6 +14,7 @@ from starlette.templating import Jinja2Templates
 
 from organizer.web.config import WebAppConfig
 from organizer.web.routes.home import create_home_router
+from organizer.web.scan_jobs import ScanJobController
 from organizer.web.security import (
     LaunchTokenGate,
     SecurityHeadersMiddleware,
@@ -54,6 +55,7 @@ def create_app(config: WebAppConfig) -> FastAPI:
     app.state.web_config = config
     app.state.templates = templates
     app.state.launch_token_gate = LaunchTokenGate(config.launch_token)
+    app.state.scan_jobs = ScanJobController(config.root)
     app.include_router(create_home_router(templates))
     app.mount(
         "/static",

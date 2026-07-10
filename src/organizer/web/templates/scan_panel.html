@@ -1,0 +1,49 @@
+{% if scan.status == "not_started" %}
+<section id="scan-panel" class="status-message" aria-labelledby="scan-heading" role="status">
+  <h2 id="scan-heading">No scan has run yet.</h2>
+  <p>No files have been moved. Scanning only creates a read-only report.</p>
+  <form method="post" action="/scan" hx-post="/scan" hx-target="#scan-panel" hx-swap="outerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-primary" type="submit">Scan folder</button>
+  </form>
+</section>
+{% elif scan.status == "scanning" %}
+<section id="scan-panel" class="status-message" aria-labelledby="scan-heading" role="status" aria-live="polite"
+         hx-get="/scan/status" hx-trigger="every 1s" hx-target="#scan-panel" hx-swap="outerHTML">
+  <h2 id="scan-heading">Scanning this folder…</h2>
+  <p>No files are being moved.</p>
+  <p>Started at {{ scan.started_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}.</p>
+  <div class="progress" role="progressbar" aria-label="Scanning in progress" aria-valuetext="Scanning in progress">
+    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+  </div>
+</section>
+{% elif scan.status == "completed" %}
+<section id="scan-panel" class="status-message" aria-labelledby="scan-heading" role="status" aria-live="polite">
+  <h2 id="scan-heading">Scan completed</h2>
+  <p>No files were moved. This report is read-only.</p>
+  <dl class="summary-grid">
+    <div><dt>Total files</dt><dd>{{ scan.result.summary.file_count }}</dd></div>
+    <div><dt>Total bytes</dt><dd>{{ scan.result.summary.total_bytes|filesizeformat }}</dd></div>
+    <div><dt>Exact duplicate groups</dt><dd>{{ scan.result.summary.duplicate_group_count }}</dd></div>
+    <div><dt>Potential duplicate bytes</dt><dd>{{ scan.result.summary.potential_duplicate_bytes|filesizeformat }}</dd></div>
+    <div><dt>Review candidates</dt><dd>{{ scan.result.summary.review_candidate_count }}</dd></div>
+    <div><dt>Organization suggestions</dt><dd>{{ scan.result.summary.organization_suggestion_count }}</dd></div>
+    <div><dt>Warnings</dt><dd>{{ scan.result.warnings|length }}</dd></div>
+  </dl>
+  <p>Completed at {{ scan.completed_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}.</p>
+  <p>Saved report: <code>{{ relative_report_path }}</code></p>
+  <form method="post" action="/scan">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-primary" type="submit">Scan folder again</button>
+  </form>
+</section>
+{% else %}
+<section id="scan-panel" class="status-message failure-message" aria-labelledby="scan-heading" role="alert">
+  <h2 id="scan-heading">Scan failed</h2>
+  <p>{{ scan.error_message }}</p>
+  <form method="post" action="/scan">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-primary" type="submit">Try scan again</button>
+  </form>
+</section>
+{% endif %}

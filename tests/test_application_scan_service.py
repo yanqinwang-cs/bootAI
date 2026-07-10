@@ -4,12 +4,21 @@ import tempfile
 import unittest
 from unittest import mock
 
-from organizer.application.scan_service import scan_root
+from organizer.application.scan_service import scan_root, write_scan_report
 from organizer.ollama_client import OllamaClient
 from organizer.reports import build_scan_report
 
 
 class ScanServiceTests(unittest.TestCase):
+    def test_write_scan_report_uses_collision_safe_report_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = scan_root(root)
+            report_path = write_scan_report(result)
+
+            self.assertEqual(report_path.name, next(report_path.parent.glob("*_report.json")).name)
+            self.assertTrue(report_path.is_file())
+            self.assertFalse((root / "operation_logs").exists())
     def test_deterministic_scan_returns_authoritative_report_and_summary(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
