@@ -125,8 +125,12 @@ class WebDependencyHygieneTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, combined)
 
-    def test_web_shell_has_no_workflow_or_movement_imports(self) -> None:
+    def test_web_routes_use_application_services_not_domain_owners(self) -> None:
         combined = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted((WEB_ROOT / "routes").rglob("*.py"))
+        ).lower()
+        all_web_code = "\n".join(
             path.read_text(encoding="utf-8")
             for path in sorted(WEB_ROOT.rglob("*.py"))
         ).lower()
@@ -135,19 +139,28 @@ class WebDependencyHygieneTests(unittest.TestCase):
             "organizer.scanner",
             "organizer.duplicates",
             "organizer.planner",
-            "organizer.review",
+            "from organizer.review import",
+            "from organizer.review_session import",
+            "from organizer.review_state import",
+            "import organizer.review",
+            "import organizer.review_session",
+            "import organizer.review_state",
             "organizer.grouping",
             "organizer.reports",
-            "restore",
-            "sqlite",
         ):
             self.assertNotIn(forbidden, combined)
-        self.assertIn("organizer.application.scan_service", combined)
+        for forbidden in ("organizer.executor", "restore", "sqlite"):
+            self.assertNotIn(forbidden, all_web_code)
+        self.assertIn("organizer.application.scan_service", all_web_code)
+        self.assertIn("organizer.application.review_service", combined)
         self.assertNotIn(
             "from organizer.application.review_service import create_review_session\n",
             combined,
         )
-        self.assertIn("from organizer.safety import validate_under_root", combined)
+        self.assertIn(
+            "from organizer.safety import validate_under_root",
+            all_web_code,
+        )
 
     def test_core_and_web_config_import_without_optional_dependencies(self) -> None:
         command = [

@@ -44,7 +44,7 @@ class WebReviewRouteTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         self.directory.cleanup()
 
-    async def test_review_routes_render_read_only_rows_and_details(self) -> None:
+    async def test_review_routes_render_rows_decisions_and_details_without_writes(self) -> None:
         before = sorted(path.relative_to(self.root).as_posix() for path in self.root.rglob("*"))
         async with _client(self.app) as client:
             await client.get(f"/launch/{self.token}")
@@ -60,7 +60,7 @@ class WebReviewRouteTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('<html lang="en">', review.text)
         self.assertIn("<title>Review findings · bootAI</title>", review.text)
         self.assertIn('<main id="main-content"', review.text)
-        self.assertIn('<caption>Read-only review findings</caption>', review.text)
+        self.assertIn('<caption>Review findings and decisions</caption>', review.text)
         self.assertIn('scope="col"', review.text)
         self.assertIn('for="decision-filter"', review.text)
         self.assertIn('aria-current="page"', review.text)
@@ -70,9 +70,11 @@ class WebReviewRouteTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Exact duplicates", review.text)
         self.assertIn("D1", review.text)
         self.assertIn("Review later", review.text)
-        self.assertNotIn("approve-page", review.text)
-        self.assertNotIn("reject-page", review.text)
-        self.assertNotIn("undecide-page", review.text)
+        self.assertIn("Organize current page", review.text)
+        self.assertIn("Keep current page here", review.text)
+        self.assertIn("Mark current page for later review", review.text)
+        self.assertIn('aria-pressed="true"', review.text)
+        self.assertIn("Save reviewed plan", review.text)
         self.assertIn("backup copy.txt", review.text)
         self.assertEqual(duplicate.status_code, 200)
         self.assertIn("1 matching rows", duplicate.text)

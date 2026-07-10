@@ -82,7 +82,7 @@ def create_review_session(
 def create_review_session_from_scan_result(
     result: ScanApplicationResult,
 ) -> ReviewApplicationSession:
-    """Create read-only review rows from one completed scan result."""
+    """Create review rows from one completed scan result without rescanning."""
     resolved_root = result.root.resolve()
     items = build_review_session_items_from_report(result.report, resolved_root)
     state = load_review_state(resolved_root)
@@ -93,7 +93,7 @@ def create_review_session_from_scan_result(
         items=items,
         source_path=None,
         review_state=state,
-        persist_review_state=False,
+        persist_review_state=True,
         review_state_ignored=False,
     )
 

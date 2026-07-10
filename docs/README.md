@@ -6,9 +6,9 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.14 and Stages 11.0 through 11.4 are implemented. Stages 11.3 and 11.4 add the read-only scan dashboard and latest-completed-scan review explorer on top of the Stage 11.1 application-service boundary.
+Stages 1 through 10.14 and Stages 11.0 through 11.5 are implemented. Stage 11.5 completes the first web MVP on the application-service boundary: scan, inspect, decide, and explicitly save a reviewed plan.
 
-The local web application is the intended primary interface for ordinary users. Its current screens are an authenticated, root-locked read-only scan dashboard and latest-completed-scan review explorer: it runs on `127.0.0.1`, serves bundled assets, and does not expose decisions, apply, or restore. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only, and native desktop work is optional and deferred until after Stage 11.
+The local web application is the intended primary interface for ordinary users. Its authenticated, root-locked workspace runs on `127.0.0.1`, serves bundled assets, and supports Organize (`approved`), Keep here (`rejected`), and Review later (`undecided`) decisions. Current-page bulk changes require exact confirmation; saving is explicit and collision-safe, and unsaved decisions block rescanning. There is no autosave, web apply, or web restore. Stage 11.6 resume, revision, and multi-tab protection remain future work. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing.
 
 ## Quick Navigation
 

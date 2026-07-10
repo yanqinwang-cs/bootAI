@@ -161,7 +161,10 @@ main {
 .warning-panel,
 .empty-state,
 .detail-list,
-.conflict-list {
+.conflict-list,
+.review-save-status,
+.bulk-decision-panel,
+.confirmation-panel {
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;
   border: 1px solid var(--bootai-border);
@@ -173,9 +176,53 @@ main {
   border-color: #b78300;
 }
 
+.review-save-status.dirty {
+  border-color: #b54708;
+  border-width: 2px;
+}
+
+.bulk-decision-panel h2,
+.review-save-status h2 {
+  font-size: 1.25rem;
+}
+
+.decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.row-decision-form fieldset {
+  min-width: 16rem;
+}
+
+.current-decision {
+  margin-bottom: 0.5rem;
+}
+
+.confirmation-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 38rem;
+  margin: 1.5rem 0;
+}
+
+.confirmation-form input[type="text"] {
+  width: 100%;
+  padding: 0.65rem;
+  border: 1px solid var(--bootai-border);
+  border-radius: 0.35rem;
+}
+
+.safety-note {
+  padding: 1rem;
+  border-left: 0.35rem solid var(--bootai-accent);
+  background: #e8eef2;
+}
+
 .review-table {
   width: 100%;
-  min-width: 62rem;
+  min-width: 78rem;
   border-collapse: collapse;
   background: var(--bootai-surface);
 }

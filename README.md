@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.14 and Stages 11.0 through 11.4 are implemented. Stage 11.4 adds a root-locked, loopback-only, authenticated read-only review explorer on top of the Stage 11.3 scan dashboard. It inspects only the latest completed scan and does not change decisions or files. The tool can currently:
+Stages 1 through 10.14 and Stages 11.0 through 11.5 are implemented. Stage 11.5 completes the first local-web MVP: scan, inspect findings, make review decisions, and explicitly save a reviewed plan. It does not move, apply, restore, or remove files. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -43,14 +43,16 @@ Stages 1 through 10.14 and Stages 11.0 through 11.4 are implemented. Stage 11.4 
 - Launch a single-worker local web shell for one immutable validated root.
 - Establish one browser session through a single-use launch URL, then redirect to a clean authenticated page.
 - Serve locally bundled HTMX and Bootstrap assets with strict Host and response-header controls.
+- Set web review rows to Organize (`approved`), Keep here (`rejected`), or Review later (`undecided`).
+- Apply an exact-confirmed decision to the current review page and explicitly save all rows to a collision-safe reviewed-plan artifact.
 
-Stage 11.1 migrated report generation and review-session creation/resume into application services. Stages 11.3 and 11.4 connect read-only scanning and review exploration to those services without rescanning during navigation. The interactive CLI review loop and all apply, undo, verification, and movement paths retain their existing owners. The historical OpenRouter assistant remains excluded from bootAI packaging, and the core package still has no mandatory third-party dependencies.
+Stage 11.1 migrated report generation and review-session creation/resume into application services. Stages 11.3 through 11.5 connect scanning, review exploration, immutable decision updates, and explicit reviewed-plan saving to those services without rescanning during navigation. The interactive CLI review loop and all apply, undo, verification, and movement paths retain their existing owners. The historical OpenRouter assistant remains excluded from bootAI packaging, and the core package still has no mandatory third-party dependencies.
 
 ## Interface Direction
 
 The local web application is the intended primary interface for ordinary users. Its implemented Stage 11.2 foundation uses FastAPI, Jinja2, HTMX, Bootstrap, minimal vanilla JavaScript, and Uvicorn, with all assets bundled locally and the server restricted to one validated root on IPv4 loopback.
 
-The current web application provides an explicit read-only scan dashboard and review explorer. Review filters, sorting, pagination, details, and conflict inspection operate on the latest completed scan generation; no decision mutation is available yet. The CLI remains available for development, scripting, diagnostics, manual fallback, and safety-critical testing. Static HTML remains a read-only report and audit-snapshot format. Native desktop development is optional and deferred until after Stage 11.
+The current web application provides an explicit scan dashboard and a generation-bound review workspace. Review filters, sorting, pagination, details, conflicts, row decisions, confirmed current-page decisions, dirty status, and explicit saving operate on the latest completed scan. Saving writes the existing reviewed-plan format and never moves files. Unsaved decisions block a replacement scan; there is no autosave. Apply and restore remain unavailable in the web interface. Stage 11.6 remains future work for resume, revisions, and multi-tab stale-state protection. The CLI remains available for development, scripting, diagnostics, manual fallback, and safety-critical testing.
 
 See the [local web architecture contract](docs/WEB_ARCHITECTURE.md) and [web threat model](docs/WEB_THREAT_MODEL.md) for the frozen Stage 11 requirements.
 

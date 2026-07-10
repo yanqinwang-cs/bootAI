@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm current-page decision · bootAI{% endblock %}
+
+{% block content %}
+<section class="review-panel confirmation-panel" aria-labelledby="confirmation-heading">
+  <p class="eyebrow">Current-page decision preview</p>
+  <h1 id="confirmation-heading">{{ action_label }}</h1>
+  <p>This preview freezes the exact current page from the validated filter, sort, and pagination state.</p>
+
+  <dl class="detail-list">
+    <dt>Current page</dt><dd>{{ preview.page }} of {{ preview.total_pages }}</dd>
+    <dt>Total session rows</dt><dd>{{ preview.total_count }}</dd>
+    <dt>Matching rows</dt><dd>{{ preview.matching_count }}</dd>
+    <dt>Targeted rows</dt><dd>{{ preview.target_ids|length }}</dd>
+    <dt>Rows that will change</dt><dd>{{ preview.change_ids|length }}</dd>
+    <dt>Already set</dt><dd>{{ preview.already_count }}</dd>
+    <dt>Stable IDs</dt><dd>{% if preview.target_ids %}<code>{{ preview.target_ids|join(", ") }}</code>{% else %}None{% endif %}</dd>
+    <dt>Current decisions</dt>
+    <dd>{% for value, count in preview.decision_counts %}{{ decision_labels.get(value, value) }}: {{ count }}{% if not loop.last %} · {% endif %}{% endfor %}</dd>
+    <dt>Categories</dt>
+    <dd>{% for value, count in preview.category_counts %}{{ category_labels.get(value, value) }}: {{ count }}{% if not loop.last %} · {% endif %}{% endfor %}</dd>
+  </dl>
+
+  <p class="safety-note"><strong>No files will be moved.</strong> This changes in-memory review decisions only and does not save automatically.</p>
+
+  {% if not preview.target_ids %}
+  <p role="status">No rows are displayed on this page, so no confirmation is needed.</p>
+  {% elif not preview.change_ids %}
+  <p role="status">Every targeted row already has this decision. No changes are required.</p>
+  {% else %}
+  <form class="confirmation-form" method="post" action="/review/page-decision/confirm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="preview_token" value="{{ preview_token }}">
+    <label for="page-decision-confirmation">Type <strong>{{ preview.confirmation }}</strong> to confirm</label>
+    <input id="page-decision-confirmation" name="confirmation" type="text" required autocomplete="off" aria-describedby="confirmation-help">
+    <p id="confirmation-help">The phrase must match exactly. A wrong or blank phrase cancels this one-use preview.</p>
+    <button class="btn btn-primary" type="submit">Confirm current-page decision</button>
+  </form>
+  {% endif %}
+
+  <p><a class="btn btn-outline-primary" href="{{ review_url }}">Back to review findings</a></p>
+</section>
+{% endblock %}

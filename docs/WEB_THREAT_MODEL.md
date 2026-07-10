@@ -1,6 +1,6 @@
 # Local Web Threat Model
 
-Status: mandatory Stage 11 security contract, accepted in Stage 11.0 and implemented through the Stage 11.4 read-only explorer.
+Status: mandatory Stage 11 security contract, accepted in Stage 11.0 and implemented through the Stage 11.5 decision-and-save MVP.
 
 This threat model applies to bootAI's single-user local web application. It is concrete to bootAI's root-bound scan, review, apply, verification, history, and restore workflows. It is not a claim that localhost is inherently trusted.
 
@@ -139,9 +139,9 @@ State-changing actions include decisions, current-page bulk decisions, reviewed-
 
 GET and HEAD are read-only. POST performs mutations. Apply, save, decision change, configuration change, and restore must never be triggered by GET.
 
-Through Stage 11.4 the production route set is `GET /healthz`, `GET /launch/{token}`, `GET /`, `POST /scan`, `GET /scan/status`, `GET /review`, `GET /review/items/{item_id}`, `GET /review/conflicts`, and mounted local static delivery. `/healthz` returns only `{"status":"ok"}` without authentication. The launch GET changes authentication state as the bootstrap exception; review routes are GET-only and the only POST is the explicit scan trigger.
+Through Stage 11.5 the production route set is `GET /healthz`, `GET /launch/{token}`, `GET /`, `POST /scan`, `GET /scan/status`, `GET /review`, `POST /review/items/{item_id}/decision`, `POST /review/page-decision/preview`, `POST /review/page-decision/confirm`, `POST /review/save`, `GET /review/items/{item_id}`, `GET /review/conflicts`, and mounted local static delivery. `/healthz` returns only `{"status":"ok"}` without authentication. The launch GET changes authentication state as the bootstrap exception. All review mutations are authenticated POSTs; GET remains read-only.
 
-After a successful POST, redirect or render a read-only result URL so refresh cannot repeat the mutation. Revision checks, single-use operation tokens where required, and server-side locks enforce idempotency; client-side button disabling is not a security control.
+After a successful POST, redirect or render a read-only result URL so refresh cannot repeat the mutation. Stage 11.5 uses server-side locks, the current scan generation, stable-ID lookup, and browser-session-bound one-use opaque tokens for current-page confirmation. Stage 11.6 adds explicit request revisions and multi-tab stale-state rejection; client-side button disabling is not a security control.
 
 ### Stable IDs and untrusted artifacts
 
@@ -151,7 +151,7 @@ Loaded JSON artifacts must pass their existing schema, path, conflict, and root 
 
 ### Revision and multi-tab protection
 
-Every state-changing review request carries the revision it read. A successful mutation advances the revision. A request with an older revision receives a conflict response with understandable reload/review guidance. The backend never silently applies a stale decision over a newer one.
+Stage 11.5 serializes immutable application-session replacement and rejects preview tokens from another browser session or scan generation. It does not claim full two-tab stale-write protection. Stage 11.6 will require every state-changing review request to carry the revision it read, advance revisions after successful mutation, and reject older requests with understandable reload/review guidance rather than silently merging them.
 
 ### Single-process jobs and operation locks
 
@@ -225,4 +225,4 @@ The pure ASGI header middleware is outermost among user middleware so these head
 
 ## Verification Expectations
 
-Each implementation stage must add tests for the controls it introduces. Stages 11.2 through 11.4 cover root/config isolation, token replay and concurrency, cookie attributes, CSRF and Origin helpers, Host rejection, response headers, generic errors, route/method inventory, local assets, launcher binding, generation-safe scan jobs, report-only writes, no-rescan review navigation, stable-ID details, root-relative paths, and blocked arbitrary preview access. Later tests must add workflow-specific stale revision, repeated mutation, concurrent execution, tampered artifacts, changed sources, new destinations, and other controls when those surfaces exist.
+Each implementation stage must add tests for the controls it introduces. Stages 11.2 through 11.5 cover root/config isolation, launch-token replay and concurrency, cookie attributes, CSRF and Origin enforcement, Host rejection, response headers, generic errors, route/method inventory, local assets, launcher binding, generation-safe scan jobs, report-only writes, no-rescan review navigation, stable-ID details, strict mutation forms, one-use page previews, dirty-scan blocking, explicit collision-safe save, root-relative paths, and blocked arbitrary path handling. Stage 11.6 tests must add revision and multi-tab stale-state behavior; later stages add execution-specific controls.

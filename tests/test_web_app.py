@@ -94,9 +94,14 @@ class WebAppTests(unittest.IsolatedAsyncioTestCase):
                 follow_redirects=False,
             )
             cookie_value = client.cookies["bootai_session"]
+            signed_value, separator, signature = cookie_value.rpartition(".")
+            self.assertEqual(separator, ".")
             client.cookies.set(
                 "bootai_session",
-                cookie_value[:-1] + ("A" if cookie_value[-1] != "A" else "B"),
+                signed_value
+                + separator
+                + ("A" if signature[0] != "A" else "B")
+                + signature[1:],
             )
             response = await client.get("/")
 
@@ -180,6 +185,19 @@ class WebAppTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(methods_by_path["/"], {"GET"})
         self.assertEqual(methods_by_path["/scan"], {"POST"})
         self.assertEqual(methods_by_path["/scan/status"], {"GET"})
+        self.assertEqual(
+            methods_by_path["/review/items/{item_id}/decision"],
+            {"POST"},
+        )
+        self.assertEqual(
+            methods_by_path["/review/page-decision/preview"],
+            {"POST"},
+        )
+        self.assertEqual(
+            methods_by_path["/review/page-decision/confirm"],
+            {"POST"},
+        )
+        self.assertEqual(methods_by_path["/review/save"], {"POST"})
 
         async with _client(self.app) as client:
             for path in ("/docs", "/redoc", "/openapi.json"):

@@ -212,6 +212,22 @@ class WebServerTests(unittest.TestCase):
 
         self.assertTrue(fake_socket.closed)
 
+    def test_keyboard_interrupt_is_a_clean_shutdown(self) -> None:
+        fake_socket = _FakeSocket()
+        fake_uvicorn_server = Mock()
+        fake_uvicorn_server.run.side_effect = KeyboardInterrupt()
+
+        with (
+            patch.object(server, "bind_loopback_socket", return_value=fake_socket),
+            patch.object(server.uvicorn, "Config", return_value="config"),
+            patch.object(server.uvicorn, "Server", return_value=fake_uvicorn_server),
+            redirect_stdout(StringIO()),
+        ):
+            result = server.run_server(self.config, open_browser=False)
+
+        self.assertEqual(result, 0)
+        self.assertTrue(fake_socket.closed)
+
     def test_browser_readiness_thread_is_started_joined_and_token_safe(self) -> None:
         fake_socket = _FakeSocket()
         fake_thread = Mock()

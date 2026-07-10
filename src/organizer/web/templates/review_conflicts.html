@@ -4,7 +4,7 @@
 
 {% block content %}
 <section class="review-panel" aria-labelledby="conflicts-heading">
-  <p class="eyebrow">Read-only conflict inspection</p>
+  <p class="eyebrow">Conflict inspection</p>
   <h1 id="conflicts-heading">Approved conflicts: {{ conflicts|length }}</h1>
   {% if conflicts %}
   <ul class="conflict-list">
@@ -13,7 +13,7 @@
       <h2>{{ conflict.conflict_type|title }} conflict</h2>
       <p class="path-cell">{{ conflict.relative_path }}</p>
       <ul>
-        {% for item in conflict.items %}<li><a href="{{ request.url_for('review_item', item_id=item.id) }}">{{ item.id }}</a></li>{% endfor %}
+        {% for item in conflict.items %}<li><a href="{{ request.app.url_path_for('review_item', item_id=item.id) }}">{{ item.id }}</a></li>{% endfor %}
       </ul>
     </li>
     {% endfor %}

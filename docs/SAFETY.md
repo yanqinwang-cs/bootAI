@@ -85,17 +85,21 @@
 - A one-time launch token establishes a signed, host-only, browser-lifetime session cookie with `HttpOnly` and `SameSite=Strict`.
 - Launch-token comparison and consumption are atomic; wrong, blank, and replayed tokens receive the same generic failure. A success clears any prior session and redirects away from the secret URL.
 - Signed session data is integrity-protected but not confidential. Store no root or launch token in it, and persist no session secret.
-- Every state-changing request uses POST and requires a session-bound CSRF token, same-origin validation, and a current revision.
+- Every state-changing request uses POST and requires a session-bound CSRF token, same-origin validation, and the current scan generation. Explicit request revisions and multi-tab stale-state rejection begin in Stage 11.6.
 - Origin validation fails closed and requires one exact loopback origin matching scheme, host, and port. Missing or malformed Origin is not accepted.
 - GET requests are read-only. Refreshing a result must not repeat a mutation.
 - Trusted Host validation rejects unexpected hosts, CORS is not enabled, and frontend assets are bundled locally.
-- Stale review submissions are rejected rather than silently overwriting newer decisions.
+- Stage 11.5 serializes application-session replacement under a lock and binds bulk previews to the browser session and scan generation. Stage 11.6 adds full stale-form and multi-tab rejection.
 - One root-bound process permits one active scan job and one active execution or restore operation at a time.
 - Web routes must not import `executor.py`; only the execution application service may delegate to existing executor functions.
 - Web apply is forbidden before Stage 11.8, and web restore is forbidden before Stage 11.9.
 - An arbitrary path-based file-serving endpoint is forbidden.
 - Accessibility targets WCAG 2.2 AA from the first web screen.
-- Through Stage 11.4, review routes are GET-only and read-only. The only production POST is the explicit Stage 11.3 scan trigger; review navigation does not rescan or write artifacts.
+- Stage 11.5 review mutations are POST-only and require authentication, CSRF, Origin, current generation, stable IDs or a one-use opaque preview token, and POST/redirect/GET. GET remains read-only.
+- Web decisions map Organize to `approved`, Keep here to `rejected`, and Review later to `undecided`. Current-page actions affect only the exact frozen page IDs after typed confirmation.
+- Reviewed-plan saving is explicit, collision-safe, includes hidden and off-page rows, and never moves files. There is no autosave or browser-selected output path.
+- Unsaved decisions block a replacement scan with `409 Conflict`; they are never silently discarded or assigned to a later generation.
+- Web apply and restore controls remain absent.
 
 The complete controls and threat mappings are in [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md).
 

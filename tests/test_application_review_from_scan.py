@@ -35,7 +35,7 @@ class ReviewFromScanTests(unittest.TestCase):
                 ("D1", "R1"),
             )
             self.assertEqual(session.items[1].review_category, "backup_or_copy")
-            self.assertFalse(session.persist_review_state)
+            self.assertTrue(session.persist_review_state)
 
             view = get_review_view(
                 update_review_page_size(

@@ -104,7 +104,10 @@ def run_server(
         else:
             _print_manual_launch_url(launch_url)
 
-        server.run(sockets=[bound_socket])
+        try:
+            server.run(sockets=[bound_socket])
+        except KeyboardInterrupt:
+            pass
         return 0
     finally:
         stop_event.set()

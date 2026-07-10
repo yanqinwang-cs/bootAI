@@ -1,5 +1,13 @@
 # Release Notes
 
+## Stage 11.5 — Web Review Decisions and Reviewed-Plan Saving
+
+Stage 11.5 completes the first web MVP: scan, inspect findings, set rows to Organize (`approved`), Keep here (`rejected`), or Review later (`undecided`), and explicitly save every row in the existing reviewed-plan format. Single-row changes use stable IDs. Current-page actions freeze the displayed IDs server-side and retain the established `APPROVE CURRENT PAGE`, `REJECT CURRENT PAGE`, or `UNDECIDE CURRENT PAGE` confirmation phrases before one-use confirmation.
+
+The root-bound holder atomically replaces immutable application sessions and displays textual dirty state. Unsaved decisions block a replacement scan with `409 Conflict`; there is no autosave or silent discard. Successful save returns a root-relative collision-safe path and clears dirty state, while failure preserves it. Filters, sorting, pagination, details, and conflicts remain projections over the complete session.
+
+All mutations remain authenticated POSTs protected by CSRF, exact Origin, Trusted Host, security headers, current-generation checks, and POST/redirect/GET. No source, destination, root, output path, or trusted row list comes from the browser. No user file moves, and no executor, operation log, apply, restore, resume, revision, multi-tab merge, schema, dependency, or CLI-interface change is introduced. Stage 11.6 remains future work.
+
 ## Stage 11.4 — Read-Only Review Explorer
 
 Stage 11.4 adds authenticated GET-only review exploration for the latest completed scan generation. It reuses the application review service and existing review-session filtering, sorting, pagination, stable IDs, and conflict detection without rescanning during navigation. The explorer shows root-relative metadata, warnings, category counts, current decisions as read-only labels, and approved conflicts.
@@ -18,7 +26,7 @@ The FastAPI app disables documentation endpoints and exposes only health, single
 
 HTMX 2.0.10 and Bootstrap 5.3.8 are bundled from verified official release files with their published SHA-384 values and license notices. The accessible first screen confirms the immutable root, offline/local operation, and that no scan or movement has occurred. Exact optional dependencies are isolated in `web` and `web-test`; core dependencies remain empty.
 
-No existing CLI flag, artifact format, JSON schema, executor path, movement, verification, undo, or legacy code changes. Stage 11.5 has not begun.
+No existing CLI flag, artifact format, JSON schema, executor path, movement, verification, undo, or legacy code changed in Stage 11.2; workflow routes were added only by their later stages.
 
 ## Stage 11.1 — Application Services and Dependency Hygiene
 

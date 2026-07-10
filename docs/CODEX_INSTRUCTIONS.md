@@ -18,7 +18,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.14 and Stages 11.0 through 11.4 are complete. Current code supports the existing CLI workflows, UI-independent services, read-only scan dashboard, and latest-completed-scan review explorer. Stages 11.3 and 11.4 add no decision mutation, reviewed-plan writing, apply, restore, schema, database, or existing-CLI change.
+Stages 1 through 10.14 and Stages 11.0 through 11.5 are complete. The first web MVP can scan, inspect, decide, and explicitly save a reviewed plan. Stage 11.5 adds no movement, apply, restore, resume, revision, multi-tab merge, schema, database, or existing-CLI change.
 
 ## Reuse Before Create
 
@@ -53,7 +53,8 @@ Stages 1 through 10.14 and Stages 11.0 through 11.4 are complete. Current code s
 - `web/server.py` owns loopback socket binding, browser bootstrap, and Uvicorn lifecycle.
 - `web/app.py` owns app construction, middleware, installed-resource lookup, and generic errors.
 - `web/security.py` owns launch-token consumption, session/CSRF helpers, exact same-origin validation, and response headers.
-- `web/routes/home.py` owns health, launch bootstrap, the authenticated dashboard, and scan routes; `web/routes/review.py` owns read-only explorer presentation only.
+- `web/routes/home.py` owns health, launch bootstrap, the authenticated dashboard, and scan routes; `web/routes/review.py` owns review presentation and authenticated decision/save HTTP handling through application services.
+- `web/review_explorer.py` owns the locked, generation-bound in-memory application-session holder and one-use current-page preview tokens; it does not own review algorithms or persistence formats.
 - `executor.py` owns movement-specific source/destination/symlink preflight, moving, operation logs, and undo.
 
 ## Stage 11 Guardrails
@@ -67,7 +68,7 @@ Stages 1 through 10.14 and Stages 11.0 through 11.4 are complete. Current code s
 - One validated root is immutable for each server process. Changing roots requires a new process.
 - Bind to `127.0.0.1`, use one worker, and never default to `0.0.0.0`.
 - Treat browser values and loaded JSON artifacts as untrusted.
-- Every mutation requires POST, a signed session, session-bound CSRF, same-origin validation, and revision protection. GET remains read-only.
+- Every mutation requires POST, a signed session, session-bound CSRF, same-origin validation, and current-generation validation. GET remains read-only. Explicit revisions and multi-tab stale-state rejection begin in Stage 11.6.
 - Use a one-time launch token, Trusted Host validation, restrictive security headers, no CORS, and no arbitrary file-serving endpoint.
 - Bundle frontend assets locally. No CDN, remote fonts, analytics, telemetry, external scripts, or runtime cloud APIs.
 - Do not add a database initially; existing JSON artifacts remain authoritative.
@@ -85,7 +86,11 @@ Stages 1 through 10.14 and Stages 11.0 through 11.4 are complete. Current code s
 - The signed session cookie is host-only, browser-lifetime, `HttpOnly`, `SameSite=Strict`, and contains only an authentication marker plus opaque session and CSRF values. Signed cookie contents are not confidential.
 - `testserver` is a Trusted Host only in explicit test configuration. Production accepts `127.0.0.1` and `localhost` without wildcards or `www` redirects.
 - Missing, duplicate, malformed, credential-bearing, path-bearing, external, wrong-host, wrong-scheme, or wrong-port Origin values fail closed. CORS remains disabled.
-- Stage 11.4 production application routes are `GET /healthz`, `GET /launch/{token}`, `GET /`, `POST /scan`, `GET /scan/status`, `GET /review`, `GET /review/items/{item_id}`, `GET /review/conflicts`, and local static delivery. The only POST is the explicit Stage 11.3 scan trigger; review routes remain GET-only.
+- Stage 11.5 adds POST-only single-row decision, current-page preview/confirmation, and reviewed-plan save routes. Every route uses the application review service; browser forms submit stable IDs or opaque preview tokens, allowed actions, CSRF, and validated view state—not paths or trusted row lists.
+- User labels map exactly as Organize → `approved`, Keep here → `rejected`, and Review later → `undecided`. Current-page confirmations retain `APPROVE CURRENT PAGE`, `REJECT CURRENT PAGE`, and `UNDECIDE CURRENT PAGE`.
+- Saving is explicit, includes all rows, uses the existing collision-safe reviewed-plan owner, and never moves files. No autosave or browser-selected output path is permitted.
+- A dirty review session blocks `POST /scan` with `409 Conflict`; it must not be discarded silently or attributed to a new scan generation.
+- Stage 11.6 remains responsible for reviewed-plan resume, request revisions, and multi-tab stale-state protection.
 - Do not weaken CSP or add inline scripts/handlers. The security headers must cover pages, redirects, static responses, Host failures, and handled errors.
 
 ## Do Not Skip Ahead

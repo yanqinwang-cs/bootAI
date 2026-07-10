@@ -12,6 +12,7 @@ from organizer.web.security import (
     csrf_token_for_session,
     initialize_authenticated_session,
     is_authenticated,
+    session_id_for_session,
     validate_csrf_token,
     validate_same_origin,
 )
@@ -73,6 +74,16 @@ class WebSecurityTests(unittest.TestCase):
             csrf_token_for_session(unauthenticated)
         with self.assertRaises(WebSecurityError):
             validate_csrf_token(unauthenticated, token)
+
+    def test_opaque_session_id_requires_authentication(self) -> None:
+        session: dict[str, object] = {}
+        initialize_authenticated_session(session)
+        session_id = session_id_for_session(session)
+
+        self.assertIsInstance(session_id, str)
+        self.assertGreaterEqual(len(session_id), 24)
+        with self.assertRaises(WebSecurityError):
+            session_id_for_session({})
 
     def test_same_origin_accepts_exact_loopback_origins(self) -> None:
         validate_same_origin(

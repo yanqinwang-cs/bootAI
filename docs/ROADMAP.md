@@ -41,6 +41,7 @@
 | 11.2 | Secure local web shell and launcher | `web/`, optional web dependencies, bundled assets | separate `organizer.web` launcher | authenticated shell only; no scan or movement |
 | 11.3 | Read-only scan dashboard | `web/scan_jobs.py`, scan routes and templates | none | explicit scan/report only; no decisions or movement |
 | 11.4 | Read-only review explorer | report-to-review adapter, review routes and templates | none | latest completed scan only; no decision mutation |
+| 11.5 | Web review decisions and reviewed-plan saving | generation-bound review holder, decision/save routes and templates | none | explicit save only; no movement |
 
 ## Stage 11 Sequence
 
@@ -88,11 +89,9 @@ Completed: browse, filter, sort, and paginate the latest completed scan’s revi
 
 ### Stage 11.5 — Review Decisions and Reviewed-Plan Saving
 
-- Add Organize, Keep here, and Review later decisions.
-- Add exact-confirmed current-page bulk decisions, dirty state, explicit save, and collision-safe reviewed-plan artifacts.
-- Add no movement.
+Completed: Organize (`approved`), Keep here (`rejected`), and Review later (`undecided`) single-row decisions; exact-confirmed current-page decisions; textual dirty state; explicit collision-safe save of every row; and dirty-session scan blocking. There is no autosave, apply, restore, resume, revision, multi-tab merge, or movement.
 
-This is the first product-evaluation checkpoint. A user should be able to launch the development web interface, scan a folder, understand findings, inspect suggestions, make review decisions, and save a valid reviewed plan. Apply and undo may remain CLI-only while the workflow is evaluated with target users.
+This is the first completed product-evaluation checkpoint. A user can launch the development web interface, scan a folder, understand findings, inspect suggestions, make review decisions, and save a valid reviewed plan. Apply and undo remain CLI-only while the workflow is evaluated with target users.
 
 ### Stage 11.6 — Resume, Stale-State, and Multi-Tab Protection
 

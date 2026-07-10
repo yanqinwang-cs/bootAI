@@ -119,6 +119,15 @@ def csrf_token_for_session(session: Mapping[str, object]) -> str:
     return token
 
 
+def session_id_for_session(session: Mapping[str, object]) -> str:
+    if not is_authenticated(session):
+        raise WebSecurityError("authenticated session required")
+    session_id = session.get(SESSION_ID_KEY)
+    if not isinstance(session_id, str) or not session_id:
+        raise WebSecurityError("opaque session ID is unavailable")
+    return session_id
+
+
 def validate_csrf_token(
     session: Mapping[str, object],
     submitted_token: str | None,

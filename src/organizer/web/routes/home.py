@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
-from urllib.parse import parse_qs
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
@@ -14,6 +13,11 @@ from organizer.web.security import (
     is_authenticated,
     validate_csrf_token,
     validate_same_origin,
+)
+from organizer.web.forms import FormDataError, read_urlencoded_form
+from organizer.web.review_explorer import (
+    ReviewExplorerStore,
+    UnsavedReviewChanges,
 )
 from organizer.web.scan_jobs import ScanAlreadyRunning, ScanJobController
 
@@ -57,16 +61,53 @@ def create_home_router(templates: Jinja2Templates) -> APIRouter:
     @router.post("/scan", include_in_schema=False)
     async def start_scan(request: Request) -> Response:
         _require_authenticated(request)
-        submitted_token = await _csrf_token_from_form(request)
+        try:
+            form = await read_urlencoded_form(
+                request,
+                allowed_fields={"csrf_token"},
+            )
+        except FormDataError as error:
+            raise HTTPException(status_code=400, detail="scan request unavailable") from error
         try:
             validate_same_origin(request)
-            validate_csrf_token(request.session, submitted_token)
+            validate_csrf_token(request.session, form.get("csrf_token"))
         except ValueError as error:
             raise HTTPException(status_code=403, detail="scan request unavailable") from error
 
         controller: ScanJobController = request.app.state.scan_jobs
+        explorer: ReviewExplorerStore = request.app.state.review_explorer
         try:
-            controller.start()
+            explorer.start_scan(controller)
+        except UnsavedReviewChanges:
+            if request.headers.get("hx-request", "").lower() == "true":
+                response = templates.TemplateResponse(
+                    request=request,
+                    name="scan_panel.html",
+                    context={
+                        **_scan_context(request),
+                        "scan_blocked_message": (
+                            "Unsaved review changes must be saved before "
+                            "another scan can start. bootAI did not discard them."
+                        ),
+                    },
+                    status_code=409,
+                )
+            else:
+                response = templates.TemplateResponse(
+                    request=request,
+                    name="error.html",
+                    context={
+                        "page_title": "Unsaved review changes",
+                        "heading": "Unsaved review changes",
+                        "message": (
+                            "Save the reviewed plan before scanning again. "
+                            "bootAI did not discard any review decisions."
+                        ),
+                    },
+                    status_code=409,
+                )
+            response.headers["Cache-Control"] = "no-store"
+            return response
         except ScanAlreadyRunning as error:
             raise HTTPException(status_code=409, detail="scan already running") from error
 
@@ -98,13 +139,6 @@ def create_home_router(templates: Jinja2Templates) -> APIRouter:
 def _require_authenticated(request: Request) -> None:
     if not is_authenticated(request.session):
         raise HTTPException(status_code=403, detail="session unavailable")
-
-
-async def _csrf_token_from_form(request: Request) -> str | None:
-    body = await request.body()
-    values = parse_qs(body.decode("utf-8", errors="replace"), keep_blank_values=True)
-    tokens = values.get("csrf_token", [])
-    return tokens[0] if len(tokens) == 1 else None
 
 
 def _scan_context(request: Request) -> dict[str, object]:

@@ -1,8 +1,8 @@
 # Local Web Architecture Contract
 
-Status: accepted in Stage 11.0; implemented through the Stage 11.4 read-only review explorer.
+Status: accepted in Stage 11.0; implemented through the Stage 11.5 review-decision and reviewed-plan-saving MVP.
 
-This document freezes the architecture that all Stage 11 web work must follow. Stage 11.1 provides shared application services and dependency hygiene. Stages 11.2 through 11.4 add the isolated local server, browser bootstrap, security foundation, read-only scan dashboard, and latest-completed-scan review explorer.
+This document freezes the architecture that all Stage 11 web work must follow. Stage 11.1 provides shared application services and dependency hygiene. Stages 11.2 through 11.5 add the isolated local server, browser bootstrap, security foundation, scan dashboard, generation-bound review explorer, decisions, and explicit reviewed-plan saving.
 
 The companion [web threat model](WEB_THREAT_MODEL.md) defines the mandatory security controls. The architecture decisions are also recorded in [ADR 0001](adr/0001-local-web-stack.md), [ADR 0002](adr/0002-web-security-boundary.md), and [ADR 0003](adr/0003-application-service-layer.md).
 
@@ -17,7 +17,7 @@ The interfaces have distinct roles:
 - Static HTML remains a permanent, read-only report and audit-snapshot format. It does not become an interactive web application.
 - A native desktop application is optional, demand-driven, and deferred until after core Stage 11 work.
 
-## Implemented Boundaries Through Stage 11.4
+## Implemented Boundaries Through Stage 11.5
 
 Stage 11.0 did not add or modify:
 
@@ -34,6 +34,10 @@ Stage 11.1 adds `application/scan_service.py`, `review_service.py`, `artifact_se
 Stage 11.2 adds `src/organizer/web/`, exact optional web dependencies, installed templates/static resources, and focused HTTP-security helpers. The shell reuses only `safety.validate_under_root`; it does not import application workflows, scan, list or load artifacts, create review sessions, expose a production POST route, or alter any movement or undo path. The existing CLI and JSON formats remain unchanged.
 
 Stage 11.3 adds the explicit read-only scan dashboard and generation-safe in-process scan job. Stage 11.4 adds the authenticated GET-only review explorer, which builds rows from the latest completed scan report through the application review service, keeps view state in validated query parameters, and does not rescan or write artifacts during navigation.
+
+Stage 11.5 adds a web-owned, locked holder for one immutable `ReviewApplicationSession` per completed scan generation. Single-row decisions replace that session through the application service. Current-page previews freeze exact stable IDs server-side and expose only a random one-use token bound to the browser session and scan generation. The three established exact phrases remain `APPROVE CURRENT PAGE`, `REJECT CURRENT PAGE`, and `UNDECIDE CURRENT PAGE`.
+
+User labels preserve existing values: Organize is `approved`, Keep here is `rejected`, and Review later is `undecided`. Saving is explicit and delegates to the existing application/owner path, includes every hidden and off-page row, uses collision-safe naming, and reports a root-relative path. No click autosaves. Dirty state blocks a new scan with `409 Conflict`; successful save clears it. Apply, restore, reviewed-plan resume, revision numbers, and multi-tab stale-state handling are not implemented.
 
 ## Current Ownership That Must Be Preserved
 
@@ -277,7 +281,7 @@ A database may be considered only after measured evidence shows a need. It must 
 
 ## Security Contract
 
-Localhost is a network security boundary, not a reason to omit security. Stage 11.2 implements loopback-only binding, atomic single-use launch authentication, a signed host-only browser-session cookie, session-bound CSRF helpers, exact fail-closed same-origin validation, Trusted Host enforcement, read-only application routes, restrictive headers, and no CORS. The signed cookie is integrity-protected but not confidential. Revision and replay checks are required when mutation routes begin. Details and threat-to-control mappings are mandatory in [WEB_THREAT_MODEL.md](WEB_THREAT_MODEL.md).
+Localhost is a network security boundary, not a reason to omit security. Stage 11.2 implements loopback-only binding, atomic single-use launch authentication, a signed host-only browser-session cookie, session-bound CSRF helpers, exact fail-closed same-origin validation, Trusted Host enforcement, restrictive headers, and no CORS. The signed cookie is integrity-protected but not confidential. Stage 11.5 mutations add authenticated POST-only handling, strict form allowlists, current-generation checks, locked session replacement, one-use bulk tokens, and POST/redirect/GET. Stage 11.6 adds explicit revisions and multi-tab stale-state rejection. Details and threat-to-control mappings are mandatory in [WEB_THREAT_MODEL.md](WEB_THREAT_MODEL.md).
 
 ## Accessibility Contract
 
@@ -361,7 +365,7 @@ Completed: browse the latest completed scan’s review rows, filter, sort, pagin
 
 ### Stage 11.5 — Review Decisions and Reviewed-Plan Saving
 
-Add Organize, Keep here, and Review later decisions; current-page confirmed bulk decisions; dirty state; explicit save; and collision-safe reviewed-plan artifacts. No movement.
+Completed: Organize, Keep here, and Review later decisions; current-page exact-confirmed bulk decisions; dirty state; explicit save; collision-safe reviewed-plan artifacts; and scan blocking while unsaved decisions exist. No autosave or movement.
 
 ### Stage 11.6 — Resume, Stale-State, and Multi-Tab Protection
 

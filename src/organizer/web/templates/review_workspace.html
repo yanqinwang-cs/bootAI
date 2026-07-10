@@ -1,0 +1,123 @@
+<div id="review-workspace" data-review-dirty="{{ 'true' if base_session.dirty else 'false' }}">
+  <section class="review-save-status{% if base_session.dirty %} dirty{% endif %}"
+           aria-labelledby="save-status-heading" role="status" aria-live="polite">
+    {% if base_session.dirty %}
+    <h2 id="save-status-heading">Unsaved review changes</h2>
+    <p>Your decisions differ from the latest saved snapshot. They exist only in this server process until you save.</p>
+    {% else %}
+    <h2 id="save-status-heading">All review decisions saved</h2>
+    {% if saved_plan_relative %}
+    <p>Saved reviewed plan: <code>{{ saved_plan_relative }}</code></p>
+    <ul class="save-result-list">
+      <li>Rows saved: {{ base_session.items|length }}</li>
+      <li>Organize: {{ summary.approved_move_count }}</li>
+      <li>Keep here: {{ summary.rejected_move_count }}</li>
+      <li>Review later: {{ summary.undecided_move_count }}</li>
+      <li>Approved conflicts: {{ summary.approved_move_conflict_count }}</li>
+    </ul>
+    {% else %}
+    <p>The current scan decisions are unchanged. Save explicitly when you want a reviewed-plan file.</p>
+    {% endif %}
+    {% endif %}
+    <form method="post" action="/review/save?{{ view_query_string }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn {% if base_session.dirty %}btn-primary{% else %}btn-outline-primary{% endif %}" type="submit">
+        Save reviewed plan
+      </button>
+    </form>
+    <p class="mb-0 mt-2">Saving writes review records only. No files are moved.</p>
+  </section>
+
+  <section class="review-summary" aria-labelledby="summary-heading">
+    <h2 id="summary-heading">Current view</h2>
+    <p>{{ view.matching_count }} matching rows of {{ view.total_count }} total. Page {{ view.page if view.page else 0 }} of {{ view.total_pages }}.</p>
+    <p>Decisions: {{ summary.approved_move_count }} organize · {{ summary.rejected_move_count }} keep here · {{ summary.undecided_move_count }} review later.</p>
+    <p>Approved conflicts: {{ summary.approved_move_conflict_count }} · Warnings: {{ warning_count }}</p>
+    <p><a href="/review/conflicts">Inspect approved conflicts</a></p>
+  </section>
+
+  {% if view.rows %}
+  <section class="bulk-decision-panel" aria-labelledby="bulk-decision-heading">
+    <h2 id="bulk-decision-heading">Decide for the current page</h2>
+    <p>The next step previews the exact {{ view.rows|length }} stable IDs on this page before any decision changes.</p>
+    <form method="post" action="/review/page-decision/preview?{{ view_query_string }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="decision-actions" role="group" aria-label="Decision for current page">
+        {% for decision, label in bulk_action_labels.items() %}
+        <button class="btn btn-outline-primary" type="submit" name="decision" value="{{ decision }}">{{ label }}</button>
+        {% endfor %}
+      </div>
+    </form>
+  </section>
+
+  <div class="table-responsive">
+    <table class="review-table">
+      <caption>Review findings and decisions</caption>
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">File</th>
+          <th scope="col">Current folder</th>
+          <th scope="col">Suggested folder</th>
+          <th scope="col">Type</th>
+          <th scope="col">Size</th>
+          <th scope="col">Reason</th>
+          <th scope="col">Category</th>
+          <th scope="col">Decision</th>
+          <th scope="col"><span class="visually-hidden">Details</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in view.rows %}
+        <tr>
+          <th scope="row">{{ item.id }}</th>
+          <td>{{ item.plan_item.source.name }}</td>
+          <td class="path-cell">{{ item.plan_item.source.relative_to(session.root).parent }}</td>
+          <td class="path-cell">{{ item.plan_item.destination.relative_to(session.root).parent }}</td>
+          <td>{{ item.plan_item.source.suffix or "File" }}</td>
+          <td>{% set metadata = row_metadata[item.id] %}{% if metadata.size_bytes is not none %}{{ metadata.size_bytes|filesizeformat }}{% else %}Unavailable{% endif %}</td>
+          <td>{{ item.plan_item.reason }}</td>
+          <td>{{ category_labels.get(item.category, item.category) }}{% if item.review_category %} · {{ item.review_category|replace("_", " ")|title }}{% endif %}</td>
+          <td>
+            <p class="current-decision">Current: <strong>{{ decision_labels.get(item.decision, item.decision) }}</strong></p>
+            <form class="row-decision-form"
+                  method="post"
+                  action="/review/items/{{ item.id }}/decision?{{ view_query_string }}"
+                  hx-post="/review/items/{{ item.id }}/decision?{{ view_query_string }}"
+                  hx-target="#review-workspace"
+                  hx-swap="outerHTML">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <fieldset>
+                <legend class="visually-hidden">Decision for {{ item.id }}, {{ item.plan_item.source.name }}</legend>
+                <div class="decision-actions" role="group" aria-label="Decision for {{ item.id }}, {{ item.plan_item.source.name }}">
+                  {% for decision, label in decision_labels.items() %}
+                  <button class="btn btn-sm {% if item.decision == decision %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                          type="submit" name="decision" value="{{ decision }}"
+                          aria-pressed="{{ 'true' if item.decision == decision else 'false' }}">
+                    {{ label }}{% if item.decision == decision %}<span class="visually-hidden"> (current decision)</span>{% endif %}
+                  </button>
+                  {% endfor %}
+                </div>
+              </fieldset>
+            </form>
+          </td>
+          <td><a class="details-link" href="{{ request.app.url_path_for('review_item', item_id=item.id) }}">View details for {{ item.id }}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state" role="status">No findings match the current view.</p>
+  {% endif %}
+
+  {% if view.total_pages > 0 %}
+  <nav class="pagination-nav" aria-label="Review results pages">
+    <span>Page {{ view.page }} of {{ view.total_pages }}</span>
+    <div>
+      {% if previous_url %}<a href="{{ previous_url }}">Previous page</a>{% endif %}
+      {% if next_url %}<a href="{{ next_url }}">Next page</a>{% endif %}
+    </div>
+  </nav>
+  {% endif %}
+</div>

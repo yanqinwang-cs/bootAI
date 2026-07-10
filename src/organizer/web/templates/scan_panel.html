@@ -1,4 +1,10 @@
-{% if scan.status == "not_started" %}
+{% if scan_blocked_message %}
+<section id="scan-panel" class="status-message failure-message" aria-labelledby="scan-heading" role="alert">
+  <h2 id="scan-heading">Unsaved review changes</h2>
+  <p>{{ scan_blocked_message }}</p>
+  <p><a class="btn btn-primary" href="/review">Return to review and save</a></p>
+</section>
+{% elif scan.status == "not_started" %}
 <section id="scan-panel" class="status-message" aria-labelledby="scan-heading" role="status">
   <h2 id="scan-heading">No scan has run yet.</h2>
   <p>No files have been moved. Scanning only creates a read-only report.</p>
