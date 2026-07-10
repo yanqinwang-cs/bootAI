@@ -831,6 +831,31 @@ quit
 
 Expected outcome: view commands change only displayed rows and page metadata. Stable IDs still address hidden rows, `summary` still covers the full session, saved JSON still contains every row in deterministic order, and no operation log or movement occurs from view commands or save.
 
+## Stage 10.13 Current-Page Decisions
+
+In a disposable new or resumed review session, run:
+
+```text
+page-size 5
+filter decision undecided
+sort source asc
+show
+approve-page
+WRONG
+show
+approve-page
+APPROVE CURRENT PAGE
+view
+clear-filter
+page next
+reject-page
+REJECT CURRENT PAGE
+save
+quit
+```
+
+Expected outcome: the wrong confirmation changes nothing; the exact confirmation changes only stable IDs displayed on that page; off-page and filtered-out rows retain their decisions; no save occurs until `save`; the saved reviewed plan still contains all rows; and no operation log or file movement is created by page-decision commands.
+
 ## Final Git Hygiene Check
 
 From the repository root:

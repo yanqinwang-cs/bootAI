@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.12 are implemented. The tool can currently:
+Stages 1 through 10.13 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -36,8 +36,9 @@ Stages 1 through 10.12 are implemented. The tool can currently:
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 - Resume saved reviewed-plan sessions, edit decisions, and save a new collision-safe revision.
 - Filter, sort, and paginate review-session rows without changing decisions or saved-plan contents.
+- Change decisions for the current displayed page only after an exact decision confirmation.
 
-Stage 10.12 adds display-only review filters, stable sorting, and bounded pagination to new and resumed sessions. View state is not saved and does not change decisions, apply confirmation, movement, operation logs, or undo.
+Stage 10.13 adds exact-confirmed `approve-page`, `reject-page`, and `undecide-page` review commands. They target only stable IDs on the displayed page, change in-memory decisions only, and never save, apply, or move files automatically.
 
 ## Setup
 

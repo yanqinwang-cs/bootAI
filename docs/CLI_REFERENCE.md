@@ -233,6 +233,9 @@ Inside the review session:
 - `page-size <number>`: set page size from 1 through 200; default is 25.
 - `view`: show active filters, sort, pagination, and row counts.
 - `show`: display the current filtered, sorted page.
+- `approve-page`: preview and set current-page rows to approved after `APPROVE CURRENT PAGE` confirmation.
+- `reject-page`: preview and set current-page rows to rejected after `REJECT CURRENT PAGE` confirmation.
+- `undecide-page`: preview and set current-page rows to undecided after `UNDECIDE CURRENT PAGE` confirmation.
 - `save`: write a reviewed-plan JSON file under `AI_Review/review_sessions/`.
 - `apply`: save the current reviewed plan if needed, then require exact `APPLY_REVIEWED_PLAN` confirmation before applying approved moves.
 - `quit`: exit without applying.
@@ -248,5 +251,7 @@ Saved reviewed plans are untrusted input. `--apply-reviewed-plan` validates the 
 `--resume-reviewed-plan` is single-purpose and reconstructs the saved rows with their explicit `approved`, `rejected`, or `undecided` decisions. It does not scan, regenerate plans, or load review-state memory. `save` writes a collision-safe sibling such as `reviewed_plan_1.json` without overwriting the input. Resume, edit, save, and quit do not move files. The existing interactive `apply` command remains available only with exact `APPLY_REVIEWED_PLAN` confirmation and revalidates the saved revision through the existing apply path before executor use.
 
 View filters combine with AND and reset to page 1 when changed. Sorting uses one primary field with stable ID tie-breaking and also resets to page 1. Page numbers are one-based; an empty view displays page `0 of 0`. View state is temporary and is not written to reviewed-plan JSON or review state. `summary`, saving, conflict detection, and apply continue to use all session rows. `details`, `approve`, `reject`, and `undecide` always target stable row IDs, including rows hidden by the current view. Risk and size are not supported because batch review rows do not contain those fields.
+
+Bulk page commands target only the stable IDs returned by the current filtered, sorted page. They preview target IDs, current decision/category counts, changed rows, and idempotent rows before prompting. Empty or fully idempotent pages do not prompt. Correct confirmation changes in-memory review decisions only; it does not save, apply, or move files. If a decision filter changes the visible set, the current page is recalculated and clamped without clearing filters, sort, or page size. There are no all-filtered or whole-session bulk commands.
 
 Approved saved reviewed-plan items involving protected-context sources are rejected before executor use. Tool-owned destinations under `AI_Review/` and `Organized/` remain valid reviewed-plan destinations.

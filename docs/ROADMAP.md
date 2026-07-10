@@ -34,14 +34,9 @@
 | 10.10 | Post-apply verification and undo hardening | `organization_verify.py`, existing `executor.py` tests | `--verify-organization-apply` | read-only audit report |
 | 10.11 | Resume and edit saved review sessions | `review_session.py`, `cli.py` | `--resume-reviewed-plan` | review-only until exact-confirmed existing apply |
 | 10.12 | Review filtering, sorting, and pagination | `review_session.py`, `cli.py` | interactive view commands | display state only |
+| 10.13 | Confirmed bulk decisions for current page | `review_session.py`, `cli.py` | `approve-page`, `reject-page`, `undecide-page` | decision-only confirmation |
 
 ## Future Stages
-
-### Stage 10.13: Bulk Decisions On Visible Rows
-
-Goal: consider explicit bulk decisions for the current reviewed view.
-
-Non-goals: no implicit approval and no bypass of exact confirmation.
 
 ### Later: UI Or Richer Review Interface
 

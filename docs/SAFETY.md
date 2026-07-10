@@ -37,6 +37,8 @@
 - Resumed reviewed-plan saves must not overwrite their input file.
 - Review filters, sort order, and pagination are temporary display state only.
 - View state must not change decisions, remove hidden rows from saved output, or target rows by page position.
+- Bulk page decisions must preview exact stable IDs and require their decision-specific typed confirmation.
+- Bulk page decisions affect the current displayed page only and must not save, apply, move files, or target hidden/off-page rows.
 - Rejected saved reviewed-plan items must be ignored for movement.
 - Protected-context files are not actionable move candidates by default.
 - Generated web/archive assets are not actionable move candidates by default.

@@ -17,7 +17,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.12 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, protected/generated/project-output exclusion from actionable plans, strong-anchor organization, organization rules and anchor-decision reporting, report-only existing organization pattern inference, confirmed organization-rule review, rule-aware organization audit, rule-aware organization review JSON export, confirmed approved organization-review apply, read-only post-apply verification, saved review-session resume and editing, temporary review filtering/sorting/pagination, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
+Stages 1 through 10.13 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, protected/generated/project-output exclusion from actionable plans, strong-anchor organization, organization rules and anchor-decision reporting, report-only existing organization pattern inference, confirmed organization-rule review, rule-aware organization audit, rule-aware organization review JSON export, confirmed approved organization-review apply, read-only post-apply verification, saved review-session resume and editing, temporary review filtering/sorting/pagination, confirmed current-page review decisions, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
 
 ## Reuse Before Create
 
@@ -98,7 +98,8 @@ Answer these before editing:
 - Stage 10.10 verifies organization-review apply results against the filesystem and executor operation log, and hardens undo verification with temporary-directory tests. It must add no organization logic or mover, automatic undo, rule changes, LLM behavior, or GUI work.
 - Stage 10.11 resumes only existing batch reviewed-plan JSON. Saved decisions are authoritative, review state is not applied, save is collision-safe, and confirmed apply must reuse the existing validator and executor path.
 - Stage 10.12 view state filters, sorts, and paginates display rows only. Stable IDs, all session rows, decisions, save ordering, apply confirmation, and executor behavior remain unchanged.
-- Bulk decisions on visible rows and richer review interfaces remain future work.
+- Stage 10.13 bulk decisions target only exact stable IDs on the current displayed page, require action-specific typed confirmation, remain in memory until save, and must not enter the executor path.
+- Whole-filter/session bulk decisions and richer review interfaces remain future work.
 
 ## Testing And Git Hygiene
 

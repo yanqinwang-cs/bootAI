@@ -35,7 +35,12 @@ from organizer.rule_review import (
     rule_candidates_from_report,
 )
 from organizer.review_session import (
+    DECISION_APPROVED,
+    DECISION_REJECTED,
+    DECISION_UNDECIDED,
+    PageDecisionPreview,
     ReviewViewState,
+    apply_page_decision_change,
     approve_items,
     approved_plan_items,
     build_review_view,
@@ -47,6 +52,7 @@ from organizer.review_session import (
     get_item,
     load_reviewed_plan_items,
     load_reviewed_plan_move_items,
+    preview_page_decision_change,
     reject_items,
     save_reviewed_plan,
     save_resumed_reviewed_plan,
@@ -545,6 +551,24 @@ def _run_review_session(
             elif action == "page-size" and len(command) == 2:
                 view_state = set_review_page_size(view_state, command[1])
                 _print_review_view_state(items, view_state, root)
+            elif action in {
+                "approve-page",
+                "reject-page",
+                "undecide-page",
+            } and len(command) == 1:
+                decision = {
+                    "approve-page": DECISION_APPROVED,
+                    "reject-page": DECISION_REJECTED,
+                    "undecide-page": DECISION_UNDECIDED,
+                }[action]
+                items, view_state, changed = _confirm_page_decision_change(
+                    items,
+                    view_state,
+                    root,
+                    decision,
+                )
+                if changed:
+                    saved_current_plan_path = None
             elif action == "reject" and len(command) > 1:
                 items = reject_items(items, command[1:])
                 view_state = clamp_review_page(view_state, items, root)
@@ -630,6 +654,12 @@ def _run_review_session(
                 raise ValueError("usage: page-size <number>")
             elif action == "view":
                 raise ValueError("usage: view")
+            elif action in {
+                "approve-page",
+                "reject-page",
+                "undecide-page",
+            }:
+                raise ValueError(f"usage: {action}")
             else:
                 print("Unknown command. Type help for available commands.")
         except ValueError as error:
@@ -989,8 +1019,77 @@ def _print_review_session_help() -> None:
         "summary, conflicts, reject <IDs...>, approve <IDs...>, undecide <IDs...>, "
         "details <ID>, filter <field> <value>, clear-filter, "
         "sort <field> [asc|desc], clear-sort, page <next|prev|number>, "
-        "page-size <number>, view, show, save, apply, quit"
+        "page-size <number>, view, show, approve-page, reject-page, "
+        "undecide-page, save, apply, quit"
     )
+
+
+def _confirm_page_decision_change(
+    items: list[ReviewedPlanItem],
+    state: ReviewViewState,
+    root: Path,
+    decision: str,
+) -> tuple[list[ReviewedPlanItem], ReviewViewState, bool]:
+    preview = preview_page_decision_change(items, state, root, decision)
+    _print_page_decision_preview(preview)
+    if not preview.target_ids:
+        print("No rows are displayed on the current page. No decisions changed.")
+        return items, state, False
+    if not preview.change_ids:
+        print(
+            f"All target rows are already {preview.decision}. "
+            "No changes are required."
+        )
+        return items, state, False
+
+    print("This changes review decisions only. It does not move files.")
+    try:
+        confirmation = input(
+            f"Type {preview.confirmation} to continue: "
+        )
+    except (EOFError, KeyboardInterrupt):
+        print("")
+        print("Page decision change cancelled. No decisions changed.")
+        return items, state, False
+    if confirmation != preview.confirmation:
+        print("Page decision change cancelled. No decisions changed.")
+        return items, state, False
+
+    updated_items = apply_page_decision_change(items, preview)
+    updated_state = clamp_review_page(state, updated_items, root)
+    print(
+        f"Updated {len(preview.change_ids)} review rows to {preview.decision}."
+    )
+    print(
+        f"{preview.already_count} rows were already {preview.decision}."
+    )
+    print("No files were moved.")
+    _print_review_view_state(updated_items, updated_state, root)
+    return updated_items, updated_state, True
+
+
+def _print_page_decision_preview(preview: PageDecisionPreview) -> None:
+    decision_counts = ", ".join(
+        f"{decision}={count}"
+        for decision, count in preview.decision_counts
+    ) or "none"
+    category_counts = ", ".join(
+        f"{category}={count}"
+        for category, count in preview.category_counts
+    ) or "none"
+    target_ids = ", ".join(preview.target_ids) or "none"
+    print("")
+    print("Current-page decision preview")
+    print(f"  requested decision: {preview.action}")
+    print(f"  target rows: {len(preview.target_ids)}")
+    print(f"  will change: {len(preview.change_ids)}")
+    print(f"  already {preview.decision}: {preview.already_count}")
+    print(f"  page: {preview.page} of {preview.total_pages}")
+    print(f"  matching rows: {preview.matching_count}")
+    print(f"  total session rows: {preview.total_count}")
+    print(f"  stable IDs: {target_ids}")
+    print(f"  current decisions: {decision_counts}")
+    print(f"  categories: {category_counts}")
 
 
 def _print_review_view_state(

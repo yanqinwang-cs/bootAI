@@ -51,6 +51,16 @@ REVIEW_SORT_FIELDS = {
     "category",
     "review_category",
 }
+PAGE_DECISION_CONFIRMATIONS = {
+    DECISION_APPROVED: "APPROVE CURRENT PAGE",
+    DECISION_REJECTED: "REJECT CURRENT PAGE",
+    DECISION_UNDECIDED: "UNDECIDE CURRENT PAGE",
+}
+PAGE_DECISION_ACTIONS = {
+    DECISION_APPROVED: "approve",
+    DECISION_REJECTED: "reject",
+    DECISION_UNDECIDED: "undecide",
+}
 
 
 @dataclass(frozen=True)
@@ -77,6 +87,80 @@ class ReviewViewPage:
     page_size: int
     matching_count: int
     total_count: int
+
+
+@dataclass(frozen=True)
+class PageDecisionPreview:
+    decision: str
+    action: str
+    confirmation: str
+    target_ids: tuple[str, ...]
+    change_ids: tuple[str, ...]
+    already_count: int
+    page: int
+    total_pages: int
+    matching_count: int
+    total_count: int
+    decision_counts: tuple[tuple[str, int], ...]
+    category_counts: tuple[tuple[str, int], ...]
+
+
+def preview_page_decision_change(
+    items: list[ReviewedPlanItem],
+    state: ReviewViewState,
+    root: Path,
+    decision: str,
+) -> PageDecisionPreview:
+    if decision not in PAGE_DECISION_CONFIRMATIONS:
+        raise ValueError(f"unsupported review decision: {decision}")
+    view = build_review_view(items, state, root)
+    target_ids = tuple(item.id for item in view.rows)
+    change_ids = tuple(
+        item.id for item in view.rows if item.decision != decision
+    )
+    return PageDecisionPreview(
+        decision=decision,
+        action=PAGE_DECISION_ACTIONS[decision],
+        confirmation=PAGE_DECISION_CONFIRMATIONS[decision],
+        target_ids=target_ids,
+        change_ids=change_ids,
+        already_count=len(target_ids) - len(change_ids),
+        page=view.page,
+        total_pages=view.total_pages,
+        matching_count=view.matching_count,
+        total_count=view.total_count,
+        decision_counts=_count_page_values(view.rows, "decision"),
+        category_counts=_count_page_values(view.rows, "category"),
+    )
+
+
+def apply_page_decision_change(
+    items: list[ReviewedPlanItem],
+    preview: PageDecisionPreview,
+) -> list[ReviewedPlanItem]:
+    if not set(preview.change_ids).issubset(preview.target_ids):
+        raise ValueError("page decision changes must be current-page targets")
+    if not preview.change_ids:
+        return items
+    ids = list(preview.change_ids)
+    if preview.decision == DECISION_APPROVED:
+        return approve_items(items, ids)
+    if preview.decision == DECISION_REJECTED:
+        return reject_items(items, ids)
+    if preview.decision == DECISION_UNDECIDED:
+        return undecide_items(items, ids)
+    raise ValueError(f"unsupported review decision: {preview.decision}")
+
+
+def _count_page_values(
+    rows: list[ReviewedPlanItem],
+    field: str,
+) -> tuple[tuple[str, int], ...]:
+    counts: dict[str, int] = {}
+    for item in rows:
+        value = item.decision if field == "decision" else item.category
+        counts[value] = counts.get(value, 0) + 1
+    return tuple(sorted(counts.items()))
 
 
 def set_review_filter(

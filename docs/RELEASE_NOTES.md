@@ -1,6 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.12
+## Current Status Through Stage 10.13
+
+Stage 10.13 adds previewed and typed-confirmed decision changes for the current displayed review page. Idempotent rows are reported separately, hidden and off-page rows remain unchanged, decision-filtered views are recalculated safely, and saving remains explicit.
 
 Stage 10.12 adds deterministic filtering, one-key sorting, pagination, and view-state display to both new and resumed review sessions. View commands operate only on an in-memory projection; stable IDs continue to target the complete session, and saved reviewed plans include all rows without persisting view state.
 
@@ -124,11 +126,11 @@ Apply commands require one of:
 - No HTML report review actions or apply buttons.
 - No selective subset or interactive editing command for organization-review files.
 - No cloud LLM APIs.
-- No path search, arbitrary query syntax, bulk visible-row decisions, or generalized review-file editing.
+- No path search, arbitrary query syntax, whole-filter/session bulk decisions, or generalized review-file editing.
 - Ollama refinement requires a local Ollama service and model.
 - Prompt evaluation harness is documented but not implemented.
 - Users should inspect dry-run output before approved moves.
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.13 and later remain future work.
+See [ROADMAP](ROADMAP.md). Later review-interface stages remain future work.

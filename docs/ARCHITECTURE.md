@@ -83,6 +83,8 @@ Saved batch review sessions can also be resumed through `review_session.py`. Res
 
 Review view state is an in-memory projection over all session rows. `review_session.py` owns deterministic filters, one stable sort key, and pagination. The CLI displays the resulting page, while decisions, conflict checks, saving, and apply continue to use stable IDs and the complete session row list. View state is never serialized.
 
+Bulk page decisions reuse that projection and the existing single-ID decision helpers. A preview freezes the exact stable IDs displayed on the current page, separates changed and idempotent rows, and requires a decision-specific confirmation before mutating in-memory decisions. It does not save or enter the executor path.
+
 Review state is separate from reviewed-plan JSON and operation logs. `review_state.py` stores human review decision memory under `AI_Review/review_state/review_decisions.json`, matches remembered decisions back to current rows by source, destination, category, review category, size, and modified time, and flags stale prior decisions when metadata changes. Review state records intent only. It is not an operation log, does not record filesystem success, and is not used for undo.
 
 Approved moves are explicit `MovePlanItem` values accepted by a user-facing flow. Execution is isolated in `executor.py`, which validates and applies approved duplicate, organization, and review-candidate moves only. Undo is driven by operation logs written by `executor.py`.

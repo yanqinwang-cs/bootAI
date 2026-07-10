@@ -6,7 +6,7 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.12 are implemented. Stage 10.10 verifies Stage 10.9 apply summaries against executor operation logs and current filesystem state without moving files. Stage 10.11 resumes saved batch reviewed-plan sessions without rescanning or applying review-state memory. Stage 10.12 adds temporary filtering, sorting, and pagination to both review entry points. Operation logs remain authoritative for undo. Built-in scheduler daemons, broad code organization, HTML review actions, and GUI work remain future work.
+Stages 1 through 10.13 are implemented. Stage 10.10 verifies Stage 10.9 apply summaries against executor operation logs and current filesystem state without moving files. Stage 10.11 resumes saved batch reviewed-plan sessions without rescanning or applying review-state memory. Stage 10.12 adds temporary filtering, sorting, and pagination to both review entry points. Stage 10.13 adds exact-confirmed decision changes for the current displayed page only. Operation logs remain authoritative for undo. Built-in scheduler daemons, broad code organization, HTML review actions, and GUI work remain future work.
 
 ## Quick Navigation
 
