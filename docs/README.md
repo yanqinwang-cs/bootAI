@@ -6,12 +6,16 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.13 are implemented. Stage 10.10 verifies Stage 10.9 apply summaries against executor operation logs and current filesystem state without moving files. Stage 10.11 resumes saved batch reviewed-plan sessions without rescanning or applying review-state memory. Stage 10.12 adds temporary filtering, sorting, and pagination to both review entry points. Stage 10.13 adds exact-confirmed decision changes for the current displayed page only. Operation logs remain authoritative for undo. Built-in scheduler daemons, broad code organization, HTML review actions, and GUI work remain future work.
+Stages 1 through 10.14 are implemented. Stage 10.14 adds session-local unsaved-decision protection and clearer review output without changing reviewed-plan or movement semantics. Stage 11.0 freezes the architecture and threat model for a future local web application; it adds no server, route, dependency, web asset, or runtime behavior.
+
+The local web application is the intended primary interface for ordinary users. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only, and native desktop work is optional and deferred until after Stage 11.
 
 ## Quick Navigation
 
 - [ROADMAP](ROADMAP.md)
 - [ARCHITECTURE](ARCHITECTURE.md)
+- [WEB_ARCHITECTURE](WEB_ARCHITECTURE.md)
+- [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md)
 - [SAFETY](SAFETY.md)
 - [CLI_REFERENCE](CLI_REFERENCE.md)
 - [REPORT_FORMAT](REPORT_FORMAT.md)
@@ -20,6 +24,9 @@ Stages 1 through 10.13 are implemented. Stage 10.10 verifies Stage 10.9 apply su
 - [DESIGN_DECISIONS](DESIGN_DECISIONS.md)
 - [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md)
 - [CODEX_INSTRUCTIONS](CODEX_INSTRUCTIONS.md)
+- [ADR 0001: Local Web Stack](adr/0001-local-web-stack.md)
+- [ADR 0002: Local Web Security Boundary](adr/0002-web-security-boundary.md)
+- [ADR 0003: Application-Service Layer](adr/0003-application-service-layer.md)
 - [Sample Report](examples/sample_report.json)
 - [Sample Rule Candidates](examples/sample_rule_candidates.json)
 - [Sample Rule Decisions](examples/sample_rule_decisions.json)

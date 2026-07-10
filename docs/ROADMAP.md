@@ -36,11 +36,84 @@
 | 10.12 | Review filtering, sorting, and pagination | `review_session.py`, `cli.py` | interactive view commands | display state only |
 | 10.13 | Confirmed bulk decisions for current page | `review_session.py`, `cli.py` | `approve-page`, `reject-page`, `undecide-page` | decision-only confirmation |
 | 10.14 | Review session quality-of-life polish | `review_session.py`, `cli.py` | existing interactive commands | session-local dirty-state protection |
+| 11.0 | Local web architecture contract and threat model | documentation only | none | no runtime behavior |
 
-## Future Stages
+## Stage 11 Sequence
 
-### Later: UI Or Richer Review Interface
+The local web application is bootAI's intended primary consumer interface. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only. See [WEB_ARCHITECTURE](WEB_ARCHITECTURE.md) and [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md).
 
-Goal: provide a safer review surface for candidates, groups, plans, and logs.
+### Stage 11.0 — Architecture Contract and Threat Model
 
-Non-goals: no cloud dependency by default, no bypass of CLI safety rules.
+Completed as documentation only:
+
+- accepted local web stack and asset policy;
+- layer and module ownership;
+- root, server, persistence, and accessibility contracts;
+- concrete threat model and security controls;
+- complete Stage 11 roadmap.
+
+No production code, dependencies, schemas, CLI flags, routes, templates, assets, server, or packaging changed.
+
+### Stage 11.1 — Application Services and Dependency Hygiene
+
+- Introduce UI-independent services incrementally while preserving CLI behavior.
+- Inspect and isolate legacy cloud/OpenRouter remnants.
+- Remove inappropriate mandatory cloud dependencies and define optional web dependencies.
+- Add no server and make no movement changes.
+
+### Stage 11.2 — Secure Local Web Shell and Launcher
+
+- Add a FastAPI app factory, loopback-only launcher, dynamic port, and automatic browser opening.
+- Add a one-time launch token, signed session, CSRF foundation, Trusted Host validation, CSP, base template, and local assets.
+- Add no scan workflow.
+
+### Stage 11.3 — Read-Only Scan Dashboard
+
+- Add an explicit user-triggered scan, one in-process scan job, progress polling, failure handling, report generation, and summary cards.
+- Add no decisions or movement.
+
+### Stage 11.4 — Read-Only Review Explorer
+
+- Browse, filter, sort, and paginate review rows.
+- Inspect details and conflicts.
+- Add no decision mutation.
+
+### Stage 11.5 — Review Decisions and Reviewed-Plan Saving
+
+- Add Organize, Keep here, and Review later decisions.
+- Add exact-confirmed current-page bulk decisions, dirty state, explicit save, and collision-safe reviewed-plan artifacts.
+- Add no movement.
+
+This is the first product-evaluation checkpoint. A user should be able to launch the development web interface, scan a folder, understand findings, inspect suggestions, make review decisions, and save a valid reviewed plan. Apply and undo may remain CLI-only while the workflow is evaluated with target users.
+
+### Stage 11.6 — Resume, Stale-State, and Multi-Tab Protection
+
+- Resume reviewed plans.
+- Add revision protection, stale-form rejection, multi-tab conflict handling, and source/destination change detection.
+- Add no movement.
+
+### Stage 11.7 — Final Plan Preview and Execution Preflight
+
+- Show exact source and destination plans.
+- Check missing sources, existing destinations, conflicts, root and symlink safety, and stale metadata.
+- Add no movement.
+
+### Stage 11.8 — Confirmed Web Apply and Verification
+
+- Run a fresh preflight and require exact typed confirmation, CSRF, revision protection, and one execution at a time.
+- Reuse existing reviewed-plan validation and `executor.py` only.
+- Write the operation log and apply result, then run post-apply verification.
+
+### Stage 11.9 — History, Verification, and Confirmed Restore
+
+- Display operation history and verification results.
+- Run restore preflight and require exact confirmation.
+- Reuse existing executor undo only and write undo-result logs.
+
+### Stage 11.10 — Packaging, Onboarding, Accessibility, and Release Hardening
+
+- Add a low-setup packaged launcher, macOS first and Windows later.
+- Hide the terminal for ordinary users, open the browser automatically, provide native folder selection, and support clean shutdown.
+- Complete the WCAG 2.2 AA audit, large-folder performance testing, and nontechnical-user testing.
+
+Native desktop development remains an optional final extension after Stage 11. Stage 11 usability should be evaluated at the 11.5 checkpoint rather than postponed until all execution and packaging stages are complete.

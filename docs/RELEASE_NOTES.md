@@ -1,5 +1,13 @@
 # Release Notes
 
+## Stage 11.0 — Local Web Architecture Contract and Threat Model
+
+Stage 11.0 defines the documentation contract for bootAI's future primary local web interface. It accepts FastAPI, Jinja2, HTMX, Bootstrap, minimal vanilla JavaScript, and Uvicorn; requires local assets, loopback-only single-worker serving, one immutable validated root, existing JSON persistence, WCAG 2.2 AA, and a UI-independent application-service layer.
+
+The threat model treats the browser and loaded artifacts as untrusted and requires a one-time launch token, signed session, CSRF, Origin and Host validation, POST-only mutations, restrictive security headers, stable IDs instead of paths, revision protection, fresh preflight, and executor-only movement and undo.
+
+This stage changes documentation only. It adds no server, routes, application-service modules, dependencies, templates, static assets, CLI flags, schemas, packaging, or production behavior. The CLI remains the current implemented interface while the local web application is the intended primary consumer interface for later Stage 11 work.
+
 ## Current Status Through Stage 10.14
 
 Stage 10.14 polishes the interactive review session with grouped help, specific invalid-command guidance, session-local unsaved-decision tracking, exact `QUIT WITHOUT SAVING` protection, root-relative session/save summaries, and clearer conflict display. Reviewed-plan schemas, review-state semantics, apply confirmation, and movement behavior are unchanged.
@@ -67,6 +75,7 @@ Stage 10.9 adds confirmed apply for approved organization-review rows. Exact `AP
 - Stage 10.12: filtering, sorting, and pagination for review sessions.
 - Stage 10.13: confirmed decisions for the current review page.
 - Stage 10.14: review-session clarity and unsaved-decision protection.
+- Stage 11.0: local web architecture, security, accessibility, and roadmap contract; documentation only.
 
 ## Safety Model
 
@@ -129,7 +138,7 @@ Apply commands require one of:
 ## Known Limitations
 
 - No built-in scheduler daemon or background service.
-- No GUI yet.
+- No local web runtime yet; Stage 11.0 defines its architecture and security contract only.
 - No HTML report review actions or apply buttons.
 - No selective subset or interactive editing command for organization-review files.
 - No cloud LLM APIs.
@@ -140,4 +149,4 @@ Apply commands require one of:
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Later review-interface stages remain future work.
+See [ROADMAP](ROADMAP.md). Stage 11.5 is the first product-evaluation checkpoint; apply and undo may remain CLI-only while the web review workflow is evaluated.

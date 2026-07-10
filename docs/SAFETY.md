@@ -75,6 +75,32 @@
 - Approved duplicate, organization, and review-candidate moves all use `executor.py`.
 - Organization apply requires exact confirmation and keeps dry-run planning as the default.
 
+## Local Web Invariants
+
+- The browser, all browser-provided values, and all loaded JSON artifacts are untrusted.
+- Each web-server process must use one resolved, validated, immutable root.
+- The browser must not change the root or submit arbitrary source or destination paths.
+- Browser actions use stable session-scoped IDs that the backend maps to server-held data and revalidates.
+- The server binds to `127.0.0.1` with one worker and must not default to `0.0.0.0`.
+- A one-time launch token establishes a signed, host-only, browser-lifetime session cookie with `HttpOnly` and `SameSite=Strict`.
+- Every state-changing request uses POST and requires a session-bound CSRF token, same-origin validation, and a current revision.
+- GET requests are read-only. Refreshing a result must not repeat a mutation.
+- Trusted Host validation rejects unexpected hosts, CORS is not enabled, and frontend assets are bundled locally.
+- Stale review submissions are rejected rather than silently overwriting newer decisions.
+- One root-bound process permits one active scan job and one active execution or restore operation at a time.
+- Web routes must not import `executor.py`; only the execution application service may delegate to existing executor functions.
+- Web apply is forbidden before Stage 11.8, and web restore is forbidden before Stage 11.9.
+- An arbitrary path-based file-serving endpoint is forbidden.
+- Accessibility targets WCAG 2.2 AA from the first web screen.
+
+The complete controls and threat mappings are in [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md).
+
+## Storage-Recovery Claims
+
+Moving a file to another folder on the same filesystem does not save storage space. Interfaces may report `Potential duplicate bytes`, `Potential recoverable storage`, or `Duplicate candidates for review`.
+
+Do not report `Space saved` or `Storage recovered` unless an operation actually removes data from that filesystem or transfers it elsewhere. Stage 11 adds no permanent removal, Trash integration, or automatic disposal. The existing reversible-move, operation-history, and restore requirements remain in force.
+
 ## Risk Categories
 
 - Exact duplicates: files with matching SHA-256 hashes.

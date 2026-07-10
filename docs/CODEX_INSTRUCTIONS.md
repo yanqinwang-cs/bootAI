@@ -9,6 +9,7 @@ Codex must read this file before implementing future stages.
 - State explicit non-goals.
 - List intended files before editing.
 - Inspect existing modules before adding code.
+- Before any Stage 11 implementation, read `WEB_ARCHITECTURE.md` and `WEB_THREAT_MODEL.md` completely.
 - Reuse existing functions where possible.
 - Respect module ownership.
 - Do not skip ahead.
@@ -17,7 +18,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.14 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, protected/generated/project-output exclusion from actionable plans, strong-anchor organization, organization rules and anchor-decision reporting, report-only existing organization pattern inference, confirmed organization-rule review, rule-aware organization audit, rule-aware organization review JSON export, confirmed approved organization-review apply, read-only post-apply verification, saved review-session resume and editing, temporary review filtering/sorting/pagination, confirmed current-page review decisions, session-local unsaved-decision protection and clearer review output, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
+Stages 1 through 10.14 and the Stage 11.0 documentation contract are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, protected/generated/project-output exclusion from actionable plans, strong-anchor organization, organization rules and anchor-decision reporting, report-only existing organization pattern inference, confirmed organization-rule review, rule-aware organization audit, rule-aware organization review JSON export, confirmed approved organization-review apply, read-only post-apply verification, saved review-session resume and editing, temporary review filtering/sorting/pagination, confirmed current-page review decisions, session-local unsaved-decision protection and clearer review output, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans. Stage 11.0 adds no web runtime or behavior.
 
 ## Reuse Before Create
 
@@ -42,7 +43,29 @@ Stages 1 through 10.14 are complete. Current code supports scanning, duplicate d
 - `html_report.py` owns read-only static HTML rendering from report dictionaries.
 - `review_session.py` owns batch review-session construction, decisions, reviewed-plan JSON writing, saved-plan validation, and conversion back to `MovePlanItem` values.
 - `review_state.py` owns persistent human review decision memory.
-- `executor.py` owns moving and undo.
+- `safety.py` owns shared root-containment validation.
+- `executor.py` owns movement-specific source/destination/symlink preflight, moving, operation logs, and undo.
+
+## Stage 11 Guardrails
+
+- The local web application is the intended primary consumer interface; do not describe the CLI as the intended ordinary-user interface.
+- Do not skip Stage 11 safety gates or combine roadmap stages merely because later functionality is convenient.
+- Web routes must not import `executor.py`. Only the future `application/execution_service.py` may delegate to existing executor functions.
+- Application services must reuse current scanner, duplicate, grouping, review-session, safety, executor, verification, report, and artifact ownership.
+- Do not create separate CLI and web implementations of the same workflow.
+- Browser requests must submit stable root-bound IDs and allowed actions, never arbitrary source or destination paths.
+- One validated root is immutable for each server process. Changing roots requires a new process.
+- Bind to `127.0.0.1`, use one worker, and never default to `0.0.0.0`.
+- Treat browser values and loaded JSON artifacts as untrusted.
+- Every mutation requires POST, a signed session, session-bound CSRF, same-origin validation, and revision protection. GET remains read-only.
+- Use a one-time launch token, Trusted Host validation, restrictive security headers, no CORS, and no arbitrary file-serving endpoint.
+- Bundle frontend assets locally. No CDN, remote fonts, analytics, telemetry, external scripts, or runtime cloud APIs.
+- Do not add a database initially; existing JSON artifacts remain authoritative.
+- Accessibility targets WCAG 2.2 AA from the first web screen.
+- Do not add web apply before Stage 11.8 or web restore before Stage 11.9.
+- Do not begin native desktop development during Stage 11. A small packaged folder chooser in Stage 11.10 is not a desktop UI architecture.
+- Do not claim that moving files on the same filesystem saves or recovers storage.
+- Stage 11.0 adds documentation only: no production code, dependencies, schemas, CLI flags, templates, routes, assets, launchers, or packaging.
 
 ## Do Not Skip Ahead
 
@@ -100,7 +123,17 @@ Answer these before editing:
 - Stage 10.12 view state filters, sorts, and paginates display rows only. Stable IDs, all session rows, decisions, save ordering, apply confirmation, and executor behavior remain unchanged.
 - Stage 10.13 bulk decisions target only exact stable IDs on the current displayed page, require action-specific typed confirmation, remain in memory until save, and must not enter the executor path.
 - Stage 10.14 unsaved-decision state is session-local, changes only after actual decision edits, clears only after successful save, and must not alter reviewed-plan schemas, review state, conflicts, apply confirmation, or executor behavior.
-- Whole-filter/session bulk decisions and richer review interfaces remain future work.
+- Stage 11.0 freezes architecture, security, accessibility, and roadmap contracts only.
+- Stage 11.1 introduces application services and dependency hygiene without a server or movement changes.
+- Stage 11.2 adds only the secure local web shell and launcher; no scan workflow.
+- Stage 11.3 adds read-only scanning; no decisions or movement.
+- Stage 11.4 adds read-only review exploration; no decision mutation.
+- Stage 11.5 adds review decisions and saving only; no movement, and it is the first product-evaluation checkpoint.
+- Stage 11.6 adds resume, revision, stale-state, and multi-tab protection; no movement.
+- Stage 11.7 adds final-plan preview and read-only execution preflight; no movement.
+- Stage 11.8 is the first stage permitted to add confirmed web apply, using existing reviewed-plan validation and `executor.py` only.
+- Stage 11.9 is the first stage permitted to add confirmed web restore, using existing executor undo only.
+- Stage 11.10 owns packaging, onboarding, accessibility audit, performance testing, and release hardening.
 
 ## Testing And Git Hygiene
 

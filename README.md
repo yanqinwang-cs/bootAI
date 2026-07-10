@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.14 are implemented. The tool can currently:
+Stages 1 through 10.14 are implemented. Stage 11.0 now defines the architecture and threat model for the future local web interface; it adds no web runtime or production behavior. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -40,6 +40,14 @@ Stages 1 through 10.14 are implemented. The tool can currently:
 - Track unsaved review decisions locally, require exact confirmation before discarding them, and present grouped help and clearer conflict summaries.
 
 Stage 10.14 polishes the existing review session with grouped help, specific command errors, concise session/save summaries, clearer conflict output, and exact `QUIT WITHOUT SAVING` protection for unsaved decision changes. Dirty state is session-local and does not change reviewed-plan JSON or movement semantics.
+
+## Interface Direction
+
+The local web application is the intended primary interface for ordinary users. The accepted future stack is FastAPI, Jinja2, HTMX, Bootstrap, minimal vanilla JavaScript, and Uvicorn, with all assets bundled locally and the server restricted to one validated root on loopback.
+
+The web interface has not been implemented yet. The CLI remains available for development, scripting, diagnostics, manual fallback, and safety-critical testing. Static HTML remains a read-only report and audit-snapshot format. Native desktop development is optional and deferred until after Stage 11.
+
+See the [local web architecture contract](docs/WEB_ARCHITECTURE.md) and [web threat model](docs/WEB_THREAT_MODEL.md) for the frozen Stage 11 requirements.
 
 ## Setup
 
@@ -168,3 +176,6 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - [Manual testing guide](docs/MANUAL_TESTING.md)
 - [Release notes](docs/RELEASE_NOTES.md)
 - [Safety constitution](docs/SAFETY.md)
+- [Local web architecture contract](docs/WEB_ARCHITECTURE.md)
+- [Local web threat model](docs/WEB_THREAT_MODEL.md)
+- [Architecture decisions](docs/adr/0001-local-web-stack.md)

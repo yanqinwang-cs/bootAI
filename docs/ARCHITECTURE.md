@@ -36,7 +36,7 @@ Filesystem
 | Module | Ownership |
 | --- | --- |
 | `models.py` | dataclasses shared across stages |
-| `safety.py` | path validation |
+| `safety.py` | shared root-containment validation |
 | `scanner.py` | filesystem metadata scanning |
 | `duplicates.py` | SHA-256 hashing and exact duplicate grouping |
 | `planner.py` | duplicate review planning |
@@ -56,8 +56,32 @@ Filesystem
 | `html_report.py` | read-only static HTML rendering from report dictionaries |
 | `review_session.py` | batch review-session construction, decisions, reviewed-plan JSON writing, and saved-plan validation |
 | `review_state.py` | persistent human review decision memory |
-| `executor.py` | approved move execution and undo logs |
-| `cli.py` | command-line orchestration |
+| `executor.py` | movement-specific source/destination/symlink validation, approved move execution, operation logs, and undo |
+| `cli.py` | substantial current command-line and use-case orchestration |
+
+## Stage 11 Local Web Direction
+
+Stage 11 will add a local web application as bootAI's primary consumer interface. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML reports remain read-only audit snapshots.
+
+The required future dependency direction is:
+
+```text
+Local browser
+    ↓
+Web interface layer
+    ↓
+Application-service layer
+    ↓
+Existing deterministic bootAI modules
+    ↓
+executor.py for explicitly approved movement and undo only
+```
+
+The web layer must not reproduce scanner, duplicate, grouping, review, safety, movement, or undo logic. Route modules must never import `executor.py`; only the future execution application service may delegate validated and explicitly approved plans to existing executor functions. `cli.py` will migrate one use case at a time to the same application services rather than being rewritten in one large refactor.
+
+Each web-server process is bound to one validated immutable root. Browser requests submit stable session-scoped IDs and allowed actions rather than source or destination paths. Existing JSON artifacts remain authoritative; temporary UI, job, security, and revision state may remain in memory, with no initial database.
+
+The complete contract is in [WEB_ARCHITECTURE](WEB_ARCHITECTURE.md), and mandatory localhost security controls are in [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md).
 
 ## Facts, Suggestions, Approved Moves, Execution, Undo
 
