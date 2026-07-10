@@ -143,6 +143,17 @@ This is a single-purpose mode and does not rescan. It rejects `--max-depth` and 
 
 Executor preflight rejects missing or symlink sources, existing destinations, root escapes, and unsafe destination parents before movement. Successful and partial batches write the existing executor operation log under `AI_Review/operation_logs`; use that path with `--undo-log`. A secondary summary is written collision-safely under `AI_Review/reviews/organization_review_apply_result.json`. Rejected and undecided rows are summarized as skipped and never become `MovePlanItem` values.
 
+## Verify Organization Apply
+
+```bash
+python -m organizer.cli <folder> \
+  --verify-organization-apply AI_Review/reviews/organization_review_apply_result.json
+```
+
+This single-purpose read-only mode validates a Stage 10.9 apply-result file and its referenced executor operation log under the selected root. It compares normalized successful move pairs and checks that each applied destination is a regular non-symlink file while its original source is absent. It writes a collision-safe audit under `AI_Review/reviews/organization_review_apply_verification.json`.
+
+The command requires no confirmation because it does not move or restore files. It returns nonzero for mismatches or invalid input and cannot be combined with scanning, reports, planning, apply, undo, review, LLM, `--max-depth`, or `--confirm` flags. Use the referenced operation log with `--undo-log` when a separately requested undo is appropriate.
+
 ## Grouping
 
 ```bash

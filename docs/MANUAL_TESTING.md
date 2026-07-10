@@ -785,6 +785,17 @@ a needs-decision anchor with person/student pattern evidence. The command writes
 report files only, does not create `AI_Review/config/organization_rules.json`,
 and does not move scanned files.
 
+## Stage 10.10 Post-Apply Verification
+
+Use only a disposable temporary folder. After a confirmed Stage 10.9 organization-review apply, run:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder \
+  --verify-organization-apply AI_Review/reviews/organization_review_apply_result.json
+```
+
+Expected outcome: a collision-safe verification report is written under `AI_Review/reviews/`, the command reports `passed` only when the apply summary, operation log, and filesystem agree, and no files are moved or restored. Inspect the referenced operation log before separately testing `--undo-log`. Do not run this checklist on an important folder.
+
 ## Final Git Hygiene Check
 
 From the repository root:

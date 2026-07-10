@@ -55,6 +55,8 @@
 - Only approved organization-review rows may become `MovePlanItem` values; rejected and undecided rows remain summary metadata.
 - Duplicate approved sources or destinations must block organization-review apply before executor use.
 - Organization-review apply-result files do not replace executor operation logs; undo continues to use operation logs.
+- Organization apply verification reports are audit records, not operation logs, and cannot trigger movement or undo.
+- Verification inputs must be regular non-symlink files under the selected root.
 - Locked anchors must not bypass protected/generated/project-output exclusions.
 - Locked anchors should require at least two eligible safe files before producing organization suggestions.
 - Ignored terms win over locked anchors after alias normalization.

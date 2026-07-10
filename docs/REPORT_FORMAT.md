@@ -259,3 +259,9 @@ A confirmed Stage 10.9 apply writes a secondary summary under `AI_Review/reviews
 Rejected and undecided rows appear only in `skipped`. If executor movement fails after earlier successes, the failed operation appears in `failed`, later approved rows appear in `skipped` as not attempted, and successful operations remain undoable through the referenced operation log.
 
 Malformed reviews, path conflicts, and executor preflight rejection produce no apply-result file because movement never starts. Result filenames are collision-safe and never overwrite an earlier summary. See [sample_organization_review_apply_result.json](examples/sample_organization_review_apply_result.json) and the documentation-only [organization_review_apply_result.schema.json](schemas/organization_review_apply_result.schema.json).
+
+## Organization Apply Verification
+
+Stage 10.10 writes a collision-safe verification audit under `AI_Review/reviews/`. It records the root-relative apply-result and operation-log paths, verification status, checked counts, individual checks, mismatches, and warnings. Status is `passed`, `mismatches`, or `invalid_input`.
+
+Verification compares successful operation-log source/destination pairs with the apply result without relying on list order. It also checks that applied destinations are regular non-symlink files and original sources are absent. This report is not an operation log and cannot be used for undo. See [sample_organization_review_apply_verification.json](examples/sample_organization_review_apply_verification.json) and the documentation-only [organization_review_apply_verification.schema.json](schemas/organization_review_apply_verification.schema.json).

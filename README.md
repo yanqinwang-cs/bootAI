@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.9 are implemented. The tool can currently:
+Stages 1 through 10.10 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -22,6 +22,7 @@ Stages 1 through 10.9 are implemented. The tool can currently:
 - Audit how accepted organization rules affect report output.
 - Export rule-aware organization suggestions as a JSON batch-review file.
 - Apply approved organization-review rows through the existing executor after exact confirmation.
+- Verify an organization-review apply result against its operation log and current filesystem state.
 - Suggest organization plans.
 - Flag isolated code files as candidates for review.
 - Optionally refine organization suggestions with local Ollama.
@@ -34,14 +35,14 @@ Stages 1 through 10.9 are implemented. The tool can currently:
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.9 applies only manually approved Stage 10.8 organization-review rows after exact `APPLY ORGANIZATION REVIEW` confirmation. All movement goes through `executor.py`, writes the existing operation log, and remains undoable. Broad code organization, HTML review actions, selective subset tooling, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.10 adds read-only post-apply verification and stronger undo regression coverage. Verification writes an audit report only; it does not move or restore files. Operation logs remain authoritative for movement and undo.
 
 ## Setup
 
 Use Python 3 and the standard library. No third-party dependencies are required for the current test suite.
 
 ```bash
-PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_state tests.test_html_report tests.test_scope tests.test_organization_rules tests.test_pattern_inference tests.test_rule_review tests.test_rule_audit tests.test_organization_review tests.test_organization_review_apply
+PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_state tests.test_html_report tests.test_scope tests.test_organization_rules tests.test_pattern_inference tests.test_rule_review tests.test_rule_audit tests.test_organization_review tests.test_organization_review_apply tests.test_organization_verify
 ```
 
 ## Quickstart
@@ -59,6 +60,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans --ignore-
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --export-rule-candidates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --export-organization-review
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-organization-review AI_Review/reviews/organization_review.approved.json --confirm "APPLY ORGANIZATION REVIEW"
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --verify-organization-apply AI_Review/reviews/organization_review_apply_result.json
 ```
 
 Apply commands require exact confirmation:
@@ -147,6 +149,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Review mode blocks apply when one source or destination has multiple approved moves.
 - Saved reviewed plans are validated as untrusted input before approved moves are applied.
 - Operation logs remain authoritative for actual successful moves and undo.
+- Post-apply verification compares the apply summary, operation log, and filesystem without moving files.
 - `executor.py` is the only module that performs real movement.
 - Review, grouping, and LLM modules produce facts or suggestions; they do not execute moves.
 

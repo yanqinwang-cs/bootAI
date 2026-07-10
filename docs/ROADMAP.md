@@ -31,6 +31,7 @@
 | 10.7 | Rule-aware organization audit | `rule_audit.py`, `reports.py`, `html_report.py` | none | read-only report audit |
 | 10.8 | Rule-aware organization batch review export | `organization_review.py`, `cli.py` | `--export-organization-review`, `--organization-review-output` | review JSON only |
 | 10.9 | Apply approved organization review | `organization_apply_review.py`, `cli.py`, `executor.py` | `--apply-organization-review`, `--confirm` | exact confirmation and operation log required |
+| 10.10 | Post-apply verification and undo hardening | `organization_verify.py`, existing `executor.py` tests | `--verify-organization-apply` | read-only audit report |
 
 ## Future Stages
 
@@ -39,12 +40,6 @@
 Goal: make large batch review sessions easier to inspect.
 
 Non-goals: no bypass of exact confirmation or executor movement rules.
-
-### Stage 10.10: Post-Apply Verification And Undo Hardening
-
-Goal: verify organization-review apply results against the filesystem and executor operation log, and harden undo verification using temporary-directory tests.
-
-Non-goals: no new organization logic, no new mover, no automatic undo, no rule changes, no LLM behavior, and no GUI work.
 
 ### Stage 10.11: Resume Or Edit Saved Review Sessions
 

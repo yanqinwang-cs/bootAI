@@ -1,6 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.9
+## Current Status Through Stage 10.10
+
+Stage 10.10 adds a single-purpose read-only verification command for Stage 10.9 apply results. It strictly validates the apply summary and referenced executor operation log, compares normalized successful move pairs, checks current filesystem state, and writes a collision-safe audit report. Undo behavior is unchanged and receives additional temporary-directory regression coverage.
 
 Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the existing JSON report and a browser-openable HTML rendering from the same report data without approving or applying moves.
 
@@ -126,4 +128,4 @@ Apply commands require one of:
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.10 and later remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10.11 and later remain future work.

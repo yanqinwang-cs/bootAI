@@ -1,0 +1,27 @@
+{
+  "applied_count": 1,
+  "apply_result_file": "AI_Review/reviews/organization_review_apply_result.json",
+  "checks": [
+    {
+      "detail": "verified 1 destination(s) and 1 absent source(s)",
+      "name": "filesystem_state",
+      "passed": true
+    },
+    {
+      "detail": "matched 1 successful operation(s)",
+      "name": "operation_log_matches",
+      "passed": true
+    }
+  ],
+  "generated_at": "2026-07-10T13:00:00+00:00",
+  "mismatches": [],
+  "operation_log_file": "AI_Review/operation_logs/operation_log_20260710T123000000000Z.json",
+  "passed": true,
+  "schema_version": 1,
+  "source": "bootAI Stage 10.10 organization apply verification",
+  "status": "passed",
+  "verification_root": ".",
+  "verified_destination_count": 1,
+  "verified_missing_source_count": 1,
+  "warnings": []
+}

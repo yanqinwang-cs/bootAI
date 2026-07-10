@@ -25,6 +25,8 @@ Filesystem
      -> explicit MovePlanItem values
   -> execution
      -> executor.py
+  -> verification
+     -> organization_verify.py
   -> undo
      -> operation logs
 ```
@@ -47,6 +49,7 @@ Filesystem
 | `rule_audit.py` | read-only audit of organization-rule effects in reports |
 | `organization_review.py` | export and validation of rule-aware organization review JSON; never applies rows |
 | `organization_apply_review.py` | approved organization-review conversion, executor orchestration, and apply-result summaries |
+| `organization_verify.py` | read-only comparison of apply summaries, operation logs, and filesystem state |
 | `llm_refinement.py` | advisory LLM prompt, payload, validation, refined suggestions |
 | `ollama_client.py` | local Ollama client only |
 | `reports.py` | read-only report assembly and JSON report writing |
@@ -71,6 +74,8 @@ Rule-aware audit is report-only. `rule_audit.py` compares conservative defaults 
 Organization-review export is also report-derived and read-only. `organization_review.py` consumes serialized organization suggestions, anchor decisions, organization rules, and rule-audit context already assembled by `reports.py`. It writes editable review records, not `MovePlanItem` values or execution-ready plans. Stage 10.8 has no path from an approved review row to filesystem movement.
 
 Organization-review apply is a separate confirmed workflow. `organization_apply_review.py` treats the reviewed JSON as user-approved intent, converts only approved rows to `MovePlanItem` values, checks normalized source/destination conflicts, and delegates all preflight and movement to `executor.py`. Its apply-result JSON is a user-readable summary; the executor operation log remains authoritative for successful moves and undo.
+
+Post-apply verification is separate from execution and undo. `organization_verify.py` treats both JSON artifacts as untrusted input, normalizes their paths under the scan root, compares successful source/destination pairs, and checks current source and destination state. It writes an audit report only and does not import or call executor movement functions.
 
 Batch review sessions collect duplicate, deterministic organization, and review-candidate `MovePlanItem` values for command-line review. Review-candidate rows keep `category = "review_candidate"` separate from `review_category` metadata such as `empty`, `temporary`, or `backup_or_copy`. Approve/reject decisions and reviewed-plan JSON records do not execute moves. Approved rows are checked for source and destination conflicts before apply. Saved reviewed-plan JSON is treated as untrusted input when loaded later; `review_session.py` validates it, rejects approved move conflicts, and converts only approved records back into `MovePlanItem` values. Final apply still uses `executor.py`.
 

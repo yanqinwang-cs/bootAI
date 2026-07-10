@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/bootai/organization_review_apply_verification.schema.json",
+  "title": "bootAI Stage 10.10 Organization Apply Verification",
+  "description": "Documentation-only schema for the read-only post-apply audit.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source",
+    "generated_at",
+    "verification_root",
+    "apply_result_file",
+    "operation_log_file",
+    "status",
+    "passed",
+    "applied_count",
+    "verified_destination_count",
+    "verified_missing_source_count",
+    "checks",
+    "mismatches",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source": {"const": "bootAI Stage 10.10 organization apply verification"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "verification_root": {"const": "."},
+    "apply_result_file": {"$ref": "#/$defs/relative_path"},
+    "operation_log_file": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/relative_path"}
+      ]
+    },
+    "status": {"enum": ["passed", "mismatches", "invalid_input"]},
+    "passed": {"type": "boolean"},
+    "applied_count": {"type": "integer", "minimum": 0},
+    "verified_destination_count": {"type": "integer", "minimum": 0},
+    "verified_missing_source_count": {"type": "integer", "minimum": 0},
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "passed", "detail"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "passed": {"type": "boolean"},
+          "detail": {"type": "string"}
+        }
+      }
+    },
+    "mismatches": {"type": "array", "items": {"type": "string"}},
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    }
+  }
+}

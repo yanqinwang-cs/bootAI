@@ -25,6 +25,7 @@ from organizer.organization_apply_review import (
 )
 from organizer.organization_rules import load_organization_rules
 from organizer.organization_review import export_organization_review
+from organizer.organization_verify import verify_organization_apply
 from organizer.planner import build_duplicate_review_plan
 from organizer.reports import build_scan_report, default_report_path, write_report
 from organizer.review import build_review_candidate_plan, detect_review_candidates
@@ -80,6 +81,7 @@ def main() -> int:
     parser.add_argument("--export-organization-review", action="store_true")
     parser.add_argument("--organization-review-output", type=Path, default=None)
     parser.add_argument("--apply-organization-review", type=Path, default=None)
+    parser.add_argument("--verify-organization-apply", type=Path, default=None)
     parser.add_argument("--review-plans", action="store_true")
     parser.add_argument("--ignore-review-state", action="store_true")
     parser.add_argument("--apply-reviewed-plan", type=Path, default=None)
@@ -111,6 +113,9 @@ def main() -> int:
         )
     if args.ignore_review_state and not args.review_plans:
         parser.error("--ignore-review-state requires --review-plans")
+
+    if args.verify_organization_apply is not None:
+        return _handle_verify_organization_apply(parser, args)
 
     if args.apply_organization_review is not None:
         return _handle_apply_organization_review(parser, args)
@@ -674,6 +679,65 @@ def _handle_apply_organization_review(
 
     print("Apply completed.")
     _print_operation_log(outcome.operation_log)
+    return 0
+
+
+def _handle_verify_organization_apply(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.max_depth is not None
+        or args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.apply_reviewed_plan is not None
+        or args.apply_organization_review is not None
+        or args.export_organization_review
+        or args.organization_review_output is not None
+        or args.export_rule_candidates
+        or args.rule_candidates_output is not None
+        or args.apply_rule_decisions is not None
+        or args.report
+        or args.report_output is not None
+        or args.html_report
+        or args.html_report_output is not None
+        or args.undo_log is not None
+        or args.review_plans
+        or args.ignore_review_state
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.refine_groups
+        or args.plan_refined_organization
+        or args.llm_provider is not None
+        or args.llm_model is not None
+        or args.ollama_host is not None
+        or args.confirm is not None
+    ):
+        parser.error(
+            "--verify-organization-apply cannot be combined with other modes, "
+            "--max-depth, or --confirm"
+        )
+
+    try:
+        outcome = verify_organization_apply(
+            args.verify_organization_apply,
+            args.folder,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+
+    print(f"Verification status: {outcome.status}")
+    print(f"Applied rows checked: {outcome.applied_count}")
+    print(f"Verification report: {outcome.result_path}")
+    if not outcome.passed:
+        print(f"Verification completed with {outcome.mismatch_count} issue(s).")
+        return 1
+    print("Verification passed.")
     return 0
 
 
