@@ -85,6 +85,8 @@ Review view state is an in-memory projection over all session rows. `review_sess
 
 Bulk page decisions reuse that projection and the existing single-ID decision helpers. A preview freezes the exact stable IDs displayed on the current page, separates changed and idempotent rows, and requires a decision-specific confirmation before mutating in-memory decisions. It does not save or enter the executor path.
 
+Review-session dirty state is a session-local boolean derived only from actual decision changes. It starts clean for generated and resumed sessions, clears after a successful save, and requires exact `QUIT WITHOUT SAVING` confirmation before unsaved decisions are discarded. It is presentation/session state only: it is not serialized and does not alter review-state memory, conflict detection, apply confirmation, or executor behavior.
+
 Review state is separate from reviewed-plan JSON and operation logs. `review_state.py` stores human review decision memory under `AI_Review/review_state/review_decisions.json`, matches remembered decisions back to current rows by source, destination, category, review category, size, and modified time, and flags stale prior decisions when metadata changes. Review state records intent only. It is not an operation log, does not record filesystem success, and is not used for undo.
 
 Approved moves are explicit `MovePlanItem` values accepted by a user-facing flow. Execution is isolated in `executor.py`, which validates and applies approved duplicate, organization, and review-candidate moves only. Undo is driven by operation logs written by `executor.py`.

@@ -215,12 +215,12 @@ Review mode is single-purpose. It rejects display, planning, apply, undo, report
 
 Inside the review session:
 
-- `help`: show commands.
+- `help`: show commands grouped by inspection, decisions, view controls, and session actions.
 - `show duplicates`: show duplicate suggested moves.
 - `show organization`: show organization suggested moves.
 - `show review-candidates`: show review-candidate suggested moves with `R` IDs.
 - `summary`: show approved and rejected move counts.
-- `conflicts`: show approved source and destination conflicts.
+- `conflicts`: show deterministic approved source and destination conflicts with stable IDs and root-relative paths.
 - `reject <IDs...>`: mark suggested moves as rejected.
 - `approve <IDs...>`: mark rejected moves as approved again.
 - `undecide <IDs...>`: return selected rows to undecided.
@@ -236,9 +236,13 @@ Inside the review session:
 - `approve-page`: preview and set current-page rows to approved after `APPROVE CURRENT PAGE` confirmation.
 - `reject-page`: preview and set current-page rows to rejected after `REJECT CURRENT PAGE` confirmation.
 - `undecide-page`: preview and set current-page rows to undecided after `UNDECIDE CURRENT PAGE` confirmation.
-- `save`: write a reviewed-plan JSON file under `AI_Review/review_sessions/`.
+- `save`: write a reviewed-plan JSON file under `AI_Review/review_sessions/`, print decision/conflict totals, and clear the session-local unsaved-decision indicator.
 - `apply`: save the current reviewed plan if needed, then require exact `APPLY_REVIEWED_PLAN` confirmation before applying approved moves.
-- `quit`: exit without applying.
+- `quit`: exit without applying; unsaved decision changes require exact `QUIT WITHOUT SAVING` confirmation.
+
+The session header identifies generated versus resumed input and shows current decision totals. `view` also reports whether review decisions have changed since the last successful save. Only actual decision changes mark the session dirty; inspection, filtering, sorting, and pagination do not. An idempotent decision command leaves the dirty state unchanged. Dirty state is in memory only and is never written to reviewed-plan JSON, review state, operation logs, or apply results.
+
+Invalid commands identify the entered command, and invalid filters, sorts, pages, page sizes, and row IDs report their supported values without changing decisions or valid view state. A cancelled dirty-session quit preserves all in-memory decisions and moves no files.
 
 By default, `--review-plans` loads review decision memory from `AI_Review/review_state/review_decisions.json`. Matching rows can be pre-marked as remembered approvals or remembered rejections, and stale prior decisions are shown when the source path still matches but file size or modified time changed. `--ignore-review-state` skips this memory for the current session. Review state is decision memory only. It is not an operation log, does not record filesystem success, and does not replace undo logs.
 

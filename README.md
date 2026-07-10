@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.13 are implemented. The tool can currently:
+Stages 1 through 10.14 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -37,15 +37,16 @@ Stages 1 through 10.13 are implemented. The tool can currently:
 - Resume saved reviewed-plan sessions, edit decisions, and save a new collision-safe revision.
 - Filter, sort, and paginate review-session rows without changing decisions or saved-plan contents.
 - Change decisions for the current displayed page only after an exact decision confirmation.
+- Track unsaved review decisions locally, require exact confirmation before discarding them, and present grouped help and clearer conflict summaries.
 
-Stage 10.13 adds exact-confirmed `approve-page`, `reject-page`, and `undecide-page` review commands. They target only stable IDs on the displayed page, change in-memory decisions only, and never save, apply, or move files automatically.
+Stage 10.14 polishes the existing review session with grouped help, specific command errors, concise session/save summaries, clearer conflict output, and exact `QUIT WITHOUT SAVING` protection for unsaved decision changes. Dirty state is session-local and does not change reviewed-plan JSON or movement semantics.
 
 ## Setup
 
 Use Python 3 and the standard library. No third-party dependencies are required for the current test suite.
 
 ```bash
-PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_state tests.test_html_report tests.test_scope tests.test_organization_rules tests.test_pattern_inference tests.test_rule_review tests.test_rule_audit tests.test_organization_review tests.test_organization_review_apply tests.test_organization_verify
+PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_session_resume tests.test_review_session_view tests.test_review_session_bulk tests.test_review_session_polish tests.test_review_state tests.test_html_report tests.test_scope tests.test_organization_rules tests.test_pattern_inference tests.test_rule_review tests.test_rule_audit tests.test_organization_review tests.test_organization_review_apply tests.test_organization_verify
 ```
 
 ## Quickstart

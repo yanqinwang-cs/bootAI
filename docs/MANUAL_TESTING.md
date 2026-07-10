@@ -856,6 +856,29 @@ quit
 
 Expected outcome: the wrong confirmation changes nothing; the exact confirmation changes only stable IDs displayed on that page; off-page and filtered-out rows retain their decisions; no save occurs until `save`; the saved reviewed plan still contains all rows; and no operation log or file movement is created by page-decision commands.
 
+## Stage 10.14 Review Session Polish
+
+Use a disposable resumed reviewed-plan session and run:
+
+```text
+help
+view
+conflicts
+approve O1
+view
+quit
+WRONG
+view
+save
+view
+reject-page
+REJECT CURRENT PAGE
+quit
+QUIT WITHOUT SAVING
+```
+
+Expected outcome: help is grouped by purpose; invalid input names the failed command or argument; actual decision changes set `unsaved decision changes` to `yes`; view-only commands do not change that state; a wrong quit confirmation keeps the session open; save writes a collision-safe reviewed-plan sibling and clears the indicator; the final exact quit confirmation discards only the later in-memory decision changes. The resumed input remains unchanged, and no operation log or file movement is produced by help, view, conflicts, decision editing, save, or quit.
+
 ## Final Git Hygiene Check
 
 From the repository root:

@@ -51,6 +51,7 @@ REVIEW_SORT_FIELDS = {
     "category",
     "review_category",
 }
+REVIEW_SORT_DIRECTIONS = {"asc", "desc"}
 PAGE_DECISION_CONFIRMATIONS = {
     DECISION_APPROVED: "APPROVE CURRENT PAGE",
     DECISION_REJECTED: "REJECT CURRENT PAGE",
@@ -103,6 +104,12 @@ class PageDecisionPreview:
     total_count: int
     decision_counts: tuple[tuple[str, int], ...]
     category_counts: tuple[tuple[str, int], ...]
+
+
+def review_decision_snapshot(
+    items: list[ReviewedPlanItem],
+) -> tuple[tuple[str, str], ...]:
+    return tuple(sorted((item.id, item.decision) for item in items))
 
 
 def preview_page_decision_change(
@@ -172,12 +179,15 @@ def set_review_filter(
     normalized_value = value.strip().lower()
     allowed_values = REVIEW_FILTER_VALUES.get(normalized_field)
     if allowed_values is None:
-        raise ValueError(f"unsupported review filter field: {field}")
+        supported = ", ".join(sorted(REVIEW_FILTER_VALUES))
+        raise ValueError(
+            f"Unknown filter field: {field}. Supported fields: {supported}."
+        )
     if normalized_value not in allowed_values:
         allowed = ", ".join(sorted(allowed_values))
         raise ValueError(
-            f"unsupported {normalized_field} filter value: {value}; "
-            f"allowed values: {allowed}"
+            f"Invalid filter value for {normalized_field}: {value}. "
+            f"Supported values: {allowed}."
         )
     filters = dict(state.filters)
     filters[normalized_field] = normalized_value
@@ -200,9 +210,16 @@ def set_review_sort(
     normalized_field = field.strip().lower()
     normalized_direction = direction.strip().lower()
     if normalized_field not in REVIEW_SORT_FIELDS:
-        raise ValueError(f"unsupported review sort field: {field}")
-    if normalized_direction not in {"asc", "desc"}:
-        raise ValueError("review sort direction must be asc or desc")
+        supported = ", ".join(sorted(REVIEW_SORT_FIELDS))
+        raise ValueError(
+            f"Unknown sort field: {field}. Supported fields: {supported}."
+        )
+    if normalized_direction not in REVIEW_SORT_DIRECTIONS:
+        supported = ", ".join(sorted(REVIEW_SORT_DIRECTIONS))
+        raise ValueError(
+            f"Invalid sort direction: {direction}. "
+            f"Supported directions: {supported}."
+        )
     return replace(
         state,
         sort_field=normalized_field,
@@ -289,7 +306,7 @@ def set_review_page(
     view = build_review_view(items, state, root)
     normalized_request = page_request.strip().lower()
     if view.total_pages == 0:
-        raise ValueError("current review view has no pages")
+        raise ValueError("Invalid page request: the current review view has no pages.")
     if normalized_request == "next":
         requested_page = view.page + 1
     elif normalized_request == "prev":
@@ -298,10 +315,13 @@ def set_review_page(
         try:
             requested_page = int(normalized_request)
         except ValueError as error:
-            raise ValueError("review page must be next, prev, or a page number") from error
+            raise ValueError(
+                f"Invalid page: {page_request}. Use next, prev, or a page number."
+            ) from error
     if requested_page < 1 or requested_page > view.total_pages:
         raise ValueError(
-            f"review page must be between 1 and {view.total_pages}"
+            f"Invalid page: {page_request}. "
+            f"Page must be between 1 and {view.total_pages}."
         )
     return replace(state, page=requested_page)
 
@@ -313,10 +333,13 @@ def set_review_page_size(
     try:
         page_size = int(page_size_text)
     except ValueError as error:
-        raise ValueError("review page size must be an integer") from error
+        raise ValueError(
+            f"Invalid page size: {page_size_text}. Page size must be an integer."
+        ) from error
     if page_size < 1 or page_size > MAX_REVIEW_PAGE_SIZE:
         raise ValueError(
-            f"review page size must be between 1 and {MAX_REVIEW_PAGE_SIZE}"
+            f"Invalid page size: {page_size_text}. "
+            f"Page size must be between 1 and {MAX_REVIEW_PAGE_SIZE}."
         )
     return replace(state, page_size=page_size, page=1)
 
@@ -434,7 +457,7 @@ def get_item(
     for item in items:
         if item.id == normalized_id:
             return item
-    raise ValueError(f"unknown review item ID: {item_id}")
+    raise ValueError(f"Row ID not found: {item_id}. No review decisions were changed.")
 
 
 def summarize_review_items(
@@ -840,7 +863,10 @@ def _set_decision(
     known_ids = {item.id for item in items}
     unknown_ids = [item_id for item_id in normalized_ids if item_id not in known_ids]
     if unknown_ids:
-        raise ValueError(f"unknown review item ID: {unknown_ids[0]}")
+        raise ValueError(
+            f"Row ID not found: {unknown_ids[0]}. "
+            "No review decisions were changed."
+        )
 
     ids_to_update = set(normalized_ids)
     return [
@@ -850,7 +876,7 @@ def _set_decision(
             memory_status=MEMORY_NEW,
             remembered_decision=None,
         )
-        if item.id in ids_to_update
+        if item.id in ids_to_update and item.decision != decision
         else item
         for item in items
     ]

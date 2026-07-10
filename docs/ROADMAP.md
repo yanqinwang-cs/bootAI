@@ -35,6 +35,7 @@
 | 10.11 | Resume and edit saved review sessions | `review_session.py`, `cli.py` | `--resume-reviewed-plan` | review-only until exact-confirmed existing apply |
 | 10.12 | Review filtering, sorting, and pagination | `review_session.py`, `cli.py` | interactive view commands | display state only |
 | 10.13 | Confirmed bulk decisions for current page | `review_session.py`, `cli.py` | `approve-page`, `reject-page`, `undecide-page` | decision-only confirmation |
+| 10.14 | Review session quality-of-life polish | `review_session.py`, `cli.py` | existing interactive commands | session-local dirty-state protection |
 
 ## Future Stages
 

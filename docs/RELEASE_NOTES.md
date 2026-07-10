@@ -1,6 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.13
+## Current Status Through Stage 10.14
+
+Stage 10.14 polishes the interactive review session with grouped help, specific invalid-command guidance, session-local unsaved-decision tracking, exact `QUIT WITHOUT SAVING` protection, root-relative session/save summaries, and clearer conflict display. Reviewed-plan schemas, review-state semantics, apply confirmation, and movement behavior are unchanged.
 
 Stage 10.13 adds previewed and typed-confirmed decision changes for the current displayed review page. Idempotent rows are reported separately, hidden and off-page rows remain unchanged, decision-filtered views are recalculated safely, and saving remains explicit.
 
@@ -60,6 +62,11 @@ Stage 10.9 adds confirmed apply for approved organization-review rows. Exact `AP
 - Stage 10.7: rule-aware organization audit in JSON and HTML reports.
 - Stage 10.8: read-only rule-aware organization suggestion review export.
 - Stage 10.9: confirmed approved organization-review apply through the existing executor.
+- Stage 10.10: post-apply verification and undo hardening.
+- Stage 10.11: resume and edit saved review sessions.
+- Stage 10.12: filtering, sorting, and pagination for review sessions.
+- Stage 10.13: confirmed decisions for the current review page.
+- Stage 10.14: review-session clarity and unsaved-decision protection.
 
 ## Safety Model
 

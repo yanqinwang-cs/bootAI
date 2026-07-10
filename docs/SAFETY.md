@@ -39,6 +39,8 @@
 - View state must not change decisions, remove hidden rows from saved output, or target rows by page position.
 - Bulk page decisions must preview exact stable IDs and require their decision-specific typed confirmation.
 - Bulk page decisions affect the current displayed page only and must not save, apply, move files, or target hidden/off-page rows.
+- Unsaved review-decision tracking is session-local and must not be serialized or treated as filesystem success.
+- Quitting with unsaved review decisions requires exact `QUIT WITHOUT SAVING` confirmation; cancelling preserves decisions and moves no files.
 - Rejected saved reviewed-plan items must be ignored for movement.
 - Protected-context files are not actionable move candidates by default.
 - Generated web/archive assets are not actionable move candidates by default.
