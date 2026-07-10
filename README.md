@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.14 and Stages 11.0 through 11.2 are implemented. Stage 11.2 adds the first local web runtime: a root-locked, loopback-only, authenticated welcome shell. It deliberately does not scan, load artifacts, create review sessions, or move files. The tool can currently:
+Stages 1 through 10.14 and Stages 11.0 through 11.4 are implemented. Stage 11.4 adds a root-locked, loopback-only, authenticated read-only review explorer on top of the Stage 11.3 scan dashboard. It inspects only the latest completed scan and does not change decisions or files. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -44,13 +44,13 @@ Stages 1 through 10.14 and Stages 11.0 through 11.2 are implemented. Stage 11.2 
 - Establish one browser session through a single-use launch URL, then redirect to a clean authenticated page.
 - Serve locally bundled HTMX and Bootstrap assets with strict Host and response-header controls.
 
-Stage 11.1 migrated only report generation and review-session creation/resume into application services. Stage 11.2 does not connect those services to HTTP. The interactive CLI review loop and all apply, undo, verification, and movement paths retain their existing owners. The historical OpenRouter assistant remains excluded from bootAI packaging, and the core package still has no mandatory third-party dependencies.
+Stage 11.1 migrated report generation and review-session creation/resume into application services. Stages 11.3 and 11.4 connect read-only scanning and review exploration to those services without rescanning during navigation. The interactive CLI review loop and all apply, undo, verification, and movement paths retain their existing owners. The historical OpenRouter assistant remains excluded from bootAI packaging, and the core package still has no mandatory third-party dependencies.
 
 ## Interface Direction
 
 The local web application is the intended primary interface for ordinary users. Its implemented Stage 11.2 foundation uses FastAPI, Jinja2, HTMX, Bootstrap, minimal vanilla JavaScript, and Uvicorn, with all assets bundled locally and the server restricted to one validated root on IPv4 loopback.
 
-The current web page is a security and accessibility shell, not a scan dashboard. Read-only scanning begins in Stage 11.3. The CLI remains available for development, scripting, diagnostics, manual fallback, and safety-critical testing. Static HTML remains a read-only report and audit-snapshot format. Native desktop development is optional and deferred until after Stage 11.
+The current web application provides an explicit read-only scan dashboard and review explorer. Review filters, sorting, pagination, details, and conflict inspection operate on the latest completed scan generation; no decision mutation is available yet. The CLI remains available for development, scripting, diagnostics, manual fallback, and safety-critical testing. Static HTML remains a read-only report and audit-snapshot format. Native desktop development is optional and deferred until after Stage 11.
 
 See the [local web architecture contract](docs/WEB_ARCHITECTURE.md) and [web threat model](docs/WEB_THREAT_MODEL.md) for the frozen Stage 11 requirements.
 
@@ -186,7 +186,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Post-apply verification compares the apply summary, operation log, and filesystem without moving files.
 - `executor.py` is the only module that performs real movement.
 - Review, grouping, and LLM modules produce facts or suggestions; they do not execute moves.
-- The Stage 11.2 web shell has no scan, artifact, review, apply, restore, arbitrary file-serving, or production POST route.
+- The Stage 11.4 web explorer has no review mutation, artifact-writing, apply, restore, arbitrary file-serving, or executor route. The only production POST is the explicit Stage 11.3 scan trigger.
 - Its signed session cookie is integrity-protected, not confidential; it contains only authentication state and opaque session/CSRF values.
 
 ## Documentation

@@ -39,6 +39,8 @@
 | 11.0 | Local web architecture contract and threat model | documentation only | none | no runtime behavior |
 | 11.1 | Application services and dependency hygiene | `application/`, `reports.py`, narrow CLI entry migration | none | no server or movement changes |
 | 11.2 | Secure local web shell and launcher | `web/`, optional web dependencies, bundled assets | separate `organizer.web` launcher | authenticated shell only; no scan or movement |
+| 11.3 | Read-only scan dashboard | `web/scan_jobs.py`, scan routes and templates | none | explicit scan/report only; no decisions or movement |
+| 11.4 | Read-only review explorer | report-to-review adapter, review routes and templates | none | latest completed scan only; no decision mutation |
 
 ## Stage 11 Sequence
 
@@ -78,14 +80,11 @@ Completed:
 
 ### Stage 11.3 — Read-Only Scan Dashboard
 
-- Add an explicit user-triggered scan, one in-process scan job, progress polling, failure handling, report generation, and summary cards.
-- Add no decisions or movement.
+Completed: explicit user-triggered scan, one generation-safe in-process scan job, progress polling, failure handling, report generation, and summary cards. No decisions or movement.
 
 ### Stage 11.4 — Read-Only Review Explorer
 
-- Browse, filter, sort, and paginate review rows.
-- Inspect details and conflicts.
-- Add no decision mutation.
+Completed: browse, filter, sort, and paginate the latest completed scan’s review rows; inspect stable-ID metadata details and approved conflicts; display warnings without rescanning or writing artifacts. No decision mutation.
 
 ### Stage 11.5 — Review Decisions and Reviewed-Plan Saving
 

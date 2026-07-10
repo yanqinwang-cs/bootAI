@@ -16,6 +16,7 @@ from organizer.review import build_review_candidate_plan, detect_review_candidat
 from organizer.safety import validate_under_root
 from organizer.scanner import scan_directory
 from organizer.scope import is_actionable_destination_path, is_actionable_source_path
+from organizer.reports import validate_report_data
 
 REVIEW_SESSION_SCHEMA_VERSION = 1
 REVIEW_PLAN_TYPE = "batch_review"
@@ -426,6 +427,110 @@ def build_review_session_items(
         )
     )
     return items
+
+
+def build_review_session_items_from_report(
+    report: object,
+    root: Path,
+) -> list[ReviewedPlanItem]:
+    """Build the same review rows from one already-completed scan report."""
+    validated_report = validate_report_data(report)
+    resolved_root = root.resolve()
+    items: list[ReviewedPlanItem] = []
+
+    duplicate_items = _report_plan_items(
+        validated_report["duplicate_review_plan"],
+        resolved_root,
+        CATEGORY_DUPLICATE,
+        "D",
+    )
+    organization_items: list[dict[str, Any]] = []
+    for index, suggestion in enumerate(
+        validated_report["organization_suggestions"],
+        start=1,
+    ):
+        if not isinstance(suggestion, dict):
+            raise ValueError(f"organization suggestion {index} must be an object")
+        organization_items.extend(
+            _report_plan_items(
+                suggestion.get("plan_items"),
+                resolved_root,
+                CATEGORY_ORGANIZATION,
+                "O",
+                start_index=len(organization_items) + 1,
+            )
+        )
+    review_items = _report_plan_items(
+        validated_report["review_candidate_plan"],
+        resolved_root,
+        CATEGORY_REVIEW_CANDIDATE,
+        "R",
+    )
+    review_candidates = validated_report["review_candidates"]
+    if len(review_items) != len(review_candidates):
+        raise ValueError("report review candidate rows do not match candidate facts")
+    review_items = [
+        replace(item, review_category=candidate["category"])
+        for item, candidate in zip(review_items, review_candidates)
+        if isinstance(candidate, dict)
+    ]
+    if len(review_items) != len(review_candidates):
+        raise ValueError("report review candidate facts are invalid")
+    items.extend(duplicate_items)
+    items.extend(organization_items)
+    items.extend(review_items)
+    return items
+
+
+def _report_plan_items(
+    raw_items: object,
+    root: Path,
+    category: str,
+    prefix: str,
+    *,
+    start_index: int = 1,
+) -> list[ReviewedPlanItem]:
+    if not isinstance(raw_items, list):
+        raise ValueError(f"report {category} plan must be a list")
+    result: list[ReviewedPlanItem] = []
+    for offset, raw_item in enumerate(raw_items, start=start_index):
+        if not isinstance(raw_item, dict):
+            raise ValueError(f"report {category} item {offset} must be an object")
+        source = _validated_relative_path(raw_item.get("source"), "source", offset)
+        destination = _validated_relative_path(
+            raw_item.get("destination"),
+            "destination",
+            offset,
+        )
+        source_path = root / source
+        destination_path = root / destination
+        validate_under_root(source_path.resolve(strict=False), root)
+        validate_under_root(destination_path.resolve(strict=False), root)
+        result.append(
+            ReviewedPlanItem(
+                id=f"{prefix}{offset}",
+                category=category,
+                decision=DECISION_APPROVED,
+                plan_item=MovePlanItem(
+                    source=source_path,
+                    destination=destination_path,
+                    reason=_optional_string(
+                        raw_item.get("reason"),
+                        "Report suggestion.",
+                    ),
+                    confidence=_optional_confidence(raw_item.get("confidence")),
+                    operation=_optional_string(
+                        raw_item.get("operation"),
+                        "dry-run move",
+                    ),
+                    overwrite_risk=_optional_bool(
+                        raw_item.get("overwrite_risk"),
+                        False,
+                    ),
+                ),
+            )
+        )
+    return result
 
 
 def approve_items(

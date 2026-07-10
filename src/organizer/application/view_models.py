@@ -61,6 +61,13 @@ class ReviewSaveResult:
 
 
 @dataclass(frozen=True)
+class ReviewItemMetadata:
+    item: ReviewedPlanItem
+    size_bytes: int | None
+    modified_time: float | None
+
+
+@dataclass(frozen=True)
 class ArtifactSummary:
     artifact_type: str
     relative_path: str

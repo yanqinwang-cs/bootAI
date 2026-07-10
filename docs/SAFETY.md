@@ -95,7 +95,7 @@
 - Web apply is forbidden before Stage 11.8, and web restore is forbidden before Stage 11.9.
 - An arbitrary path-based file-serving endpoint is forbidden.
 - Accessibility targets WCAG 2.2 AA from the first web screen.
-- Through Stage 11.2, the only production application routes are read-only health and home GETs plus the documented launch-bootstrap GET; there is no production POST route or workflow connection.
+- Through Stage 11.4, review routes are GET-only and read-only. The only production POST is the explicit Stage 11.3 scan trigger; review navigation does not rescan or write artifacts.
 
 The complete controls and threat mappings are in [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md).
 

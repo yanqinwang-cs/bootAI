@@ -79,7 +79,7 @@ Filesystem
 
 ## Stage 11 Local Web Direction
 
-Stage 11 is adding a local web application as bootAI's primary consumer interface. Stage 11.1 established the shared application-service boundary. Stage 11.2 adds only an authenticated local shell around one validated immutable root; its routes do not yet import application workflows. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML reports remain read-only audit snapshots.
+Stage 11 adds a local web application as bootAI's primary consumer interface. Stage 11.1 established the shared application-service boundary; Stage 11.3 adds explicit read-only scanning and Stage 11.4 adds a read-only explorer for the latest completed scan generation. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML reports remain read-only audit snapshots.
 
 The required future dependency direction is:
 
@@ -95,7 +95,7 @@ Existing deterministic bootAI modules
 executor.py for explicitly approved movement and undo only
 ```
 
-The web layer must not reproduce scanner, duplicate, grouping, review, safety, movement, or undo logic. Route modules must never import `executor.py`; only the future execution application service may delegate validated and explicitly approved plans to existing executor functions. Stage 11.2 reuses only `safety.validate_under_root` and exposes no scan, artifact, review, apply, or restore workflow. The interactive command loop and every apply/undo path remain direct. Later use cases must continue to migrate incrementally rather than rewriting `cli.py`.
+The web layer must not reproduce scanner, duplicate, grouping, review, safety, movement, or undo logic. Route modules must never import `executor.py`; only the future execution application service may delegate validated and explicitly approved plans to existing executor functions. Stages 11.3 and 11.4 reuse application scan/review services and expose no decision, artifact-writing, apply, or restore workflow. The interactive command loop and every apply/undo path remain direct. Later use cases must continue to migrate incrementally rather than rewriting `cli.py`.
 
 Each web-server process is bound to one validated immutable root. Browser requests submit stable session-scoped IDs and allowed actions rather than source or destination paths. Existing JSON artifacts remain authoritative; temporary UI, job, security, and revision state may remain in memory, with no initial database.
 

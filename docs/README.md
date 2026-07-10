@@ -6,9 +6,9 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.14 and Stages 11.0 through 11.2 are implemented. Stage 11.2 adds the secure local web shell and launcher on top of the Stage 11.1 application-service boundary.
+Stages 1 through 10.14 and Stages 11.0 through 11.4 are implemented. Stages 11.3 and 11.4 add the read-only scan dashboard and latest-completed-scan review explorer on top of the Stage 11.1 application-service boundary.
 
-The local web application is the intended primary interface for ordinary users. Its current screen is an authenticated, root-locked welcome page only: it runs on `127.0.0.1`, serves bundled assets, and does not scan, load artifacts, review, apply, or restore. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only, and native desktop work is optional and deferred until after Stage 11.
+The local web application is the intended primary interface for ordinary users. Its current screens are an authenticated, root-locked read-only scan dashboard and latest-completed-scan review explorer: it runs on `127.0.0.1`, serves bundled assets, and does not expose decisions, apply, or restore. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only, and native desktop work is optional and deferred until after Stage 11.
 
 ## Quick Navigation
 

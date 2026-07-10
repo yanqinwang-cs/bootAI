@@ -1,6 +1,6 @@
 # Local Web Threat Model
 
-Status: mandatory Stage 11 security contract, accepted in Stage 11.0 and implemented through the Stage 11.2 foundation.
+Status: mandatory Stage 11 security contract, accepted in Stage 11.0 and implemented through the Stage 11.4 read-only explorer.
 
 This threat model applies to bootAI's single-user local web application. It is concrete to bootAI's root-bound scan, review, apply, verification, history, and restore workflows. It is not a claim that localhost is inherently trusted.
 
@@ -139,7 +139,7 @@ State-changing actions include decisions, current-page bulk decisions, reviewed-
 
 GET and HEAD are read-only. POST performs mutations. Apply, save, decision change, configuration change, and restore must never be triggered by GET.
 
-Through Stage 11.2 the production route set is `GET /healthz`, `GET /launch/{token}`, `GET /`, and mounted local static delivery. `/healthz` returns only `{"status":"ok"}` without authentication. The launch GET changes authentication state as the sole documented bootstrap exception. There is no production POST route.
+Through Stage 11.4 the production route set is `GET /healthz`, `GET /launch/{token}`, `GET /`, `POST /scan`, `GET /scan/status`, `GET /review`, `GET /review/items/{item_id}`, `GET /review/conflicts`, and mounted local static delivery. `/healthz` returns only `{"status":"ok"}` without authentication. The launch GET changes authentication state as the bootstrap exception; review routes are GET-only and the only POST is the explicit scan trigger.
 
 After a successful POST, redirect or render a read-only result URL so refresh cannot repeat the mutation. Revision checks, single-use operation tokens where required, and server-side locks enforce idempotency; client-side button disabling is not a security control.
 
@@ -225,4 +225,4 @@ The pure ASGI header middleware is outermost among user middleware so these head
 
 ## Verification Expectations
 
-Each implementation stage must add tests for the controls it introduces. Stage 11.2 covers root/config isolation, token replay and concurrency, cookie attributes, CSRF and Origin helpers, Host rejection, response headers, generic errors, route/method inventory, local assets, launcher binding, browser sequencing, and cleanup. Later tests must add workflow-specific arbitrary/traversal paths, stale revision, repeated POST, concurrent jobs/execution, tampered artifacts, changed sources, new destinations, and blocked arbitrary preview access when those surfaces exist.
+Each implementation stage must add tests for the controls it introduces. Stages 11.2 through 11.4 cover root/config isolation, token replay and concurrency, cookie attributes, CSRF and Origin helpers, Host rejection, response headers, generic errors, route/method inventory, local assets, launcher binding, generation-safe scan jobs, report-only writes, no-rescan review navigation, stable-ID details, root-relative paths, and blocked arbitrary preview access. Later tests must add workflow-specific stale revision, repeated mutation, concurrent execution, tampered artifacts, changed sources, new destinations, and other controls when those surfaces exist.

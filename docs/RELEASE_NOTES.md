@@ -1,5 +1,15 @@
 # Release Notes
 
+## Stage 11.4 — Read-Only Review Explorer
+
+Stage 11.4 adds authenticated GET-only review exploration for the latest completed scan generation. It reuses the application review service and existing review-session filtering, sorting, pagination, stable IDs, and conflict detection without rescanning during navigation. The explorer shows root-relative metadata, warnings, category counts, current decisions as read-only labels, and approved conflicts.
+
+No review decision, review-state, reviewed-plan, report, operation-log, apply, restore, executor, or file-content-preview behavior is added. A new or failed scan invalidates the previous explorer source; independent web app instances keep independent in-memory state.
+
+## Stage 11.3 — Read-Only Scan Dashboard
+
+Stage 11.3 adds an explicit authenticated scan trigger, generation-safe in-process scan job, status polling, collision-safe JSON report writing through the existing report owner, failure handling, and read-only summary cards. No review decisions or movement are available.
+
 ## Stage 11.2 — Secure Local Web Shell and Launcher
 
 Stage 11.2 adds bootAI's first local web runtime. `python3 -m organizer.web --root <folder>` validates and locks one root, binds an already-listening IPv4 socket to `127.0.0.1` on a dynamic or explicitly selected port, and runs one Uvicorn worker with proxy headers and access logging disabled. Automatic launch waits for the minimal unauthenticated health check; `--no-browser` and browser-open failure print the private single-use launch URL.
@@ -8,7 +18,7 @@ The FastAPI app disables documentation endpoints and exposes only health, single
 
 HTMX 2.0.10 and Bootstrap 5.3.8 are bundled from verified official release files with their published SHA-384 values and license notices. The accessible first screen confirms the immutable root, offline/local operation, and that no scan or movement has occurred. Exact optional dependencies are isolated in `web` and `web-test`; core dependencies remain empty.
 
-No existing CLI flag, application service, artifact format, JSON schema, scan/report/review workflow, executor path, movement, verification, undo, or legacy code changes. Stage 11.3 has not begun.
+No existing CLI flag, artifact format, JSON schema, executor path, movement, verification, undo, or legacy code changes. Stage 11.5 has not begun.
 
 ## Stage 11.1 — Application Services and Dependency Hygiene
 

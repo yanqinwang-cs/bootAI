@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Review · bootAI{% endblock %}
+
+{% block content %}
+<section class="review-panel" aria-labelledby="review-heading" role="status">
+  <p class="eyebrow">Read-only review explorer</p>
+  <h1 id="review-heading">Review findings</h1>
+  {% if explorer.status == "not_started" %}
+  <p>No completed scan is available.</p>
+  <p>Run a scan before reviewing findings.</p>
+  {% elif explorer.status == "scanning" %}
+  <p>A scan is currently running.</p>
+  <p>Review findings will be available when it finishes.</p>
+  {% else %}
+  <p>{{ explorer.error_message or "Review findings are unavailable." }}</p>
+  {% endif %}
+  <p><a class="btn btn-primary" href="/">Return to dashboard</a></p>
+</section>
+{% endblock %}

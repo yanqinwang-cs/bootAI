@@ -30,7 +30,7 @@
     <div><dt>Organization suggestions</dt><dd>{{ scan.result.summary.organization_suggestion_count }}</dd></div>
     <div><dt>Warnings</dt><dd>{{ scan.result.warnings|length }}</dd></div>
   </dl>
-  <p>Completed at {{ scan.completed_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}.</p>
+  <p>Completed at {% if scan.completed_at %}{{ scan.completed_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}{% else %}Unavailable{% endif %}.</p>
   <p>Saved report: <code>{{ relative_report_path }}</code></p>
   <form method="post" action="/scan">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

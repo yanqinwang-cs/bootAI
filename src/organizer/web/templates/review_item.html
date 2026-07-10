@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Review row {{ item.id }} · bootAI{% endblock %}
+
+{% block content %}
+<section class="review-panel" aria-labelledby="detail-heading">
+  <p class="eyebrow">Read-only row details</p>
+  <h1 id="detail-heading">Review row {{ item.id }}</h1>
+  <dl class="detail-list">
+    <dt>File</dt><dd>{{ item.plan_item.source.name }}</dd>
+    <dt>Category</dt><dd>{{ item.category }}{% if item.review_category %} · {{ item.review_category }}{% endif %}</dd>
+    <dt>Current decision</dt><dd>{{ decision_label }}</dd>
+    <dt>Current path</dt><dd class="path-cell">{{ source_relative }}</dd>
+    <dt>Suggested destination</dt><dd class="path-cell">{{ destination_relative }}</dd>
+    <dt>Size</dt><dd>{% if size_bytes is not none %}{{ size_bytes|filesizeformat }}{% else %}Unavailable{% endif %}</dd>
+    <dt>Modified</dt><dd>{{ modified_time or "Unavailable" }}</dd>
+    <dt>Reason</dt><dd>{{ item.plan_item.reason }}</dd>
+    <dt>Confidence</dt><dd>{{ item.plan_item.confidence }}</dd>
+    <dt>Memory status</dt><dd>{{ item.memory_status|replace("_", " ")|title }}</dd>
+  </dl>
+  <p><a class="btn btn-outline-primary" href="/review">Back to review findings</a></p>
+</section>
+{% endblock %}

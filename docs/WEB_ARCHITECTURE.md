@@ -1,8 +1,8 @@
 # Local Web Architecture Contract
 
-Status: accepted in Stage 11.0; implemented through the Stage 11.2 secure shell.
+Status: accepted in Stage 11.0; implemented through the Stage 11.4 read-only review explorer.
 
-This document freezes the architecture that all Stage 11 web work must follow. Stage 11.1 provides shared application services and dependency hygiene. Stage 11.2 adds the isolated local server, browser bootstrap, security foundation, templates, and verified local assets, but does not connect an HTTP route to scan or review workflows.
+This document freezes the architecture that all Stage 11 web work must follow. Stage 11.1 provides shared application services and dependency hygiene. Stages 11.2 through 11.4 add the isolated local server, browser bootstrap, security foundation, read-only scan dashboard, and latest-completed-scan review explorer.
 
 The companion [web threat model](WEB_THREAT_MODEL.md) defines the mandatory security controls. The architecture decisions are also recorded in [ADR 0001](adr/0001-local-web-stack.md), [ADR 0002](adr/0002-web-security-boundary.md), and [ADR 0003](adr/0003-application-service-layer.md).
 
@@ -17,7 +17,7 @@ The interfaces have distinct roles:
 - Static HTML remains a permanent, read-only report and audit-snapshot format. It does not become an interactive web application.
 - A native desktop application is optional, demand-driven, and deferred until after core Stage 11 work.
 
-## Implemented Boundaries Through Stage 11.2
+## Implemented Boundaries Through Stage 11.4
 
 Stage 11.0 did not add or modify:
 
@@ -32,6 +32,8 @@ Stage 11.0 did not add or modify:
 Stage 11.1 adds `application/scan_service.py`, `review_service.py`, `artifact_service.py`, and `view_models.py`. It does not add `application/preflight_service.py`, `application/execution_service.py`, `src/organizer/web/`, or web dependencies. Artifact loading is deliberately limited to scan reports and reviewed plans; later execution and history artifacts remain deferred.
 
 Stage 11.2 adds `src/organizer/web/`, exact optional web dependencies, installed templates/static resources, and focused HTTP-security helpers. The shell reuses only `safety.validate_under_root`; it does not import application workflows, scan, list or load artifacts, create review sessions, expose a production POST route, or alter any movement or undo path. The existing CLI and JSON formats remain unchanged.
+
+Stage 11.3 adds the explicit read-only scan dashboard and generation-safe in-process scan job. Stage 11.4 adds the authenticated GET-only review explorer, which builds rows from the latest completed scan report through the application review service, keeps view state in validated query parameters, and does not rescan or write artifacts during navigation.
 
 ## Current Ownership That Must Be Preserved
 
@@ -351,11 +353,11 @@ Completed: FastAPI app factory, loopback-only launcher, dynamic or validated fix
 
 ### Stage 11.3 — Read-Only Scan Dashboard
 
-Add an explicit user-triggered scan, one in-process scan job, progress polling, failure handling, report generation, and summary cards. No decisions or movement.
+Completed: explicit user-triggered scan, one generation-safe in-process scan job, progress polling, failure handling, report generation, and summary cards. No decisions or movement.
 
 ### Stage 11.4 — Read-Only Review Explorer
 
-Browse review rows, filter, sort, paginate, inspect details, and inspect conflicts. No decision mutation.
+Completed: browse the latest completed scan’s review rows, filter, sort, paginate, inspect stable-ID metadata details, and inspect approved conflicts. Explorer navigation does not rescan or write artifacts. No decision mutation.
 
 ### Stage 11.5 — Review Decisions and Reviewed-Plan Saving
 

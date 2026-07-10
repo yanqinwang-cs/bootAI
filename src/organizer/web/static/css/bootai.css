@@ -102,6 +102,132 @@ main {
   border-color: #a53d2f;
 }
 
+.review-panel {
+  max-width: 75rem;
+  margin: 0 auto;
+}
+
+.category-nav,
+.pagination-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.category-link,
+.pagination-nav a {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--bootai-border);
+  border-radius: 0.4rem;
+  color: var(--bootai-accent);
+  text-decoration: none;
+}
+
+.category-link.active {
+  color: #ffffff;
+  background: var(--bootai-accent);
+}
+
+.count {
+  font-weight: 700;
+}
+
+.review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: end;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid var(--bootai-border);
+  border-radius: 0.75rem;
+  background: var(--bootai-surface);
+}
+
+.review-filters label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 650;
+}
+
+.review-filters select {
+  min-width: 9rem;
+  padding: 0.45rem;
+}
+
+.review-summary,
+.warning-panel,
+.empty-state,
+.detail-list,
+.conflict-list {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--bootai-border);
+  border-radius: 0.75rem;
+  background: var(--bootai-surface);
+}
+
+.warning-panel {
+  border-color: #b78300;
+}
+
+.review-table {
+  width: 100%;
+  min-width: 62rem;
+  border-collapse: collapse;
+  background: var(--bootai-surface);
+}
+
+.review-table th,
+.review-table td {
+  padding: 0.75rem;
+  border: 1px solid var(--bootai-border);
+  vertical-align: top;
+  text-align: left;
+}
+
+.review-table thead th {
+  background: #e8eef2;
+}
+
+.path-cell {
+  max-width: 18rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.35fr) minmax(0, 1fr);
+  gap: 0.75rem 1rem;
+}
+
+.detail-list dt {
+  font-weight: 700;
+}
+
+.detail-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.conflict-list {
+  padding-left: 2.25rem;
+}
+
+@media (max-width: 48rem) {
+  .detail-list {
+    display: block;
+  }
+
+  .detail-list dt {
+    margin-top: 0.75rem;
+  }
+}
+
 .skip-link {
   position: absolute;
   top: 0;

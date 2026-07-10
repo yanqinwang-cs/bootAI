@@ -138,12 +138,15 @@ class WebDependencyHygieneTests(unittest.TestCase):
             "organizer.review",
             "organizer.grouping",
             "organizer.reports",
-            "create_review_session",
             "restore",
             "sqlite",
         ):
             self.assertNotIn(forbidden, combined)
         self.assertIn("organizer.application.scan_service", combined)
+        self.assertNotIn(
+            "from organizer.application.review_service import create_review_session\n",
+            combined,
+        )
         self.assertIn("from organizer.safety import validate_under_root", combined)
 
     def test_core_and_web_config_import_without_optional_dependencies(self) -> None:

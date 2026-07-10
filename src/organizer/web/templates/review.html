@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Review findings · bootAI{% endblock %}
+
+{% block content %}
+<section class="review-panel" aria-labelledby="review-heading">
+  <p class="eyebrow">Read-only review explorer</p>
+  <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+    <div>
+      <h1 id="review-heading">Review findings</h1>
+      <p class="lead mb-1">Inspect suggestions from the latest completed scan.</p>
+      <p class="text-muted">No decisions or files can be changed here.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/">Return to dashboard</a>
+  </div>
+
+  {% if explorer.warnings %}
+  <section class="warning-panel" aria-labelledby="warnings-heading">
+    <h2 id="warnings-heading">Scan warnings ({{ warning_count }})</h2>
+    <ul>
+      {% for warning in explorer.warnings %}<li>{{ warning }}</li>{% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <nav class="category-nav" aria-label="Finding categories">
+    {% for category, label in category_labels.items() %}
+    <a class="category-link{% if active_category == category %} active{% endif %}"
+       href="{{ request.url.include_query_params(category=category, page=1) }}"
+       {% if active_category == category %}aria-current="page"{% endif %}>
+      {{ label }} <span class="count">{{ category_counts.get(category, session.items|length if category == "all" else 0) }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+
+  <form class="review-filters" method="get" action="/review">
+    <input type="hidden" name="category" value="{{ active_category }}">
+    <div>
+      <label for="decision-filter">Decision</label>
+      <select id="decision-filter" name="decision">
+        <option value="">All decisions</option>
+        {% for value, label in decision_labels.items() %}
+        <option value="{{ value }}"{% if active_filters.get("decision") == value %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="review-category-filter">Review category</label>
+      <select id="review-category-filter" name="review_category">
+        <option value="">All review categories</option>
+        {% for value in ("empty", "temporary", "backup_or_copy", "orphan_code") %}
+        <option value="{{ value }}"{% if active_filters.get("review_category") == value %} selected{% endif %}>{{ value|replace("_", " ")|title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="sort-field">Sort by</label>
+      <select id="sort-field" name="sort">
+        {% for value in ("id", "source", "destination", "decision", "category", "review_category") %}
+        <option value="{{ value }}"{% if session.view_state.sort_field == value %} selected{% endif %}>{{ value|replace("_", " ")|title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="sort-direction">Direction</label>
+      <select id="sort-direction" name="direction">
+        <option value="asc"{% if session.view_state.sort_direction == "asc" %} selected{% endif %}>Ascending</option>
+        <option value="desc"{% if session.view_state.sort_direction == "desc" %} selected{% endif %}>Descending</option>
+      </select>
+    </div>
+    <div>
+      <label for="page-size">Rows per page</label>
+      <select id="page-size" name="page_size">
+        {% for value in (25, 50, 100, 200) %}
+        <option value="{{ value }}"{% if session.view_state.page_size == value %} selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary align-self-end" type="submit">Update view</button>
+  </form>
+
+  <section class="review-summary" aria-labelledby="summary-heading">
+    <h2 id="summary-heading">Current view</h2>
+    <p>{{ view.matching_count }} matching rows of {{ view.total_count }} total. Page {{ view.page if view.page else 0 }} of {{ view.total_pages }}.</p>
+    <p>Decisions: {{ summary.approved_move_count }} organize · {{ summary.rejected_move_count }} keep here · {{ summary.undecided_move_count }} review later.</p>
+    <p>Approved conflicts: {{ summary.approved_move_conflict_count }} · Warnings: {{ warning_count }}</p>
+    <p><a href="/review/conflicts">Inspect approved conflicts</a></p>
+  </section>
+
+  {% if view.rows %}
+  <div class="table-responsive">
+    <table class="review-table">
+      <caption>Read-only review findings</caption>
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">File</th>
+          <th scope="col">Current folder</th>
+          <th scope="col">Suggested folder</th>
+          <th scope="col">Type</th>
+          <th scope="col">Size</th>
+          <th scope="col">Reason</th>
+          <th scope="col">Category</th>
+          <th scope="col">Decision</th>
+          <th scope="col"><span class="visually-hidden">Details</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in view.rows %}
+        <tr>
+          <th scope="row">{{ item.id }}</th>
+          <td>{{ item.plan_item.source.name }}</td>
+          <td class="path-cell">{{ item.plan_item.source.relative_to(session.root).parent }}</td>
+          <td class="path-cell">{{ item.plan_item.destination.relative_to(session.root).parent }}</td>
+          <td>{{ item.plan_item.source.suffix or "File" }}</td>
+          <td>{% set metadata = row_metadata[item.id] %}{% if metadata.size_bytes is not none %}{{ metadata.size_bytes|filesizeformat }}{% else %}Unavailable{% endif %}</td>
+          <td>{{ item.plan_item.reason }}</td>
+          <td>{{ category_labels.get(item.category, item.category) }}{% if item.review_category %} · {{ item.review_category|replace("_", " ")|title }}{% endif %}</td>
+          <td>{{ decision_labels.get(item.decision, item.decision) }}</td>
+          <td><a class="details-link" href="{{ request.url_for('review_item', item_id=item.id) }}">View details for {{ item.id }}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state" role="status">No findings match the current view.</p>
+  {% endif %}
+
+  {% if view.total_pages > 0 %}
+  <nav class="pagination-nav" aria-label="Review results pages">
+    <span>Page {{ view.page }} of {{ view.total_pages }}</span>
+    <div>
+      {% if view.page > 1 %}<a href="{{ request.url.include_query_params(page=view.page - 1) }}">Previous page</a>{% endif %}
+      {% if view.page < view.total_pages %}<a href="{{ request.url.include_query_params(page=view.page + 1) }}">Next page</a>{% endif %}
+    </div>
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}

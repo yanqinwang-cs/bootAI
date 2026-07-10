@@ -7,7 +7,9 @@ from organizer.application.view_models import (
     ReviewApplicationSession,
     ReviewDecisionChangeResult,
     ReviewSaveResult,
+    ReviewItemMetadata,
 )
+from organizer.application.view_models import ScanApplicationResult
 from organizer.models import ReviewedPlanItem
 from organizer.review_session import (
     DECISION_APPROVED,
@@ -20,6 +22,7 @@ from organizer.review_session import (
     apply_page_decision_change as apply_page_decision_change_to_items,
     approve_items,
     build_review_session_items,
+    build_review_session_items_from_report,
     build_review_view,
     clamp_review_page,
     clear_review_filters,
@@ -46,6 +49,7 @@ from organizer.review_state import (
     save_review_state,
     update_review_state_from_items,
 )
+from organizer.safety import validate_under_root
 from organizer.scanner import scan_directory
 
 
@@ -73,6 +77,32 @@ def create_review_session(
         persist_review_state=True,
         review_state_ignored=ignore_review_state,
     )
+
+
+def create_review_session_from_scan_result(
+    result: ScanApplicationResult,
+) -> ReviewApplicationSession:
+    """Create read-only review rows from one completed scan result."""
+    resolved_root = result.root.resolve()
+    items = build_review_session_items_from_report(result.report, resolved_root)
+    state = load_review_state(resolved_root)
+    if state.decisions:
+        items = apply_review_state_to_items(items, state, resolved_root)
+    return _new_session(
+        root=resolved_root,
+        items=items,
+        source_path=None,
+        review_state=state,
+        persist_review_state=False,
+        review_state_ignored=False,
+    )
+
+
+def review_category_counts(session: ReviewApplicationSession) -> dict[str, int]:
+    counts = {"duplicate": 0, "organization": 0, "review_candidate": 0}
+    for item in session.items:
+        counts[item.category] = counts.get(item.category, 0) + 1
+    return counts
 
 
 def resume_review_session(
@@ -105,6 +135,31 @@ def get_review_item(
     item_id: str,
 ) -> ReviewedPlanItem:
     return get_item(list(session.items), item_id)
+
+
+def get_review_item_metadata(
+    session: ReviewApplicationSession,
+    item_id: str,
+) -> ReviewItemMetadata:
+    item = get_review_item(session, item_id)
+    source = item.plan_item.source
+    try:
+        if source.is_symlink():
+            return ReviewItemMetadata(item=item, size_bytes=None, modified_time=None)
+        resolved_source = validate_under_root(
+            source.resolve(strict=False),
+            session.root,
+        )
+        if not resolved_source.is_file():
+            return ReviewItemMetadata(item=item, size_bytes=None, modified_time=None)
+        stat = resolved_source.stat()
+    except (OSError, ValueError):
+        return ReviewItemMetadata(item=item, size_bytes=None, modified_time=None)
+    return ReviewItemMetadata(
+        item=item,
+        size_bytes=stat.st_size,
+        modified_time=stat.st_mtime,
+    )
 
 
 def update_review_filter(
