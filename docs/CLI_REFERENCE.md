@@ -225,6 +225,14 @@ Inside the review session:
 - `approve <IDs...>`: mark rejected moves as approved again.
 - `undecide <IDs...>`: return selected rows to undecided.
 - `details <ID>`: show full details for one item.
+- `filter <field> <value>`: set or replace a decision, category, or review-category filter.
+- `clear-filter`: clear all active filters.
+- `sort <field> [asc|desc]`: sort the current view by ID, source, destination, decision, category, or review category.
+- `clear-sort`: restore default ID order.
+- `page next`, `page prev`, `page <number>`: navigate the current view.
+- `page-size <number>`: set page size from 1 through 200; default is 25.
+- `view`: show active filters, sort, pagination, and row counts.
+- `show`: display the current filtered, sorted page.
 - `save`: write a reviewed-plan JSON file under `AI_Review/review_sessions/`.
 - `apply`: save the current reviewed plan if needed, then require exact `APPLY_REVIEWED_PLAN` confirmation before applying approved moves.
 - `quit`: exit without applying.
@@ -238,5 +246,7 @@ Interactive apply may update review-state memory after exact confirmation and be
 Saved reviewed plans are untrusted input. `--apply-reviewed-plan` validates the plan path under the scan root, checks the JSON shape, rejects absolute paths and path traversal, ignores rejected and undecided items, blocks approved move conflicts, and converts only approved items back into `MovePlanItem` values.
 
 `--resume-reviewed-plan` is single-purpose and reconstructs the saved rows with their explicit `approved`, `rejected`, or `undecided` decisions. It does not scan, regenerate plans, or load review-state memory. `save` writes a collision-safe sibling such as `reviewed_plan_1.json` without overwriting the input. Resume, edit, save, and quit do not move files. The existing interactive `apply` command remains available only with exact `APPLY_REVIEWED_PLAN` confirmation and revalidates the saved revision through the existing apply path before executor use.
+
+View filters combine with AND and reset to page 1 when changed. Sorting uses one primary field with stable ID tie-breaking and also resets to page 1. Page numbers are one-based; an empty view displays page `0 of 0`. View state is temporary and is not written to reviewed-plan JSON or review state. `summary`, saving, conflict detection, and apply continue to use all session rows. `details`, `approve`, `reject`, and `undecide` always target stable row IDs, including rows hidden by the current view. Risk and size are not supported because batch review rows do not contain those fields.
 
 Approved saved reviewed-plan items involving protected-context sources are rejected before executor use. Tool-owned destinations under `AI_Review/` and `Organized/` remain valid reviewed-plan destinations.

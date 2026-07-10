@@ -1,6 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.11
+## Current Status Through Stage 10.12
+
+Stage 10.12 adds deterministic filtering, one-key sorting, pagination, and view-state display to both new and resumed review sessions. View commands operate only on an in-memory projection; stable IDs continue to target the complete session, and saved reviewed plans include all rows without persisting view state.
 
 Stage 10.11 adds a single-purpose resume workflow for saved batch reviewed-plan JSON. It validates untrusted files, reconstructs stable rows without rescanning, preserves explicit decisions, supports `undecide`, and saves collision-safe revisions without overwriting the input. Review state does not alter resumed decisions, and existing exact-confirmed apply behavior remains executor-owned.
 
@@ -122,12 +124,11 @@ Apply commands require one of:
 - No HTML report review actions or apply buttons.
 - No selective subset or interactive editing command for organization-review files.
 - No cloud LLM APIs.
-- No filtering/sorting/pagination in batch review yet.
-- No filtering, pagination, search, or generalized review-file editing.
+- No path search, arbitrary query syntax, bulk visible-row decisions, or generalized review-file editing.
 - Ollama refinement requires a local Ollama service and model.
 - Prompt evaluation harness is documented but not implemented.
 - Users should inspect dry-run output before approved moves.
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.12 and later remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10.13 and later remain future work.

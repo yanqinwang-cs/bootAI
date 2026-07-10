@@ -808,6 +808,29 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder \
 
 Use `details <ID>` and `summary` to confirm the prior decisions are unchanged. Try `approve`, `reject`, and `undecide`, then enter `save` and `quit`. Expected outcome: a collision-safe sibling reviewed-plan file is created, the original file is unchanged, no operation log is written, and no files move. The updated file remains suitable for the existing separately confirmed `--apply-reviewed-plan` command. Do not apply against an important folder.
 
+## Stage 10.12 Review Views
+
+In a disposable new or resumed review session, run:
+
+```text
+view
+filter decision undecided
+filter category organization
+sort source asc
+page-size 10
+show
+page next
+page prev
+details <stable-ID>
+clear-sort
+clear-filter
+view
+save
+quit
+```
+
+Expected outcome: view commands change only displayed rows and page metadata. Stable IDs still address hidden rows, `summary` still covers the full session, saved JSON still contains every row in deterministic order, and no operation log or movement occurs from view commands or save.
+
 ## Final Git Hygiene Check
 
 From the repository root:

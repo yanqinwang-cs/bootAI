@@ -33,16 +33,17 @@
 | 10.9 | Apply approved organization review | `organization_apply_review.py`, `cli.py`, `executor.py` | `--apply-organization-review`, `--confirm` | exact confirmation and operation log required |
 | 10.10 | Post-apply verification and undo hardening | `organization_verify.py`, existing `executor.py` tests | `--verify-organization-apply` | read-only audit report |
 | 10.11 | Resume and edit saved review sessions | `review_session.py`, `cli.py` | `--resume-reviewed-plan` | review-only until exact-confirmed existing apply |
+| 10.12 | Review filtering, sorting, and pagination | `review_session.py`, `cli.py` | interactive view commands | display state only |
 
 ## Future Stages
 
-### Later: Filtering, Sorting, Or Pagination
+### Stage 10.13: Bulk Decisions On Visible Rows
 
-Goal: make large batch review sessions easier to inspect.
+Goal: consider explicit bulk decisions for the current reviewed view.
 
-Non-goals: no bypass of exact confirmation or executor movement rules.
+Non-goals: no implicit approval and no bypass of exact confirmation.
 
-### Stage 10.12: UI Or Richer Review Interface
+### Later: UI Or Richer Review Interface
 
 Goal: provide a safer review surface for candidates, groups, plans, and logs.
 

@@ -35,9 +35,14 @@ from organizer.rule_review import (
     rule_candidates_from_report,
 )
 from organizer.review_session import (
+    ReviewViewState,
     approve_items,
     approved_plan_items,
+    build_review_view,
     build_review_session_items,
+    clamp_review_page,
+    clear_review_filters,
+    clear_review_sort,
     find_approved_move_conflicts,
     get_item,
     load_reviewed_plan_items,
@@ -45,6 +50,10 @@ from organizer.review_session import (
     reject_items,
     save_reviewed_plan,
     save_resumed_reviewed_plan,
+    set_review_filter,
+    set_review_page,
+    set_review_page_size,
+    set_review_sort,
     summarize_review_items,
     undecide_items,
 )
@@ -470,6 +479,8 @@ def _run_review_session(
     )
     _print_review_session_help()
     _print_review_session_summary(items, root)
+    view_state = ReviewViewState()
+    _print_review_view_state(items, view_state, root)
     saved_current_plan_path: Path | None = None
 
     while True:
@@ -489,6 +500,8 @@ def _run_review_session(
         try:
             if action == "help" and len(command) == 1:
                 _print_review_session_help()
+            elif action == "show" and len(command) == 1:
+                _print_review_view_rows(items, view_state, root)
             elif action == "show" and len(command) == 2 and command[1].lower() == "duplicates":
                 _print_review_session_rows(items, "duplicate", root)
             elif action == "show" and len(command) == 2 and command[1].lower() == "organization":
@@ -499,16 +512,52 @@ def _run_review_session(
                 _print_review_session_summary(items, root)
             elif action == "conflicts" and len(command) == 1:
                 _print_review_session_conflicts(items, root)
+            elif action == "view" and len(command) == 1:
+                _print_review_view_state(items, view_state, root)
+            elif action == "filter" and len(command) == 3:
+                view_state = set_review_filter(
+                    view_state,
+                    command[1],
+                    command[2],
+                )
+                _print_review_view_state(items, view_state, root)
+            elif action == "clear-filter" and len(command) == 1:
+                view_state = clear_review_filters(view_state)
+                _print_review_view_state(items, view_state, root)
+            elif action == "sort" and len(command) in {2, 3}:
+                view_state = set_review_sort(
+                    view_state,
+                    command[1],
+                    command[2] if len(command) == 3 else "asc",
+                )
+                _print_review_view_state(items, view_state, root)
+            elif action == "clear-sort" and len(command) == 1:
+                view_state = clear_review_sort(view_state)
+                _print_review_view_state(items, view_state, root)
+            elif action == "page" and len(command) == 2:
+                view_state = set_review_page(
+                    view_state,
+                    command[1],
+                    items,
+                    root,
+                )
+                _print_review_view_state(items, view_state, root)
+            elif action == "page-size" and len(command) == 2:
+                view_state = set_review_page_size(view_state, command[1])
+                _print_review_view_state(items, view_state, root)
             elif action == "reject" and len(command) > 1:
                 items = reject_items(items, command[1:])
+                view_state = clamp_review_page(view_state, items, root)
                 saved_current_plan_path = None
                 print(f"Rejected {len(command) - 1} reviewed plan item(s).")
             elif action == "approve" and len(command) > 1:
                 items = approve_items(items, command[1:])
+                view_state = clamp_review_page(view_state, items, root)
                 saved_current_plan_path = None
                 print(f"Approved {len(command) - 1} reviewed plan item(s).")
             elif action == "undecide" and len(command) > 1:
                 items = undecide_items(items, command[1:])
+                view_state = clamp_review_page(view_state, items, root)
                 saved_current_plan_path = None
                 print(f"Set {len(command) - 1} reviewed plan item(s) to undecided.")
             elif action == "details" and len(command) == 2:
@@ -567,6 +616,20 @@ def _run_review_session(
             elif action == "quit" and len(command) == 1:
                 print("Exiting review session without applying.")
                 return 0
+            elif action == "filter":
+                raise ValueError("usage: filter <field> <value>")
+            elif action == "clear-filter":
+                raise ValueError("usage: clear-filter")
+            elif action == "sort":
+                raise ValueError("usage: sort <field> [asc|desc]")
+            elif action == "clear-sort":
+                raise ValueError("usage: clear-sort")
+            elif action == "page":
+                raise ValueError("usage: page <next|prev|number>")
+            elif action == "page-size":
+                raise ValueError("usage: page-size <number>")
+            elif action == "view":
+                raise ValueError("usage: view")
             else:
                 print("Unknown command. Type help for available commands.")
         except ValueError as error:
@@ -924,8 +987,45 @@ def _print_review_session_help() -> None:
     print(
         "Commands: help, show duplicates, show organization, show review-candidates, "
         "summary, conflicts, reject <IDs...>, approve <IDs...>, undecide <IDs...>, "
-        "details <ID>, save, apply, quit"
+        "details <ID>, filter <field> <value>, clear-filter, "
+        "sort <field> [asc|desc], clear-sort, page <next|prev|number>, "
+        "page-size <number>, view, show, save, apply, quit"
     )
+
+
+def _print_review_view_state(
+    items: list[ReviewedPlanItem],
+    state: ReviewViewState,
+    root: Path,
+) -> None:
+    view = build_review_view(items, state, root)
+    filters = ", ".join(
+        f"{field}={value}" for field, value in state.filters
+    ) or "none"
+    print("")
+    print("View")
+    print(f"  filters: {filters}")
+    print(f"  sort: {state.sort_field} {state.sort_direction}")
+    print(f"  page: {view.page} of {view.total_pages}")
+    print(f"  page size: {view.page_size}")
+    print(f"  matching rows: {view.matching_count}")
+    print(f"  total session rows: {view.total_count}")
+    print(f"  rows shown: {len(view.rows)}")
+
+
+def _print_review_view_rows(
+    items: list[ReviewedPlanItem],
+    state: ReviewViewState,
+    root: Path,
+) -> None:
+    view = build_review_view(items, state, root)
+    print("")
+    print(f"Current review page ({view.page} of {view.total_pages})")
+    if not view.rows:
+        print("No rows match the current view.")
+        return
+    for item in view.rows:
+        _print_review_session_item_summary(item, root)
 
 
 def _print_review_session_rows(

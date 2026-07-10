@@ -35,6 +35,8 @@
 - Resumed reviewed-plan decisions are authoritative and must not be replaced by review-state memory.
 - Resume, decision editing, and saving must not scan, regenerate plans, or move files.
 - Resumed reviewed-plan saves must not overwrite their input file.
+- Review filters, sort order, and pagination are temporary display state only.
+- View state must not change decisions, remove hidden rows from saved output, or target rows by page position.
 - Rejected saved reviewed-plan items must be ignored for movement.
 - Protected-context files are not actionable move candidates by default.
 - Generated web/archive assets are not actionable move candidates by default.

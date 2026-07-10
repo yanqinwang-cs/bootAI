@@ -81,6 +81,8 @@ Batch review sessions collect duplicate, deterministic organization, and review-
 
 Saved batch review sessions can also be resumed through `review_session.py`. Resume reconstructs existing rows and decisions from validated reviewed-plan JSON without scanning or regenerating candidates. Review state is not applied to resumed rows. Saving writes a collision-safe sibling in the same reviewed-plan format; any later apply still uses the existing validator, exact confirmation, conflict checks, and executor path.
 
+Review view state is an in-memory projection over all session rows. `review_session.py` owns deterministic filters, one stable sort key, and pagination. The CLI displays the resulting page, while decisions, conflict checks, saving, and apply continue to use stable IDs and the complete session row list. View state is never serialized.
+
 Review state is separate from reviewed-plan JSON and operation logs. `review_state.py` stores human review decision memory under `AI_Review/review_state/review_decisions.json`, matches remembered decisions back to current rows by source, destination, category, review category, size, and modified time, and flags stale prior decisions when metadata changes. Review state records intent only. It is not an operation log, does not record filesystem success, and is not used for undo.
 
 Approved moves are explicit `MovePlanItem` values accepted by a user-facing flow. Execution is isolated in `executor.py`, which validates and applies approved duplicate, organization, and review-candidate moves only. Undo is driven by operation logs written by `executor.py`.

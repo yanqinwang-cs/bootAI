@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.11 are implemented. The tool can currently:
+Stages 1 through 10.12 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -35,8 +35,9 @@ Stages 1 through 10.11 are implemented. The tool can currently:
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 - Resume saved reviewed-plan sessions, edit decisions, and save a new collision-safe revision.
+- Filter, sort, and paginate review-session rows without changing decisions or saved-plan contents.
 
-Stage 10.10 adds read-only post-apply verification and stronger undo regression coverage. Verification writes an audit report only; it does not move or restore files. Operation logs remain authoritative for movement and undo.
+Stage 10.12 adds display-only review filters, stable sorting, and bounded pagination to new and resumed sessions. View state is not saved and does not change decisions, apply confirmation, movement, operation logs, or undo.
 
 ## Setup
 

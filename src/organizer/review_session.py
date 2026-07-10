@@ -32,6 +32,25 @@ MEMORY_NEW = "new_suggestion"
 MEMORY_REJECTED = "rejected_remembered"
 MEMORY_APPROVED = "approved_remembered"
 MEMORY_STALE = "stale_prior_decision"
+DEFAULT_REVIEW_PAGE_SIZE = 25
+MAX_REVIEW_PAGE_SIZE = 200
+REVIEW_FILTER_VALUES = {
+    "decision": {DECISION_APPROVED, DECISION_REJECTED, DECISION_UNDECIDED},
+    "category": {
+        CATEGORY_DUPLICATE,
+        CATEGORY_ORGANIZATION,
+        CATEGORY_REVIEW_CANDIDATE,
+    },
+    "review_category": REVIEW_CANDIDATE_CATEGORIES,
+}
+REVIEW_SORT_FIELDS = {
+    "id",
+    "source",
+    "destination",
+    "decision",
+    "category",
+    "review_category",
+}
 
 
 @dataclass(frozen=True)
@@ -39,6 +58,220 @@ class ReviewedPlanConflict:
     conflict_type: str
     relative_path: str
     items: list[ReviewedPlanItem]
+
+
+@dataclass(frozen=True)
+class ReviewViewState:
+    filters: tuple[tuple[str, str], ...] = ()
+    sort_field: str = "id"
+    sort_direction: str = "asc"
+    page: int = 1
+    page_size: int = DEFAULT_REVIEW_PAGE_SIZE
+
+
+@dataclass(frozen=True)
+class ReviewViewPage:
+    rows: list[ReviewedPlanItem]
+    page: int
+    total_pages: int
+    page_size: int
+    matching_count: int
+    total_count: int
+
+
+def set_review_filter(
+    state: ReviewViewState,
+    field: str,
+    value: str,
+) -> ReviewViewState:
+    normalized_field = field.strip().lower()
+    normalized_value = value.strip().lower()
+    allowed_values = REVIEW_FILTER_VALUES.get(normalized_field)
+    if allowed_values is None:
+        raise ValueError(f"unsupported review filter field: {field}")
+    if normalized_value not in allowed_values:
+        allowed = ", ".join(sorted(allowed_values))
+        raise ValueError(
+            f"unsupported {normalized_field} filter value: {value}; "
+            f"allowed values: {allowed}"
+        )
+    filters = dict(state.filters)
+    filters[normalized_field] = normalized_value
+    return replace(
+        state,
+        filters=tuple(sorted(filters.items())),
+        page=1,
+    )
+
+
+def clear_review_filters(state: ReviewViewState) -> ReviewViewState:
+    return replace(state, filters=(), page=1)
+
+
+def set_review_sort(
+    state: ReviewViewState,
+    field: str,
+    direction: str = "asc",
+) -> ReviewViewState:
+    normalized_field = field.strip().lower()
+    normalized_direction = direction.strip().lower()
+    if normalized_field not in REVIEW_SORT_FIELDS:
+        raise ValueError(f"unsupported review sort field: {field}")
+    if normalized_direction not in {"asc", "desc"}:
+        raise ValueError("review sort direction must be asc or desc")
+    return replace(
+        state,
+        sort_field=normalized_field,
+        sort_direction=normalized_direction,
+        page=1,
+    )
+
+
+def clear_review_sort(state: ReviewViewState) -> ReviewViewState:
+    return replace(
+        state,
+        sort_field="id",
+        sort_direction="asc",
+        page=1,
+    )
+
+
+def build_review_view(
+    items: list[ReviewedPlanItem],
+    state: ReviewViewState,
+    root: Path,
+) -> ReviewViewPage:
+    matching = apply_review_filters(items, state)
+    ordered = sort_review_rows(matching, state, root)
+    matching_count = len(ordered)
+    total_pages = (
+        (matching_count + state.page_size - 1) // state.page_size
+        if matching_count
+        else 0
+    )
+    page = min(state.page, total_pages) if total_pages else 0
+    start = (page - 1) * state.page_size if page else 0
+    rows = ordered[start : start + state.page_size] if page else []
+    return ReviewViewPage(
+        rows=rows,
+        page=page,
+        total_pages=total_pages,
+        page_size=state.page_size,
+        matching_count=matching_count,
+        total_count=len(items),
+    )
+
+
+def apply_review_filters(
+    items: list[ReviewedPlanItem],
+    state: ReviewViewState,
+) -> list[ReviewedPlanItem]:
+    filters = dict(state.filters)
+    return [
+        item
+        for item in items
+        if all(
+            _review_filter_value(item, field) == value
+            for field, value in filters.items()
+        )
+    ]
+
+
+def sort_review_rows(
+    items: list[ReviewedPlanItem],
+    state: ReviewViewState,
+    root: Path,
+) -> list[ReviewedPlanItem]:
+    rows = sorted(items, key=lambda item: item.id)
+    if state.sort_field == "id":
+        return sorted(
+            rows,
+            key=lambda item: item.id,
+            reverse=state.sort_direction == "desc",
+        )
+    return sorted(
+        rows,
+        key=lambda item: _review_sort_value(item, state.sort_field, root),
+        reverse=state.sort_direction == "desc",
+    )
+
+
+def set_review_page(
+    state: ReviewViewState,
+    page_request: str,
+    items: list[ReviewedPlanItem],
+    root: Path,
+) -> ReviewViewState:
+    view = build_review_view(items, state, root)
+    normalized_request = page_request.strip().lower()
+    if view.total_pages == 0:
+        raise ValueError("current review view has no pages")
+    if normalized_request == "next":
+        requested_page = view.page + 1
+    elif normalized_request == "prev":
+        requested_page = view.page - 1
+    else:
+        try:
+            requested_page = int(normalized_request)
+        except ValueError as error:
+            raise ValueError("review page must be next, prev, or a page number") from error
+    if requested_page < 1 or requested_page > view.total_pages:
+        raise ValueError(
+            f"review page must be between 1 and {view.total_pages}"
+        )
+    return replace(state, page=requested_page)
+
+
+def set_review_page_size(
+    state: ReviewViewState,
+    page_size_text: str,
+) -> ReviewViewState:
+    try:
+        page_size = int(page_size_text)
+    except ValueError as error:
+        raise ValueError("review page size must be an integer") from error
+    if page_size < 1 or page_size > MAX_REVIEW_PAGE_SIZE:
+        raise ValueError(
+            f"review page size must be between 1 and {MAX_REVIEW_PAGE_SIZE}"
+        )
+    return replace(state, page_size=page_size, page=1)
+
+
+def clamp_review_page(
+    state: ReviewViewState,
+    items: list[ReviewedPlanItem],
+    root: Path,
+) -> ReviewViewState:
+    view = build_review_view(items, state, root)
+    return replace(state, page=view.page if view.page else 1)
+
+
+def _review_filter_value(item: ReviewedPlanItem, field: str) -> str:
+    if field == "decision":
+        return item.decision
+    if field == "category":
+        return item.category
+    if field == "review_category":
+        return item.review_category or ""
+    raise ValueError(f"unsupported review filter field: {field}")
+
+
+def _review_sort_value(
+    item: ReviewedPlanItem,
+    field: str,
+    root: Path,
+) -> str:
+    if field == "source":
+        return _normalized_relative_path(item.plan_item.source, root)
+    if field == "destination":
+        return _normalized_relative_path(item.plan_item.destination, root)
+    if field == "decision":
+        return item.decision
+    if field == "category":
+        return item.category
+    if field == "review_category":
+        return item.review_category or ""
+    return item.id
 
 
 def build_review_session_items(
