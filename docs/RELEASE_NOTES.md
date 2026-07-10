@@ -1,6 +1,8 @@
 # Release Notes
 
-## Current Status Through Stage 10.10
+## Current Status Through Stage 10.11
+
+Stage 10.11 adds a single-purpose resume workflow for saved batch reviewed-plan JSON. It validates untrusted files, reconstructs stable rows without rescanning, preserves explicit decisions, supports `undecide`, and saves collision-safe revisions without overwriting the input. Review state does not alter resumed decisions, and existing exact-confirmed apply behavior remains executor-owned.
 
 Stage 10.10 adds a single-purpose read-only verification command for Stage 10.9 apply results. It strictly validates the apply summary and referenced executor operation log, compares normalized successful move pairs, checks current filesystem state, and writes a collision-safe audit report. Undo behavior is unchanged and receives additional temporary-directory regression coverage.
 
@@ -121,11 +123,11 @@ Apply commands require one of:
 - No selective subset or interactive editing command for organization-review files.
 - No cloud LLM APIs.
 - No filtering/sorting/pagination in batch review yet.
-- No saved review-session resume or editing yet.
+- No filtering, pagination, search, or generalized review-file editing.
 - Ollama refinement requires a local Ollama service and model.
 - Prompt evaluation harness is documented but not implemented.
 - Users should inspect dry-run output before approved moves.
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.11 and later remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10.12 and later remain future work.

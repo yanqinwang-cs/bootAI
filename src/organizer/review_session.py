@@ -21,6 +21,7 @@ REVIEW_SESSION_SCHEMA_VERSION = 1
 REVIEW_PLAN_TYPE = "batch_review"
 DECISION_APPROVED = "approved"
 DECISION_REJECTED = "rejected"
+DECISION_UNDECIDED = "undecided"
 CATEGORY_DUPLICATE = "duplicate"
 CATEGORY_ORGANIZATION = "organization"
 CATEGORY_REVIEW_CANDIDATE = "review_candidate"
@@ -101,6 +102,13 @@ def reject_items(
     return _set_decision(items, ids, DECISION_REJECTED)
 
 
+def undecide_items(
+    items: list[ReviewedPlanItem],
+    ids: list[str],
+) -> list[ReviewedPlanItem]:
+    return _set_decision(items, ids, DECISION_UNDECIDED)
+
+
 def get_item(
     items: list[ReviewedPlanItem],
     item_id: str,
@@ -130,6 +138,17 @@ def summarize_review_items(
         CATEGORY_REVIEW_CANDIDATE,
         DECISION_REJECTED,
     )
+    duplicate_undecided = _count(items, CATEGORY_DUPLICATE, DECISION_UNDECIDED)
+    organization_undecided = _count(
+        items,
+        CATEGORY_ORGANIZATION,
+        DECISION_UNDECIDED,
+    )
+    review_candidate_undecided = _count(
+        items,
+        CATEGORY_REVIEW_CANDIDATE,
+        DECISION_UNDECIDED,
+    )
     conflicts = find_approved_move_conflicts(items, root) if root is not None else []
     source_conflicts = [
         conflict
@@ -158,6 +177,14 @@ def summarize_review_items(
         "organization_rejected_move_count": organization_rejected,
         "review_candidate_approved_move_count": review_candidate_approved,
         "review_candidate_rejected_move_count": review_candidate_rejected,
+        "duplicate_undecided_move_count": duplicate_undecided,
+        "organization_undecided_move_count": organization_undecided,
+        "review_candidate_undecided_move_count": review_candidate_undecided,
+        "undecided_move_count": (
+            duplicate_undecided
+            + organization_undecided
+            + review_candidate_undecided
+        ),
         "approved_source_conflict_count": len(source_conflicts),
         "approved_destination_conflict_count": len(destination_conflicts),
         "approved_move_conflict_count": len(conflicts),
@@ -229,11 +256,7 @@ def load_reviewed_plan_move_items(
     resolved_root = root.resolve()
     resolved_plan_path = _validate_existing_reviewed_plan_path(plan_path, resolved_root)
 
-    try:
-        with resolved_plan_path.open("r", encoding="utf-8") as file:
-            data = json.load(file)
-    except json.JSONDecodeError as error:
-        raise ValueError(f"invalid reviewed plan JSON: {error}") from error
+    data = _load_reviewed_plan_json(resolved_plan_path)
 
     return reviewed_plan_data_to_move_items(
         data,
@@ -242,21 +265,84 @@ def load_reviewed_plan_move_items(
     )
 
 
+def load_reviewed_plan_items(
+    plan_path: Path,
+    root: Path,
+) -> list[ReviewedPlanItem]:
+    resolved_root = root.resolve()
+    if not resolved_root.is_dir():
+        raise ValueError(f"review root is not a directory: {root}")
+    resolved_plan_path = _validate_existing_reviewed_plan_path(
+        plan_path,
+        resolved_root,
+    )
+    data = _load_reviewed_plan_json(resolved_plan_path)
+    return reviewed_plan_data_to_review_items(data, resolved_root)
+
+
+def reviewed_plan_data_to_review_items(
+    data: object,
+    root: Path,
+) -> list[ReviewedPlanItem]:
+    raw_items = _validated_reviewed_plan_items(data)
+    reviewed_items: list[ReviewedPlanItem] = []
+    seen_ids: set[str] = set()
+
+    for index, item in enumerate(raw_items, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(f"reviewed plan item {index} must be an object")
+        _validate_saved_item_identity(item, index)
+        _validate_resumed_item_metadata(item, index)
+        item_id = item["id"].strip().upper()
+        if item_id in seen_ids:
+            raise ValueError(f"reviewed plan contains duplicate item ID: {item_id}")
+        seen_ids.add(item_id)
+
+        source = _validated_relative_path(item.get("source"), "source", index)
+        destination = _validated_relative_path(
+            item.get("destination"),
+            "destination",
+            index,
+        )
+        source_path = root / source
+        destination_path = root / destination
+        validate_under_root(source_path.resolve(strict=False), root)
+        validate_under_root(destination_path.resolve(strict=False), root)
+
+        reviewed_items.append(
+            ReviewedPlanItem(
+                id=item_id,
+                category=item["category"],
+                decision=item["decision"],
+                review_category=_optional_review_category(item),
+                plan_item=MovePlanItem(
+                    source=source_path,
+                    destination=destination_path,
+                    reason=_optional_string(
+                        item.get("reason"),
+                        "Reviewed plan item.",
+                    ),
+                    confidence=_optional_confidence(item.get("confidence")),
+                    operation=_optional_string(
+                        item.get("operation"),
+                        "dry-run move",
+                    ),
+                    overwrite_risk=_optional_bool(
+                        item.get("overwrite_risk"),
+                        destination_path.exists(),
+                    ),
+                ),
+            )
+        )
+    return _sort_review_items(reviewed_items)
+
+
 def reviewed_plan_data_to_move_items(
     data: object,
     root: Path,
     all_metadata: list[FileMetadata] | None = None,
 ) -> list[MovePlanItem]:
-    if not isinstance(data, dict):
-        raise ValueError("reviewed plan must contain a JSON object")
-    if data.get("schema_version") != REVIEW_SESSION_SCHEMA_VERSION:
-        raise ValueError("reviewed plan schema_version must be 1")
-    if data.get("plan_type") != REVIEW_PLAN_TYPE:
-        raise ValueError('reviewed plan plan_type must be "batch_review"')
-
-    items = data.get("items")
-    if not isinstance(items, list):
-        raise ValueError("reviewed plan items must be a list")
+    items = _validated_reviewed_plan_items(data)
 
     metadata_context = (
         all_metadata
@@ -268,7 +354,7 @@ def reviewed_plan_data_to_move_items(
         if not isinstance(item, dict):
             raise ValueError(f"reviewed plan item {index} must be an object")
         _validate_saved_item_identity(item, index)
-        if item["decision"] == DECISION_REJECTED:
+        if item["decision"] != DECISION_APPROVED:
             continue
 
         source = _validated_relative_path(item.get("source"), "source", index)
@@ -355,6 +441,30 @@ def save_reviewed_plan(
     resolved_destination.parent.mkdir(parents=True, exist_ok=True)
     with resolved_destination.open("x", encoding="utf-8") as file:
         json.dump(reviewed_plan_to_json_data(items, resolved_root), file, indent=2, sort_keys=True)
+        file.write("\n")
+    return resolved_destination
+
+
+def save_resumed_reviewed_plan(
+    items: list[ReviewedPlanItem],
+    root: Path,
+    source_path: Path,
+) -> Path:
+    resolved_root = root.resolve()
+    resolved_source = _validate_existing_reviewed_plan_path(
+        source_path,
+        resolved_root,
+    )
+    destination = _next_resumed_reviewed_plan_path(resolved_source)
+    resolved_destination = _validate_new_output_path(destination, resolved_root)
+    resolved_destination.parent.mkdir(parents=True, exist_ok=True)
+    with resolved_destination.open("x", encoding="utf-8") as file:
+        json.dump(
+            reviewed_plan_to_json_data(items, resolved_root),
+            file,
+            indent=2,
+            sort_keys=True,
+        )
         file.write("\n")
     return resolved_destination
 
@@ -461,9 +571,9 @@ def _sort_review_items(items: list[ReviewedPlanItem]) -> list[ReviewedPlanItem]:
 
 def _validate_existing_reviewed_plan_path(path: Path, root: Path) -> Path:
     candidate = path if path.is_absolute() else root / path
-    resolved_path = validate_under_root(candidate.resolve(strict=False), root)
     if candidate.is_symlink():
-        validate_under_root(candidate.resolve(), root)
+        raise ValueError(f"reviewed plan must not be a symlink: {path}")
+    resolved_path = validate_under_root(candidate.resolve(strict=False), root)
     if not candidate.exists():
         raise ValueError(f"reviewed plan does not exist: {path}")
     if not candidate.is_file():
@@ -483,7 +593,11 @@ def _validate_saved_item_identity(item: dict[str, Any], index: int) -> None:
         CATEGORY_REVIEW_CANDIDATE,
     }:
         raise ValueError(f"reviewed plan item {index} category is invalid")
-    if decision not in {DECISION_APPROVED, DECISION_REJECTED}:
+    if decision not in {
+        DECISION_APPROVED,
+        DECISION_REJECTED,
+        DECISION_UNDECIDED,
+    }:
         raise ValueError(f"reviewed plan item {index} decision is invalid")
     if category == CATEGORY_REVIEW_CANDIDATE:
         review_category = item.get("review_category")
@@ -498,9 +612,17 @@ def _validated_relative_path(
 ) -> Path:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"reviewed plan item {index} {field_name} must be a relative path string")
+    if "\\" in value:
+        raise ValueError(
+            f"reviewed plan item {index} {field_name} must not contain backslashes"
+        )
     path = Path(value)
     if path.is_absolute():
         raise ValueError(f"reviewed plan item {index} {field_name} must be relative")
+    if not path.parts:
+        raise ValueError(
+            f"reviewed plan item {index} {field_name} must identify a path"
+        )
     if any(part == ".." for part in path.parts):
         raise ValueError(f"reviewed plan item {index} {field_name} must not contain path traversal")
     return path
@@ -528,6 +650,25 @@ def _optional_review_category(item: dict[str, Any]) -> str | None:
     if item.get("category") == CATEGORY_REVIEW_CANDIDATE:
         return item["review_category"]
     return None
+
+
+def _validate_resumed_item_metadata(item: dict[str, Any], index: int) -> None:
+    reason = item.get("reason")
+    confidence = item.get("confidence")
+    operation = item.get("operation")
+    overwrite_risk = item.get("overwrite_risk")
+    if not isinstance(reason, str) or not reason.strip():
+        raise ValueError(f"reviewed plan item {index} reason is invalid")
+    if (
+        isinstance(confidence, bool)
+        or not isinstance(confidence, int)
+        or not 0 <= confidence <= 100
+    ):
+        raise ValueError(f"reviewed plan item {index} confidence is invalid")
+    if not isinstance(operation, str) or not operation.strip():
+        raise ValueError(f"reviewed plan item {index} operation is invalid")
+    if not isinstance(overwrite_risk, bool):
+        raise ValueError(f"reviewed plan item {index} overwrite_risk is invalid")
 
 
 def _count(
@@ -589,6 +730,43 @@ def _next_reviewed_plan_path(log_dir: Path) -> Path:
         candidate = log_dir / f"{timestamp}_{counter}_reviewed_plan.json"
         counter += 1
     return candidate
+
+
+def _next_resumed_reviewed_plan_path(source_path: Path) -> Path:
+    for counter in range(1, 1000):
+        candidate = source_path.with_name(
+            f"{source_path.stem}_{counter}{source_path.suffix}"
+        )
+        if not os.path.lexists(candidate):
+            return candidate
+    raise ValueError(f"could not find unused reviewed plan path for {source_path}")
+
+
+def _load_reviewed_plan_json(path: Path) -> object:
+    try:
+        with path.open("r", encoding="utf-8") as file:
+            return json.load(file)
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"invalid reviewed plan JSON: {error}") from error
+
+
+def _validated_reviewed_plan_items(data: object) -> list[object]:
+    if not isinstance(data, dict):
+        raise ValueError("reviewed plan must contain a JSON object")
+    if data.get("schema_version") != REVIEW_SESSION_SCHEMA_VERSION:
+        raise ValueError("reviewed plan schema_version must be 1")
+    if data.get("plan_type") != REVIEW_PLAN_TYPE:
+        raise ValueError('reviewed plan plan_type must be "batch_review"')
+    if not isinstance(data.get("created_at"), str) or not data["created_at"]:
+        raise ValueError("reviewed plan created_at must be a non-empty string")
+    if data.get("scan_root") != ".":
+        raise ValueError('reviewed plan scan_root must be "."')
+    if not isinstance(data.get("summary"), dict):
+        raise ValueError("reviewed plan summary must be an object")
+    items = data.get("items")
+    if not isinstance(items, list):
+        raise ValueError("reviewed plan items must be a list")
+    return items
 
 
 def _validate_new_output_path(path: Path, root: Path) -> Path:

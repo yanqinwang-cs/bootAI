@@ -40,10 +40,13 @@ from organizer.review_session import (
     build_review_session_items,
     find_approved_move_conflicts,
     get_item,
+    load_reviewed_plan_items,
     load_reviewed_plan_move_items,
     reject_items,
     save_reviewed_plan,
+    save_resumed_reviewed_plan,
     summarize_review_items,
+    undecide_items,
 )
 from organizer.review_state import (
     ReviewState,
@@ -85,6 +88,7 @@ def main() -> int:
     parser.add_argument("--review-plans", action="store_true")
     parser.add_argument("--ignore-review-state", action="store_true")
     parser.add_argument("--apply-reviewed-plan", type=Path, default=None)
+    parser.add_argument("--resume-reviewed-plan", type=Path, default=None)
     parser.add_argument("--confirm", default=None)
     parser.add_argument("--undo-log", type=Path, default=None)
     parser.add_argument("--review-candidates", action="store_true")
@@ -116,6 +120,9 @@ def main() -> int:
 
     if args.verify_organization_apply is not None:
         return _handle_verify_organization_apply(parser, args)
+
+    if args.resume_reviewed_plan is not None:
+        return _handle_resume_reviewed_plan(parser, args)
 
     if args.apply_organization_review is not None:
         return _handle_apply_organization_review(parser, args)
@@ -373,14 +380,96 @@ def _handle_review_plans(
         else:
             print("No review state found; starting with new suggestions.")
 
+    return _run_review_session(
+        items,
+        args.folder,
+        state=state,
+        persist_review_state=True,
+        empty_message=(
+            "No duplicate, organization, or review-candidate move candidates "
+            "found for review."
+        ),
+    )
+
+
+def _handle_resume_reviewed_plan(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.max_depth is not None
+        or args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.apply_reviewed_plan is not None
+        or args.apply_organization_review is not None
+        or args.verify_organization_apply is not None
+        or args.export_organization_review
+        or args.organization_review_output is not None
+        or args.export_rule_candidates
+        or args.rule_candidates_output is not None
+        or args.apply_rule_decisions is not None
+        or args.report
+        or args.report_output is not None
+        or args.html_report
+        or args.html_report_output is not None
+        or args.undo_log is not None
+        or args.review_plans
+        or args.ignore_review_state
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.refine_groups
+        or args.plan_refined_organization
+        or args.llm_provider is not None
+        or args.llm_model is not None
+        or args.ollama_host is not None
+        or args.confirm is not None
+    ):
+        parser.error(
+            "--resume-reviewed-plan cannot be combined with other modes, "
+            "--max-depth, review-state options, or --confirm"
+        )
+
+    try:
+        items = load_reviewed_plan_items(args.resume_reviewed_plan, args.folder)
+    except ValueError as error:
+        parser.error(str(error))
+
+    print(f"Resumed reviewed plan: {args.resume_reviewed_plan}")
+    print("Saved decisions are authoritative; review state is not loaded.")
+    return _run_review_session(
+        items,
+        args.folder,
+        state=None,
+        persist_review_state=False,
+        resumed_source_path=args.resume_reviewed_plan,
+    )
+
+
+def _run_review_session(
+    items: list[ReviewedPlanItem],
+    root: Path,
+    *,
+    state: ReviewState | None,
+    persist_review_state: bool,
+    resumed_source_path: Path | None = None,
+    empty_message: str = "No reviewed plan items found in this session.",
+) -> int:
     if not items:
-        print("No duplicate, organization, or review-candidate move candidates found for review.")
+        print(empty_message)
         return 0
 
     print("Batch review session")
-    print("Approve/reject commands update review decisions only; they do not move files.")
+    print(
+        "Approve/reject/undecide commands update review decisions only; "
+        "they do not move files."
+    )
     _print_review_session_help()
-    _print_review_session_summary(items, args.folder)
+    _print_review_session_summary(items, root)
     saved_current_plan_path: Path | None = None
 
     while True:
@@ -401,15 +490,15 @@ def _handle_review_plans(
             if action == "help" and len(command) == 1:
                 _print_review_session_help()
             elif action == "show" and len(command) == 2 and command[1].lower() == "duplicates":
-                _print_review_session_rows(items, "duplicate", args.folder)
+                _print_review_session_rows(items, "duplicate", root)
             elif action == "show" and len(command) == 2 and command[1].lower() == "organization":
-                _print_review_session_rows(items, "organization", args.folder)
+                _print_review_session_rows(items, "organization", root)
             elif action == "show" and len(command) == 2 and command[1].lower() == "review-candidates":
-                _print_review_session_rows(items, "review_candidate", args.folder)
+                _print_review_session_rows(items, "review_candidate", root)
             elif action == "summary" and len(command) == 1:
-                _print_review_session_summary(items, args.folder)
+                _print_review_session_summary(items, root)
             elif action == "conflicts" and len(command) == 1:
-                _print_review_session_conflicts(items, args.folder)
+                _print_review_session_conflicts(items, root)
             elif action == "reject" and len(command) > 1:
                 items = reject_items(items, command[1:])
                 saved_current_plan_path = None
@@ -418,36 +507,63 @@ def _handle_review_plans(
                 items = approve_items(items, command[1:])
                 saved_current_plan_path = None
                 print(f"Approved {len(command) - 1} reviewed plan item(s).")
+            elif action == "undecide" and len(command) > 1:
+                items = undecide_items(items, command[1:])
+                saved_current_plan_path = None
+                print(f"Set {len(command) - 1} reviewed plan item(s) to undecided.")
             elif action == "details" and len(command) == 2:
-                _print_review_session_item(get_item(items, command[1]), args.folder)
+                _print_review_session_item(get_item(items, command[1]), root)
             elif action == "save" and len(command) == 1:
-                saved_current_plan_path = save_reviewed_plan(items, args.folder)
+                saved_current_plan_path = (
+                    save_resumed_reviewed_plan(
+                        items,
+                        root,
+                        resumed_source_path,
+                    )
+                    if resumed_source_path is not None
+                    else save_reviewed_plan(items, root)
+                )
                 print(f"Reviewed plan saved: {saved_current_plan_path}")
-                state = _save_review_state_for_items(items, args.folder, state)
+                if persist_review_state:
+                    state = _save_review_state_for_items(items, root, state)
             elif action == "apply" and len(command) == 1:
-                _print_review_session_summary(items, args.folder)
+                _print_review_session_summary(items, root)
                 plan_items = approved_plan_items(items)
                 if not plan_items:
                     print("No approved moves to apply.")
                     continue
-                conflicts = find_approved_move_conflicts(items, args.folder)
+                conflicts = find_approved_move_conflicts(items, root)
                 if conflicts:
                     print(
                         "Apply blocked: one or more source or destination paths "
                         "have multiple approved moves."
                     )
-                    _print_review_session_conflicts(items, args.folder)
+                    _print_review_session_conflicts(items, root)
                     continue
                 if saved_current_plan_path is None:
-                    saved_current_plan_path = save_reviewed_plan(items, args.folder)
+                    saved_current_plan_path = (
+                        save_resumed_reviewed_plan(
+                            items,
+                            root,
+                            resumed_source_path,
+                        )
+                        if resumed_source_path is not None
+                        else save_reviewed_plan(items, root)
+                    )
                     print(f"Reviewed plan saved: {saved_current_plan_path}")
                 confirmation = input("Type APPLY_REVIEWED_PLAN to continue: ")
                 if confirmation != CONFIRM_APPLY_REVIEWED_PLAN:
                     print("Apply refused: exact confirmation was not provided.")
                     continue
-                state = _save_review_state_for_items(items, args.folder, state)
+                if resumed_source_path is not None:
+                    plan_items = load_reviewed_plan_move_items(
+                        saved_current_plan_path,
+                        root,
+                    )
+                if persist_review_state:
+                    state = _save_review_state_for_items(items, root, state)
                 print("Applying approved moves from reviewed plan.")
-                return _apply_plan_items(plan_items, args.folder)
+                return _apply_plan_items(plan_items, root)
             elif action == "quit" and len(command) == 1:
                 print("Exiting review session without applying.")
                 return 0
@@ -807,8 +923,8 @@ def _save_review_state_for_items(
 def _print_review_session_help() -> None:
     print(
         "Commands: help, show duplicates, show organization, show review-candidates, "
-        "summary, conflicts, reject <IDs...>, approve <IDs...>, details <ID>, "
-        "save, apply, quit"
+        "summary, conflicts, reject <IDs...>, approve <IDs...>, undecide <IDs...>, "
+        "details <ID>, save, apply, quit"
     )
 
 
@@ -888,6 +1004,7 @@ def _print_review_session_summary(
     )
     print(f"  total approved moves: {summary['approved_move_count']}")
     print(f"  total rejected moves: {summary['rejected_move_count']}")
+    print(f"  total undecided moves: {summary['undecided_move_count']}")
     print(f"  approved source conflicts: {summary['approved_source_conflict_count']}")
     print(f"  approved destination conflicts: {summary['approved_destination_conflict_count']}")
     print(f"  approved move conflicts: {summary['approved_move_conflict_count']}")

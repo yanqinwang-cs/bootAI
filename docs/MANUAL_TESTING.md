@@ -796,6 +796,18 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder \
 
 Expected outcome: a collision-safe verification report is written under `AI_Review/reviews/`, the command reports `passed` only when the apply summary, operation log, and filesystem agree, and no files are moved or restored. Inspect the referenced operation log before separately testing `--undo-log`. Do not run this checklist on an important folder.
 
+## Stage 10.11 Resume Saved Review Session
+
+Use a disposable temporary folder. Start `--review-plans`, change at least one decision, enter `save`, and then `quit`. Resume the printed file:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli /path/to/temp-folder \
+  --resume-reviewed-plan \
+  /path/to/temp-folder/AI_Review/review_sessions/<saved-file>.json
+```
+
+Use `details <ID>` and `summary` to confirm the prior decisions are unchanged. Try `approve`, `reject`, and `undecide`, then enter `save` and `quit`. Expected outcome: a collision-safe sibling reviewed-plan file is created, the original file is unchanged, no operation log is written, and no files move. The updated file remains suitable for the existing separately confirmed `--apply-reviewed-plan` command. Do not apply against an important folder.
+
 ## Final Git Hygiene Check
 
 From the repository root:

@@ -32,6 +32,7 @@
 | 10.8 | Rule-aware organization batch review export | `organization_review.py`, `cli.py` | `--export-organization-review`, `--organization-review-output` | review JSON only |
 | 10.9 | Apply approved organization review | `organization_apply_review.py`, `cli.py`, `executor.py` | `--apply-organization-review`, `--confirm` | exact confirmation and operation log required |
 | 10.10 | Post-apply verification and undo hardening | `organization_verify.py`, existing `executor.py` tests | `--verify-organization-apply` | read-only audit report |
+| 10.11 | Resume and edit saved review sessions | `review_session.py`, `cli.py` | `--resume-reviewed-plan` | review-only until exact-confirmed existing apply |
 
 ## Future Stages
 
@@ -40,12 +41,6 @@
 Goal: make large batch review sessions easier to inspect.
 
 Non-goals: no bypass of exact confirmation or executor movement rules.
-
-### Stage 10.11: Resume Or Edit Saved Review Sessions
-
-Goal: load a saved reviewed-plan JSON file for continued review.
-
-Non-goals: no bypass of saved-plan validation.
 
 ### Stage 10.12: UI Or Richer Review Interface
 

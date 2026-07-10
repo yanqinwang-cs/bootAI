@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.10 are implemented. The tool can currently:
+Stages 1 through 10.11 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -34,6 +34,7 @@ Stages 1 through 10.10 are implemented. The tool can currently:
 - Detect reviewed-plan conflicts before approved batch apply.
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
+- Resume saved reviewed-plan sessions, edit decisions, and save a new collision-safe revision.
 
 Stage 10.10 adds read-only post-apply verification and stronger undo regression coverage. Verification writes an audit report only; it does not move or restore files. Operation logs remain authoritative for movement and undo.
 
@@ -61,6 +62,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --export-rule-candidates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --export-organization-review
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-organization-review AI_Review/reviews/organization_review.approved.json --confirm "APPLY ORGANIZATION REVIEW"
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --verify-organization-apply AI_Review/reviews/organization_review_apply_result.json
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --resume-reviewed-plan AI_Review/review_sessions/reviewed_plan.json
 ```
 
 Apply commands require exact confirmation:
@@ -148,6 +150,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Review-candidate rows are candidates for review and use `R` IDs in batch review.
 - Review mode blocks apply when one source or destination has multiple approved moves.
 - Saved reviewed plans are validated as untrusted input before approved moves are applied.
+- Resumed reviewed plans keep their explicit decisions authoritative and do not load review-state memory.
 - Operation logs remain authoritative for actual successful moves and undo.
 - Post-apply verification compares the apply summary, operation log, and filesystem without moving files.
 - `executor.py` is the only module that performs real movement.

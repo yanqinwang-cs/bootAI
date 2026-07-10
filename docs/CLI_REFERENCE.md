@@ -202,11 +202,13 @@ LLM refinement is optional and local-only. Refined organization apply still uses
 python -m organizer.cli <folder> --review-plans
 python -m organizer.cli <folder> --review-plans --max-depth 2
 python -m organizer.cli <folder> --review-plans --ignore-review-state
+python -m organizer.cli <folder> --resume-reviewed-plan AI_Review/review_sessions/<plan>.json
 python -m organizer.cli <folder> --apply-reviewed-plan AI_Review/review_sessions/<plan>.json --confirm APPLY_REVIEWED_PLAN
 ```
 
 - `--review-plans`: interactive batch review for duplicate, deterministic organization, and review-candidate move candidates.
 - `--ignore-review-state`: review mode only; starts from current suggestions without applying remembered review decisions.
+- `--resume-reviewed-plan <path>`: reopen an existing batch reviewed-plan without rescanning or applying review state.
 - `--apply-reviewed-plan <path>`: apply approved items from a saved reviewed-plan JSON file after validation and exact confirmation.
 
 Review mode is single-purpose. It rejects display, planning, apply, undo, report, LLM, and confirmation flags. It allows `--max-depth` and `--ignore-review-state`.
@@ -221,6 +223,7 @@ Inside the review session:
 - `conflicts`: show approved source and destination conflicts.
 - `reject <IDs...>`: mark suggested moves as rejected.
 - `approve <IDs...>`: mark rejected moves as approved again.
+- `undecide <IDs...>`: return selected rows to undecided.
 - `details <ID>`: show full details for one item.
 - `save`: write a reviewed-plan JSON file under `AI_Review/review_sessions/`.
 - `apply`: save the current reviewed plan if needed, then require exact `APPLY_REVIEWED_PLAN` confirmation before applying approved moves.
@@ -232,6 +235,8 @@ Approve, reject, and save commands do not move files. `save` writes both a revie
 
 Interactive apply may update review-state memory after exact confirmation and before executor apply. That state records review intent only. Operation logs remain authoritative for actual successful moves and undo, and failed moves do not become success records in review state.
 
-Saved reviewed plans are untrusted input. `--apply-reviewed-plan` validates the plan path under the scan root, checks the JSON shape, rejects absolute paths and path traversal, ignores rejected items, blocks approved move conflicts, and converts only approved items back into `MovePlanItem` values. It does not resume or edit review sessions.
+Saved reviewed plans are untrusted input. `--apply-reviewed-plan` validates the plan path under the scan root, checks the JSON shape, rejects absolute paths and path traversal, ignores rejected and undecided items, blocks approved move conflicts, and converts only approved items back into `MovePlanItem` values.
+
+`--resume-reviewed-plan` is single-purpose and reconstructs the saved rows with their explicit `approved`, `rejected`, or `undecided` decisions. It does not scan, regenerate plans, or load review-state memory. `save` writes a collision-safe sibling such as `reviewed_plan_1.json` without overwriting the input. Resume, edit, save, and quit do not move files. The existing interactive `apply` command remains available only with exact `APPLY_REVIEWED_PLAN` confirmation and revalidates the saved revision through the existing apply path before executor use.
 
 Approved saved reviewed-plan items involving protected-context sources are rejected before executor use. Tool-owned destinations under `AI_Review/` and `Organized/` remain valid reviewed-plan destinations.

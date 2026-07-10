@@ -32,6 +32,9 @@
 - A source or destination path must not have multiple approved reviewed-plan moves.
 - Reviewed-plan conflicts must block apply until the user rejects conflicting approved rows.
 - Saved reviewed-plan JSON files are untrusted input and must be validated before use.
+- Resumed reviewed-plan decisions are authoritative and must not be replaced by review-state memory.
+- Resume, decision editing, and saving must not scan, regenerate plans, or move files.
+- Resumed reviewed-plan saves must not overwrite their input file.
 - Rejected saved reviewed-plan items must be ignored for movement.
 - Protected-context files are not actionable move candidates by default.
 - Generated web/archive assets are not actionable move candidates by default.

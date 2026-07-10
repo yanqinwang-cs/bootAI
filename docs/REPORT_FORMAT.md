@@ -226,6 +226,12 @@ and project-output contexts.
 
 Warnings do not approve movement and do not change apply-command requirements.
 
+## Batch Reviewed-Plan Sessions
+
+Batch reviewed plans use schema version `1` and `plan_type: "batch_review"`. Rows retain stable IDs, categories, optional review categories, relative source and destination paths, reason, confidence, operation, overwrite risk, and a decision of `approved`, `rejected`, or `undecided`.
+
+Stage 10.11 reuses this format without introducing a resume-specific schema. A resumed save writes a collision-safe sibling of the input and preserves deterministic ID ordering. The original file is not overwritten. Review state is not applied to resumed rows, and rejected or undecided rows do not become move items in the existing saved-plan apply path.
+
 ## Organization Review Export
 
 `--export-organization-review` writes a separate Stage 10.8 review artifact. It is derived from the report's existing `organization_suggestions`, `anchor_decisions`, `organization_rules`, and `rule_audit`; it is not part of the report top-level schema.
