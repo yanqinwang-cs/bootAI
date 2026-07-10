@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/bootai/organization_review_apply_result.schema.json",
+  "title": "bootAI Stage 10.9 Organization Review Apply Result",
+  "description": "Documentation-only schema. The executor operation log remains authoritative for movement and undo.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source",
+    "generated_at",
+    "review_file",
+    "confirmation",
+    "approved_count",
+    "applied_count",
+    "skipped_count",
+    "failed_count",
+    "undo_log_path",
+    "applied",
+    "skipped",
+    "failed",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "source": {
+      "const": "bootAI Stage 10.9 organization review apply result"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_file": {
+      "$ref": "#/$defs/relative_path"
+    },
+    "confirmation": {
+      "const": "APPLY ORGANIZATION REVIEW"
+    },
+    "approved_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "applied_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skipped_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "undo_log_path": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/relative_path"
+        }
+      ]
+    },
+    "applied": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/result_item"
+      }
+    },
+    "skipped": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/skipped_item"
+      }
+    },
+    "failed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/failed_item"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "result_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_id",
+        "source",
+        "destination",
+        "anchor",
+        "risk_level"
+      ],
+      "properties": {
+        "review_id": {
+          "type": "string",
+          "pattern": "^org-[0-9]{6}$"
+        },
+        "source": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "destination": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "anchor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "risk_level": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      }
+    },
+    "failed_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_id",
+        "source",
+        "destination",
+        "anchor",
+        "risk_level",
+        "message"
+      ],
+      "properties": {
+        "review_id": {
+          "type": "string",
+          "pattern": "^org-[0-9]{6}$"
+        },
+        "source": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "destination": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "anchor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "risk_level": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "skipped_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_id",
+        "decision",
+        "reason"
+      ],
+      "properties": {
+        "review_id": {
+          "type": "string",
+          "pattern": "^org-[0-9]{6}$"
+        },
+        "decision": {
+          "enum": [
+            "approve",
+            "reject",
+            "undecided"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

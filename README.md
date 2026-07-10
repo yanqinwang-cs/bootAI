@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.8 are implemented. The tool can currently:
+Stages 1 through 10.9 are implemented. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -21,6 +21,7 @@ Stages 1 through 10.8 are implemented. The tool can currently:
 - Apply accepted organization rule decisions only after exact confirmation.
 - Audit how accepted organization rules affect report output.
 - Export rule-aware organization suggestions as a JSON batch-review file.
+- Apply approved organization-review rows through the existing executor after exact confirmation.
 - Suggest organization plans.
 - Flag isolated code files as candidates for review.
 - Optionally refine organization suggestions with local Ollama.
@@ -33,14 +34,14 @@ Stages 1 through 10.8 are implemented. The tool can currently:
 - Remember prior batch-review decisions as review state.
 - Apply saved reviewed-plan JSON files after validation and exact confirmation.
 
-Stage 10.8 adds a read-only organization-review export. It writes existing rule-aware organization suggestions as `approve`, `reject`, or `undecided` JSON rows for manual review. It does not apply reviewed rows, create operation logs, write organization rules, or move files. Broad code organization, HTML review actions, organization-review apply behavior, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
+Stage 10.9 applies only manually approved Stage 10.8 organization-review rows after exact `APPLY ORGANIZATION REVIEW` confirmation. All movement goes through `executor.py`, writes the existing operation log, and remains undoable. Broad code organization, HTML review actions, selective subset tooling, scheduler daemons, GUI work, cloud APIs, and prompt evaluation tooling are not implemented.
 
 ## Setup
 
 Use Python 3 and the standard library. No third-party dependencies are required for the current test suite.
 
 ```bash
-PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_state tests.test_html_report tests.test_scope tests.test_organization_rules tests.test_pattern_inference tests.test_rule_review tests.test_rule_audit tests.test_organization_review
+PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_state tests.test_html_report tests.test_scope tests.test_organization_rules tests.test_pattern_inference tests.test_rule_review tests.test_rule_audit tests.test_organization_review tests.test_organization_review_apply
 ```
 
 ## Quickstart
@@ -57,6 +58,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --review-plans --ignore-review-state
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --export-rule-candidates
 PYTHONPATH=src python3 -m organizer.cli /path/to/folder --export-organization-review
+PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-organization-review AI_Review/reviews/organization_review.approved.json --confirm "APPLY ORGANIZATION REVIEW"
 ```
 
 Apply commands require exact confirmation:
@@ -136,6 +138,7 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - Accepted organization rules do not move files and do not write operation logs.
 - Reports include a rule-aware audit when organization rules exist and explain when rules are missing or invalid.
 - Organization-review export writes editable review JSON only. It cannot apply approved rows and does not write operation logs.
+- Organization-review apply reads only an explicitly supplied reviewed file, requires exact confirmation, and moves only `approve` rows through `executor.py`.
 - Review mode approve/reject/save commands do not move files.
 - Review mode stores decision memory under `AI_Review/review_state/review_decisions.json`.
 - Review state is decision memory, not an operation log, and does not record filesystem success.

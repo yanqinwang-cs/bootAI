@@ -1,6 +1,6 @@
 # Release Notes
 
-## Current Status Through Stage 10.8
+## Current Status Through Stage 10.9
 
 Stage 10.4 adds a static HTML report viewer. `--html-report` writes both the existing JSON report and a browser-openable HTML rendering from the same report data without approving or applying moves.
 
@@ -19,6 +19,8 @@ Stage 10.6 adds a confirmed organization-rule review workflow. Inferred rule can
 Stage 10.7 adds a read-only rule-aware organization audit to JSON and HTML reports. Reports compare conservative defaults with loaded explicit organization rules, show per-rule effects, and warn about broad-impact rules or large suggestion-count increases. The audit does not write rules, create movement-plan items, call `executor.py`, or move files.
 
 Stage 10.8 adds a single-purpose rule-aware organization review export. Existing report organization suggestions are written as deterministic `org-NNNNNN` rows with `approve`, `reject`, or `undecided` decisions and cautious risk labels. The export validates review-file edits but cannot apply rows, construct movement plans, write operation logs, modify organization rules, or move files.
+
+Stage 10.9 adds confirmed apply for approved organization-review rows. Exact `APPLY ORGANIZATION REVIEW` confirmation is checked before the review path is read, duplicate approved paths block the batch, and all filesystem preflight and movement remains in `executor.py`. Apply summaries point to the existing operation log used for undo.
 
 ## Stage Summary
 
@@ -49,6 +51,7 @@ Stage 10.8 adds a single-purpose rule-aware organization review export. Existing
 - Stage 10.6: organization rule candidate export and confirmed rule-decision apply.
 - Stage 10.7: rule-aware organization audit in JSON and HTML reports.
 - Stage 10.8: read-only rule-aware organization suggestion review export.
+- Stage 10.9: confirmed approved organization-review apply through the existing executor.
 
 ## Safety Model
 
@@ -92,6 +95,7 @@ Stage 10.8 adds a single-purpose rule-aware organization review export. Existing
 - Reports: `--report`, `--report-output <path>`, `--html-report`, `--html-report-output <path>`.
 - Organization rule review: `--export-rule-candidates`, `--rule-candidates-output <path>`, `--apply-rule-decisions <path>`.
 - Organization suggestion review: `--export-organization-review`, `--organization-review-output <path>`; export and validation only.
+- Organization review apply: `--apply-organization-review <path> --confirm "APPLY ORGANIZATION REVIEW"`.
 - Batch review: `--review-plans` for duplicate, organization, and review-candidate move candidates.
 - Review state bypass: `--review-plans --ignore-review-state`.
 - Saved reviewed-plan apply: `--apply-reviewed-plan <path> --confirm APPLY_REVIEWED_PLAN`.
@@ -105,13 +109,14 @@ Apply commands require one of:
 - interactive `APPLY_REVIEWED_PLAN` inside `--review-plans`
 - `--confirm APPLY_REVIEWED_PLAN`
 - `--confirm "APPLY ORGANIZATION RULES"`
+- `--confirm "APPLY ORGANIZATION REVIEW"`
 
 ## Known Limitations
 
 - No built-in scheduler daemon or background service.
 - No GUI yet.
 - No HTML report review actions or apply buttons.
-- No apply command for Stage 10.8 organization-review files.
+- No selective subset or interactive editing command for organization-review files.
 - No cloud LLM APIs.
 - No filtering/sorting/pagination in batch review yet.
 - No saved review-session resume or editing yet.
@@ -121,4 +126,4 @@ Apply commands require one of:
 
 ## Future Roadmap
 
-See [ROADMAP](ROADMAP.md). Stage 10.9 and later remain future work.
+See [ROADMAP](ROADMAP.md). Stage 10.10 and later remain future work.

@@ -17,7 +17,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.8 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, protected/generated/project-output exclusion from actionable plans, strong-anchor organization, organization rules and anchor-decision reporting, report-only existing organization pattern inference, confirmed organization-rule review, rule-aware organization audit, rule-aware organization review JSON export, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
+Stages 1 through 10.9 are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, protected/generated/project-output exclusion from actionable plans, strong-anchor organization, organization rules and anchor-decision reporting, report-only existing organization pattern inference, confirmed organization-rule review, rule-aware organization audit, rule-aware organization review JSON export, confirmed approved organization-review apply, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans.
 
 ## Reuse Before Create
 
@@ -36,6 +36,7 @@ Stages 1 through 10.8 are complete. Current code supports scanning, duplicate de
 - `rule_review.py` owns organization rule candidate export, reviewed-decision validation, and confirmed config updates. It must not import `executor.py` or create `MovePlanItem` values.
 - `rule_audit.py` owns read-only organization-rule effect audits. It must not import `executor.py`, create movement-plan items, write rules, or move files.
 - `organization_review.py` owns rule-aware organization review JSON export and validation. It consumes report dictionaries and must not create `MovePlanItem` values, import `executor.py`, apply rows, or move files.
+- `organization_apply_review.py` owns approved organization-review conversion and result summaries. It may call only `executor.apply_move_plan()` for movement and must not rescan or regenerate suggestions.
 - `llm_refinement.py` owns prompt, payload, and validation for LLM group refinement.
 - `reports.py` owns read-only report assembly and JSON report writing.
 - `html_report.py` owns read-only static HTML rendering from report dictionaries.
@@ -93,9 +94,8 @@ Answer these before editing:
 - Stage 10.6 rule review exports inferred candidates and updates `organization_rules.json` only after exact confirmation. It must not move files.
 - Stage 10.7 rule-aware audit is report-only; it must not write rules, create movement-plan items, import `executor.py`, or move files.
 - Stage 10.8 organization-review export writes review JSON only; it must not create execution-ready plans, write operation logs, or apply rows.
-- Stage 10.9 organization-review apply behavior remains future work and requires a separate safety design.
-- Filtering, sorting, and pagination remain future work.
-- Stage 10.10 saved-session resume and editing remain future work.
+- Stage 10.9 organization-review apply requires exact confirmation before file access, converts only approved rows, and delegates all movement to `executor.py`.
+- Stage 10.10 and later review editing, subset selection, resume, filtering, sorting, and pagination remain future work.
 
 ## Testing And Git Hygiene
 

@@ -128,6 +128,21 @@ This is a single-purpose read-only export mode. Only `--max-depth` may be combin
 
 Organization-review export does not apply approved rows, create execution plans, write operation or undo logs, modify organization rules, invoke an LLM, or move files. See the [organization review format](REPORT_FORMAT.md#organization-review-export).
 
+## Apply Approved Organization Review
+
+```bash
+python -m organizer.cli <folder> \
+  --apply-organization-review AI_Review/reviews/organization_review.approved.json \
+  --confirm "APPLY ORGANIZATION REVIEW"
+```
+
+- `--apply-organization-review <path>`: validates one Stage 10.8 review file and applies only `approve` rows.
+- `--confirm "APPLY ORGANIZATION REVIEW"`: required exactly before the review path is resolved or read.
+
+This is a single-purpose mode and does not rescan. It rejects `--max-depth` and all report, export, planning, other apply, undo, rule-decision, review-session, and LLM flags. The review file must resolve to a regular file under the scan root. Duplicate approved sources or destinations block the batch.
+
+Executor preflight rejects missing or symlink sources, existing destinations, root escapes, and unsafe destination parents before movement. Successful and partial batches write the existing executor operation log under `AI_Review/operation_logs`; use that path with `--undo-log`. A secondary summary is written collision-safely under `AI_Review/reviews/organization_review_apply_result.json`. Rejected and undecided rows are summarized as skipped and never become `MovePlanItem` values.
+
 ## Grouping
 
 ```bash

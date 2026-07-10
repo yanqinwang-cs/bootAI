@@ -51,6 +51,10 @@
 - Organization-review export may write a new JSON review file but must not create execution-ready movement plans or apply reviewed rows.
 - Organization-review destinations must be safe relative paths under the controlled `Organized/` output namespace; they do not need to exist during review.
 - Organization-review decisions remain review metadata and must not bypass a later separately designed confirmation and validation stage.
+- Organization-review apply requires exact `APPLY ORGANIZATION REVIEW` confirmation before the review path is read or validated.
+- Only approved organization-review rows may become `MovePlanItem` values; rejected and undecided rows remain summary metadata.
+- Duplicate approved sources or destinations must block organization-review apply before executor use.
+- Organization-review apply-result files do not replace executor operation logs; undo continues to use operation logs.
 - Locked anchors must not bypass protected/generated/project-output exclusions.
 - Locked anchors should require at least two eligible safe files before producing organization suggestions.
 - Ignored terms win over locked anchors after alias normalization.

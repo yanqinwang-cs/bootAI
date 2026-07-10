@@ -6,7 +6,7 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.8 are implemented. Stage 10.4 adds a static HTML report viewer generated from the JSON report data. Stage 10.4.1 makes normal organization conservative by default. Stage 10.4.2 excludes protected contexts from actionable move plans. Stage 10.4.3 suppresses weak token groups, assigns role-based subfolders after grouping, and excludes generated web/archive assets from actionable plans. Stage 10.4.4 adds organization rules and alias-normalized anchor-decision reporting; broad anchors need a decision by default, while suggested groups are narrow repeated document sets or locked anchors. Stage 10.5 adds report-only existing organization pattern inference. Stage 10.6 adds confirmed organization-rule review. Stage 10.7 adds read-only rule-aware organization audit. Stage 10.8 exports those organization suggestions as editable JSON review rows without applying them. Built-in scheduler daemons, broad code organization, organization-review apply behavior, HTML review actions, and GUI work remain future work.
+Stages 1 through 10.9 are implemented. Stage 10.4 adds a static HTML report viewer generated from the JSON report data. Stage 10.4.1 makes normal organization conservative by default. Stage 10.4.2 excludes protected contexts from actionable move plans. Stage 10.4.3 suppresses weak token groups, assigns role-based subfolders after grouping, and excludes generated web/archive assets from actionable plans. Stage 10.4.4 adds organization rules and alias-normalized anchor-decision reporting; broad anchors need a decision by default, while suggested groups are narrow repeated document sets or locked anchors. Stage 10.5 adds report-only existing organization pattern inference. Stage 10.6 adds confirmed organization-rule review. Stage 10.7 adds read-only rule-aware organization audit. Stage 10.8 exports those organization suggestions as editable JSON review rows. Stage 10.9 applies only approved rows after exact confirmation through the existing executor. Built-in scheduler daemons, broad code organization, selective subset tooling, HTML review actions, and GUI work remain future work.
 
 ## Quick Navigation
 
@@ -24,6 +24,7 @@ Stages 1 through 10.8 are implemented. Stage 10.4 adds a static HTML report view
 - [Sample Rule Candidates](examples/sample_rule_candidates.json)
 - [Sample Rule Decisions](examples/sample_rule_decisions.json)
 - [Sample Organization Review](examples/sample_organization_review.json)
+- [Sample Organization Review Apply Result](examples/sample_organization_review_apply_result.json)
 - [Prompt Framework](prompts/README.md)
 - [Research Notes](research/README.md)
 

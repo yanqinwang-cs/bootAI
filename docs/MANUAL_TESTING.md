@@ -523,7 +523,36 @@ PYTHONPATH=src python3 -m organizer.cli "$REVIEW_ROOT" \
   --organization-review-output AI_Review/reviews/organization_review.json
 ```
 
-Edit a copy manually and set selected rows to `approve`, `reject`, or `undecided`. Stage 10.8 has no command that applies this file; editing it remains non-mutating review work.
+Edit a copy manually and set selected rows to `approve`, `reject`, or `undecided`. The Stage 10.8 export command itself remains non-mutating.
+
+## Stage 10.9 Approved Organization Review Apply Check
+
+Continue only in the disposable Stage 10.8 folder. Copy the export and manually approve one or two rows:
+
+```bash
+cp "$REVIEW_ROOT/AI_Review/reviews/organization_review.json" \
+  "$REVIEW_ROOT/AI_Review/reviews/organization_review.approved.json"
+```
+
+First use incorrect confirmation:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli "$REVIEW_ROOT" \
+  --apply-organization-review AI_Review/reviews/organization_review.approved.json \
+  --confirm "WRONG"
+```
+
+Expected outcome: the CLI refuses before reading the review file, no files move, no operation log exists, and no apply-result JSON is written.
+
+After inspecting the approved rows, use exact confirmation:
+
+```bash
+PYTHONPATH=src python3 -m organizer.cli "$REVIEW_ROOT" \
+  --apply-organization-review AI_Review/reviews/organization_review.approved.json \
+  --confirm "APPLY ORGANIZATION REVIEW"
+```
+
+Expected outcome: only approved rows move under `Organized/`; rejected and undecided rows remain in place. The CLI prints an apply-result path and an executor operation-log path. Use that operation log with the existing `--undo-log` command and confirm the moved files return to their original paths. Repeat only with newly recreated source files; apply-result filenames must use collision-safe siblings rather than overwrite earlier summaries.
 
 ## Stage 10.0 Batch Review
 

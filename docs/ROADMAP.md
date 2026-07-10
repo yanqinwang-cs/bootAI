@@ -30,14 +30,9 @@
 | 10.6 | Organization rule review workflow | `rule_review.py`, `organization_rules.py`, `cli.py` | `--export-rule-candidates`, `--apply-rule-decisions` | exact confirmation required for config updates |
 | 10.7 | Rule-aware organization audit | `rule_audit.py`, `reports.py`, `html_report.py` | none | read-only report audit |
 | 10.8 | Rule-aware organization batch review export | `organization_review.py`, `cli.py` | `--export-organization-review`, `--organization-review-output` | review JSON only |
+| 10.9 | Apply approved organization review | `organization_apply_review.py`, `cli.py`, `executor.py` | `--apply-organization-review`, `--confirm` | exact confirmation and operation log required |
 
 ## Future Stages
-
-### Stage 10.9: Organization Review Apply Safety Design
-
-Goal: separately evaluate whether and how validated approved organization-review rows could become explicit approved movement input.
-
-Non-goals: no apply behavior without exact confirmation, path revalidation, operation logs, undo, and executor-only movement.
 
 ### Later: Filtering, Sorting, Or Pagination
 

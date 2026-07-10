@@ -223,6 +223,16 @@ def export_organization_review(
 
 
 def load_organization_review(path: Path, root: Path) -> dict[str, Any]:
+    resolved_path = resolve_organization_review_path(path, root)
+    try:
+        with resolved_path.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"organization review JSON is invalid: {error}") from error
+    return validate_organization_review_data(data)
+
+
+def resolve_organization_review_path(path: Path, root: Path) -> Path:
     resolved_root = root.resolve()
     candidate = path if path.is_absolute() else resolved_root / path
     resolved_path = validate_under_root(candidate, resolved_root)
@@ -230,12 +240,7 @@ def load_organization_review(path: Path, root: Path) -> dict[str, Any]:
         raise ValueError(f"organization review file does not exist: {path}")
     if not resolved_path.is_file():
         raise ValueError(f"organization review path is not a file: {path}")
-    try:
-        with resolved_path.open("r", encoding="utf-8") as file:
-            data = json.load(file)
-    except json.JSONDecodeError as error:
-        raise ValueError(f"organization review JSON is invalid: {error}") from error
-    return validate_organization_review_data(data)
+    return resolved_path
 
 
 def validate_organization_review_data(data: object) -> dict[str, Any]:

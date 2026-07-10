@@ -1,0 +1,30 @@
+{
+  "applied": [
+    {
+      "anchor": "CS1010X",
+      "destination": "Organized/CS1010X/lectures/CS1010X lecture 01.pdf",
+      "review_id": "org-000001",
+      "risk_level": "high",
+      "source": "CS1010X lecture 01.pdf"
+    }
+  ],
+  "applied_count": 1,
+  "approved_count": 1,
+  "confirmation": "APPLY ORGANIZATION REVIEW",
+  "failed": [],
+  "failed_count": 0,
+  "generated_at": "2026-07-10T12:30:00+00:00",
+  "review_file": "AI_Review/reviews/organization_review.approved.json",
+  "schema_version": 1,
+  "skipped": [
+    {
+      "decision": "undecided",
+      "reason": "decision was not approve",
+      "review_id": "org-000002"
+    }
+  ],
+  "skipped_count": 1,
+  "source": "bootAI Stage 10.9 organization review apply result",
+  "undo_log_path": "AI_Review/operation_logs/operation_log_20260710T123000000000Z.json",
+  "warnings": []
+}

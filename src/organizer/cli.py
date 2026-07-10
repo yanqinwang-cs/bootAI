@@ -19,6 +19,10 @@ from organizer.models import (
     ReviewedPlanItem,
 )
 from organizer.ollama_client import OllamaClient
+from organizer.organization_apply_review import (
+    CONFIRM_APPLY_ORGANIZATION_REVIEW,
+    apply_approved_organization_review,
+)
 from organizer.organization_rules import load_organization_rules
 from organizer.organization_review import export_organization_review
 from organizer.planner import build_duplicate_review_plan
@@ -75,6 +79,7 @@ def main() -> int:
     parser.add_argument("--apply-rule-decisions", type=Path, default=None)
     parser.add_argument("--export-organization-review", action="store_true")
     parser.add_argument("--organization-review-output", type=Path, default=None)
+    parser.add_argument("--apply-organization-review", type=Path, default=None)
     parser.add_argument("--review-plans", action="store_true")
     parser.add_argument("--ignore-review-state", action="store_true")
     parser.add_argument("--apply-reviewed-plan", type=Path, default=None)
@@ -106,6 +111,9 @@ def main() -> int:
         )
     if args.ignore_review_state and not args.review_plans:
         parser.error("--ignore-review-state requires --review-plans")
+
+    if args.apply_organization_review is not None:
+        return _handle_apply_organization_review(parser, args)
 
     if args.export_organization_review:
         return _handle_export_organization_review(parser, args)
@@ -592,6 +600,80 @@ def _handle_export_organization_review(
     print(f"Organization review exported: {output_path}")
     print(f"Suggestions: {item_count}")
     print("Decisions default to undecided. This command does not move files.")
+    return 0
+
+
+def _handle_apply_organization_review(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> int:
+    if (
+        args.max_depth is not None
+        or args.duplicates
+        or args.plan_duplicates
+        or args.apply_duplicate_plan
+        or args.apply_organization_plan
+        or args.apply_refined_organization_plan
+        or args.apply_reviewed_plan is not None
+        or args.export_organization_review
+        or args.organization_review_output is not None
+        or args.export_rule_candidates
+        or args.rule_candidates_output is not None
+        or args.apply_rule_decisions is not None
+        or args.report
+        or args.report_output is not None
+        or args.html_report
+        or args.html_report_output is not None
+        or args.undo_log is not None
+        or args.review_plans
+        or args.ignore_review_state
+        or args.review_candidates
+        or args.plan_review_candidates
+        or args.project_groups
+        or args.plan_organization
+        or args.refine_groups
+        or args.plan_refined_organization
+        or args.llm_provider is not None
+        or args.llm_model is not None
+        or args.ollama_host is not None
+    ):
+        parser.error(
+            "--apply-organization-review cannot be combined with other modes or --max-depth"
+        )
+
+    if args.confirm != CONFIRM_APPLY_ORGANIZATION_REVIEW:
+        print(
+            'Apply refused: pass --confirm "APPLY ORGANIZATION REVIEW" '
+            "to apply approved organization review rows."
+        )
+        return 0
+
+    try:
+        outcome = apply_approved_organization_review(
+            args.apply_organization_review,
+            args.folder,
+            args.confirm,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+
+    print(f"Approved rows: {outcome.approved_count}")
+    print(f"Applied rows: {outcome.applied_count}")
+    print(f"Skipped rows: {outcome.skipped_count}")
+    print(f"Failed rows: {outcome.failed_count}")
+    print(f"Apply result: {outcome.result_path}")
+
+    if outcome.operation_log is None:
+        print("No approved organization review rows to apply.")
+        return 0
+
+    if outcome.failed_count:
+        print("Apply completed with failures.")
+        _print_operation_log(outcome.operation_log)
+        return 1
+
+    print("Apply completed.")
+    _print_operation_log(outcome.operation_log)
     return 0
 
 
