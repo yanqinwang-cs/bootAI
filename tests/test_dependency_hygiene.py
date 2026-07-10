@@ -20,11 +20,14 @@ class DependencyHygieneTests(unittest.TestCase):
         self.assertEqual(project["requires-python"], ">=3.13")
         self.assertFalse(any("openai" in dependency for dependency in dependencies))
         self.assertFalse(any("python-dotenv" in dependency for dependency in dependencies))
-        self.assertNotIn("optional-dependencies", project)
+        self.assertEqual(
+            set(project["optional-dependencies"]),
+            {"web", "web-test"},
+        )
         self.assertEqual(data["tool"]["setuptools"]["package-dir"], {"": "src"})
         self.assertEqual(data["tool"]["setuptools"]["packages"]["find"]["where"], ["src"])
 
-    def test_lockfile_contains_only_the_local_bootai_package(self) -> None:
+    def test_lockfile_has_no_cloud_dependencies(self) -> None:
         lock = (REPOSITORY_ROOT / "uv.lock").read_text(encoding="utf-8").lower()
         self.assertNotIn('name = "openai"', lock)
         self.assertNotIn('name = "python-dotenv"', lock)
@@ -40,7 +43,7 @@ class DependencyHygieneTests(unittest.TestCase):
         self.assertFalse((REPOSITORY_ROOT / "main.py").exists())
         self.assertIn("openrouter", (legacy / "main.py").read_text(encoding="utf-8").lower())
 
-    def test_organizer_source_has_no_cloud_or_web_runtime_imports(self) -> None:
+    def test_organizer_source_has_no_cloud_runtime_imports(self) -> None:
         source_root = REPOSITORY_ROOT / "src" / "organizer"
         combined = "\n".join(
             path.read_text(encoding="utf-8")
@@ -52,14 +55,24 @@ class DependencyHygieneTests(unittest.TestCase):
             "openrouter",
             "openrouter_api_key",
             "load_dotenv",
-            "from fastapi",
-            "import fastapi",
-            "uvicorn.run",
-            "jinja2templates",
-            "staticfiles",
         ):
             self.assertNotIn(forbidden, combined)
-        self.assertFalse((source_root / "web").exists())
+
+        non_web_combined = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(source_root.rglob("*.py"))
+            if "web" not in path.relative_to(source_root).parts
+        ).lower()
+        for web_import in (
+            "from fastapi",
+            "import fastapi",
+            "import uvicorn",
+            "from starlette",
+            "from jinja2",
+        ):
+            self.assertNotIn(web_import, non_web_combined)
+
+        self.assertTrue((source_root / "web").is_dir())
         self.assertFalse((source_root / "application" / "preflight_service.py").exists())
         self.assertFalse((source_root / "application" / "execution_service.py").exists())
 

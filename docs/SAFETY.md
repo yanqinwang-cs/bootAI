@@ -83,7 +83,10 @@
 - Browser actions use stable session-scoped IDs that the backend maps to server-held data and revalidates.
 - The server binds to `127.0.0.1` with one worker and must not default to `0.0.0.0`.
 - A one-time launch token establishes a signed, host-only, browser-lifetime session cookie with `HttpOnly` and `SameSite=Strict`.
+- Launch-token comparison and consumption are atomic; wrong, blank, and replayed tokens receive the same generic failure. A success clears any prior session and redirects away from the secret URL.
+- Signed session data is integrity-protected but not confidential. Store no root or launch token in it, and persist no session secret.
 - Every state-changing request uses POST and requires a session-bound CSRF token, same-origin validation, and a current revision.
+- Origin validation fails closed and requires one exact loopback origin matching scheme, host, and port. Missing or malformed Origin is not accepted.
 - GET requests are read-only. Refreshing a result must not repeat a mutation.
 - Trusted Host validation rejects unexpected hosts, CORS is not enabled, and frontend assets are bundled locally.
 - Stale review submissions are rejected rather than silently overwriting newer decisions.
@@ -92,6 +95,7 @@
 - Web apply is forbidden before Stage 11.8, and web restore is forbidden before Stage 11.9.
 - An arbitrary path-based file-serving endpoint is forbidden.
 - Accessibility targets WCAG 2.2 AA from the first web screen.
+- Through Stage 11.2, the only production application routes are read-only health and home GETs plus the documented launch-bootstrap GET; there is no production POST route or workflow connection.
 
 The complete controls and threat mappings are in [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md).
 

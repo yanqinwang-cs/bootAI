@@ -1,6 +1,6 @@
 # ADR 0002: Local Web Security Boundary
 
-Status: accepted in Stage 11.0.
+Status: accepted in Stage 11.0; foundation implemented in Stage 11.2.
 
 ## Context
 
@@ -17,6 +17,8 @@ Every mutation uses POST and requires a current signed session, session-bound CS
 Browser requests use stable session-scoped IDs, never arbitrary source or destination paths. The server maps IDs to root-bound server state and revalidates paths and artifacts. There is no arbitrary file-serving endpoint.
 
 Apply and restore add fresh preflight, exact typed confirmation, replay protection, a server-side operation lock, and delegation through the application-service boundary to existing executor functions.
+
+Stage 11.2 implements the pre-workflow boundary: direct IPv4-loopback binding; production Trusted Hosts limited to `127.0.0.1` and `localhost`; disabled proxy headers, access logging, and CORS; atomic one-use launch authentication; a minimal signed browser-lifetime cookie; CSRF and exact fail-closed Origin helpers; locked response headers; generic errors; and local-only assets. Its only application routes are health, launch bootstrap, and authenticated home GETs. The launch GET is the explicit bootstrap exception, and there is no production POST route until a mutation stage needs one.
 
 ## Consequences
 

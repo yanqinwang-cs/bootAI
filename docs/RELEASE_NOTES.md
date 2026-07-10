@@ -1,14 +1,24 @@
 # Release Notes
 
+## Stage 11.2 — Secure Local Web Shell and Launcher
+
+Stage 11.2 adds bootAI's first local web runtime. `python3 -m organizer.web --root <folder>` validates and locks one root, binds an already-listening IPv4 socket to `127.0.0.1` on a dynamic or explicitly selected port, and runs one Uvicorn worker with proxy headers and access logging disabled. Automatic launch waits for the minimal unauthenticated health check; `--no-browser` and browser-open failure print the private single-use launch URL.
+
+The FastAPI app disables documentation endpoints and exposes only health, single-use launch bootstrap, authenticated welcome, and package-local static GET routes. The launch token is consumed atomically, creates a minimal signed browser-lifetime session, and redirects to a clean URL. Trusted Host enforcement, CSRF and exact same-origin helpers, a locked CSP and security-header middleware, generic production errors, and no CORS establish the mutation-security foundation without adding a mutation route.
+
+HTMX 2.0.10 and Bootstrap 5.3.8 are bundled from verified official release files with their published SHA-384 values and license notices. The accessible first screen confirms the immutable root, offline/local operation, and that no scan or movement has occurred. Exact optional dependencies are isolated in `web` and `web-test`; core dependencies remain empty.
+
+No existing CLI flag, application service, artifact format, JSON schema, scan/report/review workflow, executor path, movement, verification, undo, or legacy code changes. Stage 11.3 has not begun.
+
 ## Stage 11.1 — Application Services and Dependency Hygiene
 
 Stage 11.1 adds UI-independent application services for scan-report construction, immutable review-session workflows, and deterministic listing/loading of scan reports and reviewed plans. These services delegate to existing report, review-session, review-state, safety, scanner, grouping, and Ollama owners; they create no second scanner, review engine, saver, or movement path.
 
 The CLI now uses the scan service for `--report` and `--html-report`, and the review service for `--review-plans` and `--resume-reviewed-plan`. The interactive command loop, confirmations, apply, undo, organization-review, verification, executor calls, output formats, schemas, and flags are unchanged.
 
-Mandatory `openai` and `python-dotenv` dependencies and their lockfile transitive packages are removed. Core packaging is explicitly restricted to `src/`, Python remains `>=3.13`, and no web dependencies are added. The unrelated historical OpenRouter assistant is preserved under `legacy/openrouter_code_assistant/` as unsupported, unpackaged legacy code.
+Mandatory `openai` and `python-dotenv` dependencies and their lockfile transitive packages are removed. Core packaging is explicitly restricted to `src/`, Python remains `>=3.13`, and Stage 11.1 adds no web dependencies. The unrelated historical OpenRouter assistant is preserved under `legacy/openrouter_code_assistant/` as unsupported, unpackaged legacy code.
 
-No web server, route, template, asset, preflight service, execution service, future artifact parser, or movement behavior is added. Stage 11.2 has not begun.
+No web server, route, template, asset, preflight service, execution service, future artifact parser, or movement behavior is added in Stage 11.1.
 
 ## Stage 11.0 — Local Web Architecture Contract and Threat Model
 

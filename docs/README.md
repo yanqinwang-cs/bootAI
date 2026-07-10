@@ -6,9 +6,9 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.14 and Stages 11.0 through 11.1 are implemented. Stage 11.0 freezes the architecture and threat model for a future local web application. Stage 11.1 adds UI-independent scan, review, and scan-report/reviewed-plan artifact services, removes mandatory cloud dependencies, and archives the unrelated historical OpenRouter assistant outside the package.
+Stages 1 through 10.14 and Stages 11.0 through 11.2 are implemented. Stage 11.2 adds the secure local web shell and launcher on top of the Stage 11.1 application-service boundary.
 
-The local web application is the intended primary interface for ordinary users, but no web server, route, template, asset, or web dependency exists yet. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only, and native desktop work is optional and deferred until after Stage 11.
+The local web application is the intended primary interface for ordinary users. Its current screen is an authenticated, root-locked welcome page only: it runs on `127.0.0.1`, serves bundled assets, and does not scan, load artifacts, review, apply, or restore. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only, and native desktop work is optional and deferred until after Stage 11.
 
 ## Quick Navigation
 

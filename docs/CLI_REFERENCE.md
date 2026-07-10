@@ -6,6 +6,20 @@ Run commands with:
 PYTHONPATH=src python -m organizer.cli <folder>
 ```
 
+## Local Web Launcher
+
+Stage 11.2 adds a separate module launcher; it does not add or change an `organizer.cli` flag:
+
+```bash
+PYTHONPATH=src python3 -m organizer.web --root "$HOME/Downloads"
+PYTHONPATH=src python3 -m organizer.web --root "$HOME/Downloads" --no-browser
+PYTHONPATH=src python3 -m organizer.web --root "$HOME/Downloads" --port 8123
+```
+
+Install the optional dependencies with `python3 -m pip install -e ".[web]"`. The launcher accepts only `--root`, `--no-browser`, and `--port`; there is no host option. It binds to `127.0.0.1`, normally selects a dynamic port, and opens a private single-use launch URL after `/healthz` is ready. `--no-browser` prints that URL instead. If `--root` is omitted, `~/Downloads` is accepted only when it exists and passes root validation.
+
+The current web page is an authenticated welcome shell. It does not invoke any existing scan, report, artifact, review, apply, verification, undo, or restore command. All `organizer.cli` behavior below is unchanged.
+
 ## Base
 
 ```bash

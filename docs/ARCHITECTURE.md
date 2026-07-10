@@ -21,6 +21,11 @@ Filesystem
      -> application/scan_service.py
      -> application/review_service.py
      -> application/artifact_service.py
+  -> local web shell
+     -> web/server.py
+     -> web/app.py
+     -> web/security.py
+     -> web/routes/home.py
   -> batch review
      -> review_session.py
   -> decision memory
@@ -64,12 +69,17 @@ Filesystem
 | `application/review_service.py` | immutable review-session coordination through existing review owners |
 | `application/artifact_service.py` | root-contained listing/loading of scan reports and reviewed plans only |
 | `application/view_models.py` | frozen, interface-independent application result types |
+| `web/config.py` | frozen per-launch root and ephemeral security configuration |
+| `web/server.py` | IPv4-loopback socket binding, browser bootstrap, and single-worker Uvicorn lifecycle |
+| `web/app.py` | isolated FastAPI construction, middleware, templates, static mounting, and generic errors |
+| `web/security.py` | one-time launch gate, session/CSRF helpers, exact Origin validation, and security headers |
+| `web/routes/home.py` | health, single-use launch bootstrap, and authenticated welcome routes only |
 | `executor.py` | movement-specific source/destination/symlink validation, approved move execution, operation logs, and undo |
 | `cli.py` | substantial current command-line and use-case orchestration |
 
 ## Stage 11 Local Web Direction
 
-Stage 11 will add a local web application as bootAI's primary consumer interface. Stage 11.1 establishes the shared application-service boundary but adds no web runtime. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML reports remain read-only audit snapshots.
+Stage 11 is adding a local web application as bootAI's primary consumer interface. Stage 11.1 established the shared application-service boundary. Stage 11.2 adds only an authenticated local shell around one validated immutable root; its routes do not yet import application workflows. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML reports remain read-only audit snapshots.
 
 The required future dependency direction is:
 
@@ -85,9 +95,11 @@ Existing deterministic bootAI modules
 executor.py for explicitly approved movement and undo only
 ```
 
-The web layer must not reproduce scanner, duplicate, grouping, review, safety, movement, or undo logic. Route modules must never import `executor.py`; only the future execution application service may delegate validated and explicitly approved plans to existing executor functions. Stage 11.1 migrates only CLI report construction and review-session creation/resume; the interactive command loop and every apply/undo path remain direct. Later use cases must continue to migrate incrementally rather than rewriting `cli.py`.
+The web layer must not reproduce scanner, duplicate, grouping, review, safety, movement, or undo logic. Route modules must never import `executor.py`; only the future execution application service may delegate validated and explicitly approved plans to existing executor functions. Stage 11.2 reuses only `safety.validate_under_root` and exposes no scan, artifact, review, apply, or restore workflow. The interactive command loop and every apply/undo path remain direct. Later use cases must continue to migrate incrementally rather than rewriting `cli.py`.
 
 Each web-server process is bound to one validated immutable root. Browser requests submit stable session-scoped IDs and allowed actions rather than source or destination paths. Existing JSON artifacts remain authoritative; temporary UI, job, security, and revision state may remain in memory, with no initial database.
+
+The current process binds an already-listening IPv4 socket to `127.0.0.1`, normally on an operating-system-selected port, and hands it to one Uvicorn worker with proxy headers and access logging disabled. A one-time launch token establishes a signed browser-lifetime session and immediately redirects away from the token URL. All frontend resources are installed package data; no runtime asset leaves the process origin.
 
 The complete contract is in [WEB_ARCHITECTURE](WEB_ARCHITECTURE.md), and mandatory localhost security controls are in [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md).
 

@@ -38,6 +38,7 @@
 | 10.14 | Review session quality-of-life polish | `review_session.py`, `cli.py` | existing interactive commands | session-local dirty-state protection |
 | 11.0 | Local web architecture contract and threat model | documentation only | none | no runtime behavior |
 | 11.1 | Application services and dependency hygiene | `application/`, `reports.py`, narrow CLI entry migration | none | no server or movement changes |
+| 11.2 | Secure local web shell and launcher | `web/`, optional web dependencies, bundled assets | separate `organizer.web` launcher | authenticated shell only; no scan or movement |
 
 ## Stage 11 Sequence
 
@@ -67,9 +68,13 @@ Completed:
 
 ### Stage 11.2 — Secure Local Web Shell and Launcher
 
-- Add a FastAPI app factory, loopback-only launcher, dynamic port, and automatic browser opening.
-- Add a one-time launch token, signed session, CSRF foundation, Trusted Host validation, CSP, base template, and local assets.
-- Add no scan workflow.
+Completed:
+
+- added an isolated FastAPI app factory, direct IPv4-loopback socket binding, dynamic or validated fixed port, one Uvicorn worker, and bounded automatic browser opening;
+- added atomic single-use launch authentication, a signed browser-lifetime session, CSRF and exact-Origin helpers, Trusted Host enforcement, locked security headers, generic errors, and no CORS;
+- bundled verified HTMX 2.0.10 and Bootstrap 5.3.8 assets with notices and provided a WCAG-oriented welcome screen;
+- added only health, launch, authenticated home, and local-static GET routes;
+- added no scan, artifact, review, mutation, movement, restore, database, schema, or existing CLI-interface change.
 
 ### Stage 11.3 — Read-Only Scan Dashboard
 

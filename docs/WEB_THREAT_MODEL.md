@@ -1,6 +1,6 @@
 # Local Web Threat Model
 
-Status: mandatory Stage 11 security contract, accepted in Stage 11.0.
+Status: mandatory Stage 11 security contract, accepted in Stage 11.0 and implemented through the Stage 11.2 foundation.
 
 This threat model applies to bootAI's single-user local web application. It is concrete to bootAI's root-bound scan, review, apply, verification, history, and restore workflows. It is not a claim that localhost is inherently trusted.
 
@@ -91,7 +91,7 @@ The browser is untrusted even after session establishment. HTML forms, HTMX requ
 
 ### Loopback binding and trusted hosts
 
-The server binds to `127.0.0.1`. User-facing URLs may use `127.0.0.1` or `localhost`, and the Trusted Host allowlist accepts only the concrete loopback host forms the launcher emits. An unknown Host is rejected before route processing. The application does not enable LAN or remote access in Stage 11.
+The server binds an IPv4 socket directly to `127.0.0.1`. User-facing URLs may use `127.0.0.1` or `localhost`, and those are the only production Trusted Host values. `testserver` is added only by explicit test configuration. There is no wildcard, `www` redirect, proxy-header trust, LAN mode, or host option. An unknown Host receives Starlette's generic 400 before route processing or template/root access.
 
 ### Immutable root
 
@@ -99,7 +99,7 @@ The launcher resolves and validates one root before the web workflow starts. Tha
 
 ### One-time launch token
 
-The launcher must:
+The Stage 11.2 launcher:
 
 ```text
 generate a cryptographically random token
@@ -110,11 +110,11 @@ invalidate the launch token
 redirect to a clean URL
 ```
 
-The token must not remain in navigation URLs, bookmarks, referrers, logs, or page markup after bootstrap. Reuse fails closed.
+The token is generated with `secrets.token_urlsafe(32)`. Consumption is guarded by a lock and uses `hmac.compare_digest`, allowing exactly one success even under concurrent requests. Wrong, blank, and consumed values receive the same generic failure. Success clears any prior session, creates new opaque session/CSRF values, and returns a 303 redirect to `/`. Uvicorn access logging is disabled, the final HTML contains no token, and the launcher prints the token URL only for `--no-browser` or browser-open failure.
 
 ### Signed browser session
 
-Generate a random per-launch signing secret. The session cookie is:
+Generate a random per-launch signing secret with `secrets.token_urlsafe(48)`. The `bootai_session` cookie is:
 
 ```text
 HttpOnly
@@ -122,19 +122,24 @@ SameSite=Strict
 host-only
 browser-session lifetime
 signed with the per-launch secret
+Path=/
+no Domain
+no Max-Age or Expires
 ```
 
-`Secure` is appropriate when a later deployment actually uses HTTPS; Stage 11 does not invent remote or TLS hosting. The session stores or references only the minimum root-bound state required by the UI.
+`Secure=False` is required only because Stage 11 uses loopback HTTP; HTTPS and a Secure cookie remain deferred. Signed cookie data is integrity-protected, not confidential. It contains only an authentication marker, random opaque session ID, and session-bound CSRF token—never the root or launch token. The signing secret and all tokens are memory-only and are not read from environment variables.
 
 ### CSRF and origin enforcement
 
-Every state-changing request requires a CSRF token bound to the signed session. Validate `Origin` against the exact launcher origin for mutations and reject missing or mismatched origins unless a documented same-origin browser case is handled safely. Do not enable CORS.
+Every state-changing request requires a CSRF token bound to the signed session. Origin validation requires exactly one syntactically valid `Origin` matching the trusted request's loopback scheme, host, and effective port. Missing, duplicate, `null`, credential-bearing, path-bearing, external, LAN, wrong-host, wrong-scheme, and wrong-port values fail closed. Do not enable CORS.
 
 State-changing actions include decisions, current-page bulk decisions, reviewed-plan saves, apply, restore, and configuration changes.
 
 ### Request methods and replay control
 
 GET and HEAD are read-only. POST performs mutations. Apply, save, decision change, configuration change, and restore must never be triggered by GET.
+
+Through Stage 11.2 the production route set is `GET /healthz`, `GET /launch/{token}`, `GET /`, and mounted local static delivery. `/healthz` returns only `{"status":"ok"}` without authentication. The launch GET changes authentication state as the sole documented bootstrap exception. There is no production POST route.
 
 After a successful POST, redirect or render a read-only result URL so refresh cannot repeat the mutation. Revision checks, single-use operation tokens where required, and server-side locks enforce idempotency; client-side button disabling is not a security control.
 
@@ -188,15 +193,17 @@ Content-Security-Policy:
   style-src 'self';
   img-src 'self' data:;
   connect-src 'self';
+  font-src 'self';
   object-src 'none';
   base-uri 'none';
   frame-ancestors 'none';
   form-action 'self'
 Referrer-Policy: no-referrer
 X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
 ```
 
-The exact CSP may become stricter as templates are implemented, but it may not add remote sources to support a CDN or analytics. All runtime frontend assets and notices are local.
+The pure ASGI header middleware is outermost among user middleware so these headers cover pages, redirects, static responses, Trusted Host failures, and handled errors. Production 404 and 500 pages are generic and contain no traceback or root. The exact CSP may become stricter as templates evolve, but it may not add remote sources to support a CDN or analytics. The verified HTMX 2.0.10 and Bootstrap 5.3.8 runtime files and notices are local.
 
 ## Failure Behavior
 
@@ -218,4 +225,4 @@ The exact CSP may become stricter as templates are implemented, but it may not a
 
 ## Verification Expectations
 
-Each implementation stage must add tests for the controls it introduces. At minimum, later security tests must cover unknown Host, non-loopback configuration, launch-token replay, unsigned or altered sessions, missing/wrong CSRF, wrong Origin, mutation by GET, arbitrary and traversal paths, symlink escape, stale revision, repeated POST, concurrent execution, tampered artifacts, changed sources, new destinations, and blocked arbitrary preview access.
+Each implementation stage must add tests for the controls it introduces. Stage 11.2 covers root/config isolation, token replay and concurrency, cookie attributes, CSRF and Origin helpers, Host rejection, response headers, generic errors, route/method inventory, local assets, launcher binding, browser sequencing, and cleanup. Later tests must add workflow-specific arbitrary/traversal paths, stale revision, repeated POST, concurrent jobs/execution, tampered artifacts, changed sources, new destinations, and blocked arbitrary preview access when those surfaces exist.

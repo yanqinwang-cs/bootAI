@@ -1,8 +1,8 @@
 # Local Web Architecture Contract
 
-Status: accepted in Stage 11.0; implemented through the Stage 11.1 service boundary.
+Status: accepted in Stage 11.0; implemented through the Stage 11.2 secure shell.
 
-This document freezes the architecture that all Stage 11 web work must follow. Stage 11.0 was documentation only. Stage 11.1 now provides shared application services and dependency hygiene, but still adds no server, routes, web dependencies, templates, static assets, CLI flags, or packaging behavior.
+This document freezes the architecture that all Stage 11 web work must follow. Stage 11.1 provides shared application services and dependency hygiene. Stage 11.2 adds the isolated local server, browser bootstrap, security foundation, templates, and verified local assets, but does not connect an HTTP route to scan or review workflows.
 
 The companion [web threat model](WEB_THREAT_MODEL.md) defines the mandatory security controls. The architecture decisions are also recorded in [ADR 0001](adr/0001-local-web-stack.md), [ADR 0002](adr/0002-web-security-boundary.md), and [ADR 0003](adr/0003-application-service-layer.md).
 
@@ -17,7 +17,7 @@ The interfaces have distinct roles:
 - Static HTML remains a permanent, read-only report and audit-snapshot format. It does not become an interactive web application.
 - A native desktop application is optional, demand-driven, and deferred until after core Stage 11 work.
 
-## Stage 11.0 Record and Stage 11.1 Boundary
+## Implemented Boundaries Through Stage 11.2
 
 Stage 11.0 did not add or modify:
 
@@ -30,6 +30,8 @@ Stage 11.0 did not add or modify:
 - cloud APIs, telemetry, permanent removal, or Trash integration.
 
 Stage 11.1 adds `application/scan_service.py`, `review_service.py`, `artifact_service.py`, and `view_models.py`. It does not add `application/preflight_service.py`, `application/execution_service.py`, `src/organizer/web/`, or web dependencies. Artifact loading is deliberately limited to scan reports and reviewed plans; later execution and history artifacts remain deferred.
+
+Stage 11.2 adds `src/organizer/web/`, exact optional web dependencies, installed templates/static resources, and focused HTTP-security helpers. The shell reuses only `safety.validate_under_root`; it does not import application workflows, scan, list or load artifacts, create review sessions, expose a production POST route, or alter any movement or undo path. The existing CLI and JSON formats remain unchanged.
 
 ## Current Ownership That Must Be Preserved
 
@@ -139,37 +141,27 @@ src/organizer/application/
 - Define typed presentation data shared by CLI and web presenters where appropriate.
 - Contain no request objects, HTML, terminal I/O, or filesystem side effects.
 
-## Future Web Interface Layer
+## Web Interface Layer
 
-The intended package is:
+The Stage 11.2 package is:
 
 ```text
 src/organizer/web/
     __init__.py
+    __main__.py
     app.py
     server.py
     config.py
     security.py
-    jobs.py
-    presenters.py
 
     routes/
+        __init__.py
         home.py
-        scan.py
-        review.py
-        plan.py
-        execution.py
-        history.py
 
     templates/
         base.html
         home.html
-        scan.html
-        review.html
-        plan.html
-        result.html
-        history.html
-        partials/
+        error.html
 
     static/
         css/
@@ -180,11 +172,10 @@ src/organizer/web/
             htmx.min.js
             bootstrap.min.css
             bootstrap.bundle.min.js
-        icons/
         THIRD_PARTY_NOTICES.txt
 ```
 
-This layout is guidance for later stages. Stage 11.0 must not create it.
+Later stages add workflow routes, presenters, jobs, templates, and fragments only when their roadmap stage begins. Stage 11.2 contains none of those structural placeholders.
 
 The web layer may own routes, forms, HTTP request validation, signed sessions, CSRF enforcement, templates, HTML fragments, presenters, security headers, and user-facing error rendering. It must not own scanning algorithms, duplicate detection, grouping logic, review validation, conflict detection, root safety, movement, undo, or operation-log construction.
 
@@ -221,14 +212,15 @@ Each server process operates on exactly one root:
 
 The browser cannot change the root by submitting path text. Changing roots requires ending the current root-bound server, validating another root, and starting a new process.
 
-Development mode may eventually support:
+The implemented development launcher is:
 
 ```bash
-bootai web
-bootai web --root /path/to/folder
+PYTHONPATH=src python3 -m organizer.web --root /path/to/folder
+PYTHONPATH=src python3 -m organizer.web --root /path/to/folder --no-browser
+PYTHONPATH=src python3 -m organizer.web --root /path/to/folder --port 8123
 ```
 
-The default may be the current user's Downloads directory only when that behavior is explicitly documented and the directory passes validation. A packaged launcher may use a small native folder chooser before opening the browser; that does not make bootAI a native desktop application.
+The only launcher options are `--root`, `--no-browser`, and a validated `--port` from 1 through 65535; there is no `--host`. The default is the current user's Downloads directory only when that directory passes configuration validation. A packaged launcher may later use a small native folder chooser before opening the browser; that does not make bootAI a native desktop application.
 
 ## Accepted Web Stack and Asset Policy
 
@@ -243,13 +235,17 @@ minimal vanilla JavaScript
 Uvicorn
 ```
 
+Stage 11.2 pins FastAPI 0.139.0, Starlette 1.3.1, Uvicorn 0.50.2, Jinja2 3.1.6, and ItsDangerous 2.2.0 in the optional `web` group. HTTPX 0.28.1 is isolated in `web-test`. Core dependencies remain empty; neither `python-multipart` nor FastAPI broad extras are installed.
+
+The bundled runtime assets are the official HTMX 2.0.10 `dist/htmx.min.js` and Bootstrap 5.3.8 `bootstrap.min.css` and `bootstrap.bundle.min.js`, byte-verified against their published SHA-384 integrity values. `THIRD_PARTY_NOTICES.txt` records versions, sources, integrity values, and the 0BSD/MIT licenses. No source maps are packaged.
+
 All assets must be bundled locally, including HTMX, Bootstrap CSS and JavaScript, icons, custom CSS and JavaScript, and any fonts. CDNs, remote fonts, analytics, telemetry, external scripts, and runtime cloud dependencies are forbidden. The application must remain usable without internet access.
 
 Static HTML audit reports remain self-contained read-only documents. They do not gain routes, sessions, approval controls, or apply behavior.
 
 ## Server and Concurrency Policy
 
-The eventual server configuration is:
+The implemented server configuration is:
 
 ```text
 host: 127.0.0.1
@@ -259,6 +255,8 @@ root: one validated and immutable root per launch
 ```
 
 It must never bind to `0.0.0.0` by default. LAN access, remote access, multi-user hosting, and cloud deployment are outside Stage 11.
+
+The launcher binds and listens on an IPv4 socket before Uvicorn starts, obtains the operating-system-selected port when none is requested, and passes that socket to one programmatic server. Uvicorn access logging and proxy-header handling are disabled. A bounded readiness thread polls only `/healthz`, opens the one-time launch URL after success, and is cancelled and joined during cleanup; the socket is always closed. No port, PID, token, secret, or shutdown file or endpoint is created.
 
 Use a single process and one worker initially. Permit at most one active scan job and one active execution or restore operation in a root-bound process. UI button disabling is only feedback; server-side locks, revisions, idempotency controls, and fresh preflight provide the actual protection.
 
@@ -277,7 +275,7 @@ A database may be considered only after measured evidence shows a need. It must 
 
 ## Security Contract
 
-Localhost is a network security boundary, not a reason to omit security. Later implementation must include loopback-only binding, a one-time launch token, a signed browser-session cookie, session-bound CSRF, same-origin enforcement, Trusted Host validation, read-only GET requests, mutation-only POST requests, restrictive response headers, revision checks, and no CORS. Details and threat-to-control mappings are mandatory in [WEB_THREAT_MODEL.md](WEB_THREAT_MODEL.md).
+Localhost is a network security boundary, not a reason to omit security. Stage 11.2 implements loopback-only binding, atomic single-use launch authentication, a signed host-only browser-session cookie, session-bound CSRF helpers, exact fail-closed same-origin validation, Trusted Host enforcement, read-only application routes, restrictive headers, and no CORS. The signed cookie is integrity-protected but not confidential. Revision and replay checks are required when mutation routes begin. Details and threat-to-control mappings are mandatory in [WEB_THREAT_MODEL.md](WEB_THREAT_MODEL.md).
 
 ## Accessibility Contract
 
@@ -315,7 +313,7 @@ Web UI → same application service
 
 Preserve existing CLI behavior and tests during each extraction. CLI and web flows must not develop separate scan, review, preflight, execution, or restore implementations.
 
-Stage 11.1 removes the former mandatory `openai` and `python-dotenv` dependencies and their transitive lockfile packages. Core dependencies are empty and package discovery is restricted to `src/`. The historical OpenRouter assistant is preserved only under `legacy/openrouter_code_assistant/`, outside bootAI packaging and runtime. Optional FastAPI/Jinja2/Uvicorn dependencies remain deferred until Stage 11.2.
+Stage 11.1 removed the former mandatory `openai` and `python-dotenv` dependencies and their transitive lockfile packages. Core dependencies remain empty and package discovery remains restricted to `src/`. The historical OpenRouter assistant is preserved only under `legacy/openrouter_code_assistant/`, outside bootAI packaging and runtime. Stage 11.2 adds only the isolated optional `web` and `web-test` groups.
 
 ## Packaging Goal
 
@@ -345,11 +343,11 @@ Documentation only: stack, ownership, threat model, security controls, accessibi
 
 ### Stage 11.1 — Application Services and Dependency Hygiene
 
-Completed: UI-independent scan, immutable review-session, and scan-report/reviewed-plan artifact services; narrow CLI entry migration; mandatory cloud dependency removal; and historical OpenRouter archival. Optional web dependencies remain deferred. No server and no movement changes.
+Completed: UI-independent scan, immutable review-session, and scan-report/reviewed-plan artifact services; narrow CLI entry migration; mandatory cloud dependency removal; and historical OpenRouter archival. Optional web dependencies were deferred to 11.2. No server and no movement changes were part of 11.1.
 
 ### Stage 11.2 — Secure Local Web Shell and Launcher
 
-Add the FastAPI app factory, loopback-only launcher, dynamic port, automatic browser opening, one-time launch token, signed session, CSRF foundation, Trusted Host validation, CSP, base template, and local assets. No scan yet.
+Completed: FastAPI app factory, loopback-only launcher, dynamic or validated fixed port, bounded automatic browser opening, atomic one-time launch token, signed session, CSRF and Origin foundation, Trusted Host enforcement, locked headers, generic errors, accessible base/welcome templates, and verified local assets. No scan or workflow route exists yet.
 
 ### Stage 11.3 — Read-Only Scan Dashboard
 

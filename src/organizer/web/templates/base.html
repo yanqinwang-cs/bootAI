@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}bootAI{% endblock %}</title>
+  <link
+    rel="stylesheet"
+    href="{{ request.app.url_path_for('static', path='/vendor/bootstrap.min.css') }}"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+  >
+  <link rel="stylesheet" href="{{ request.app.url_path_for('static', path='/css/bootai.css') }}">
+  <script
+    src="{{ request.app.url_path_for('static', path='/vendor/htmx.min.js') }}"
+    integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V"
+    defer
+  ></script>
+  <script
+    src="{{ request.app.url_path_for('static', path='/vendor/bootstrap.bundle.min.js') }}"
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+    defer
+  ></script>
+  <script src="{{ request.app.url_path_for('static', path='/js/bootai.js') }}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="site-header">
+    <div class="container py-3">
+      <span class="brand">bootAI</span>
+    </div>
+  </header>
+  <main id="main-content" class="container py-5" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <div class="container py-4">
+      <p class="mb-0">Local file organization assistant</p>
+    </div>
+  </footer>
+</body>
+</html>

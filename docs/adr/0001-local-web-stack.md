@@ -1,6 +1,6 @@
 # ADR 0001: Local Web Stack
 
-Status: accepted in Stage 11.0.
+Status: accepted in Stage 11.0; secure shell implemented in Stage 11.2.
 
 ## Context
 
@@ -20,6 +20,8 @@ Uvicorn
 ```
 
 Bundle all runtime frontend assets locally. Do not use CDNs, remote fonts, analytics, telemetry, external scripts, or runtime cloud dependencies. Bind to loopback only and use one worker initially.
+
+Stage 11.2 realizes this decision with exact optional dependency pins, official hash-verified HTMX 2.0.10 and Bootstrap 5.3.8 files, installed package-data resources, server-rendered templates, and no Node/npm build. The shell has no workflow route yet; later stages must continue through application services.
 
 The web application is the primary consumer interface. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only. Native desktop work is optional and deferred until after Stage 11.
 

@@ -18,7 +18,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.14 and Stages 11.0 through 11.1 are complete. Current code supports the existing scan, review, report, apply, verification, and undo workflows plus UI-independent scan, review, and narrowly scoped artifact services. Stage 11.1 migrates only CLI report construction and review-session creation/resume, removes mandatory cloud dependencies, and archives the unrelated historical OpenRouter assistant outside the package. It adds no web runtime, movement path, schema, or CLI flag.
+Stages 1 through 10.14 and Stages 11.0 through 11.2 are complete. Current code supports the existing CLI workflows and UI-independent services plus a secure local web shell. Stage 11.2 binds one root-locked process to IPv4 loopback, bootstraps one signed browser session with a single-use token, and serves an accessible welcome page from local assets. It adds no scan, artifact, review, apply, restore, schema, database, or existing-CLI change.
 
 ## Reuse Before Create
 
@@ -49,6 +49,11 @@ Stages 1 through 10.14 and Stages 11.0 through 11.1 are complete. Current code s
 - `application/review_service.py` coordinates immutable review sessions through `review_session.py` and `review_state.py`; it never imports the executor.
 - `application/artifact_service.py` lists and loads only scan reports and reviewed plans for the first web MVP. Future artifact kinds remain deferred.
 - `application/view_models.py` owns frozen interface-independent application results.
+- `web/config.py` owns immutable per-launch root and ephemeral secret configuration.
+- `web/server.py` owns loopback socket binding, browser bootstrap, and Uvicorn lifecycle.
+- `web/app.py` owns app construction, middleware, installed-resource lookup, and generic errors.
+- `web/security.py` owns launch-token consumption, session/CSRF helpers, exact same-origin validation, and response headers.
+- `web/routes/home.py` owns only health, launch bootstrap, and the authenticated welcome page through Stage 11.2.
 - `executor.py` owns movement-specific source/destination/symlink preflight, moving, operation logs, and undo.
 
 ## Stage 11 Guardrails
@@ -74,6 +79,14 @@ Stages 1 through 10.14 and Stages 11.0 through 11.1 are complete. Current code s
 - Stage 11.1 adds no server, web package, preflight service, execution service, web dependency, new CLI flag, future artifact parser, or movement change.
 - Core mandatory dependencies contain no cloud SDK or dotenv package. Cloud/OpenRouter references are permitted only in `legacy/openrouter_code_assistant/`, which is excluded from packaging and runtime.
 - `application/__init__.py` contains public exports only; services reuse `safety.py` and owner validators rather than implementing shared path validation.
+- Stage 11.2 optional dependency pins and bundled vendor hashes are exact. Do not silently upgrade, fetch from a CDN, re-minify, or remove required license notices.
+- The launcher exposes only `--root`, `--no-browser`, and `--port`; never add `--host`. It passes one already-bound `127.0.0.1` socket to one Uvicorn worker with access logs and proxy headers disabled.
+- Per-launch secrets are random, memory-only, and never read from environment variables or persisted. Print the launch URL only for `--no-browser` or browser-open failure.
+- The signed session cookie is host-only, browser-lifetime, `HttpOnly`, `SameSite=Strict`, and contains only an authentication marker plus opaque session and CSRF values. Signed cookie contents are not confidential.
+- `testserver` is a Trusted Host only in explicit test configuration. Production accepts `127.0.0.1` and `localhost` without wildcards or `www` redirects.
+- Missing, duplicate, malformed, credential-bearing, path-bearing, external, wrong-host, wrong-scheme, or wrong-port Origin values fail closed. CORS remains disabled.
+- Stage 11.2 production routes are only `GET /healthz`, `GET /launch/{token}`, `GET /`, and local static delivery. The launch GET is the documented authentication-bootstrap exception; do not add a production POST route yet.
+- Do not weaken CSP or add inline scripts/handlers. The security headers must cover pages, redirects, static responses, Host failures, and handled errors.
 
 ## Do Not Skip Ahead
 
