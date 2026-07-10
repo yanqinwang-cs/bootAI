@@ -40,13 +40,19 @@ Goal: make large batch review sessions easier to inspect.
 
 Non-goals: no bypass of exact confirmation or executor movement rules.
 
-### Stage 10.10: Resume Or Edit Saved Review Sessions
+### Stage 10.10: Post-Apply Verification And Undo Hardening
+
+Goal: verify organization-review apply results against the filesystem and executor operation log, and harden undo verification using temporary-directory tests.
+
+Non-goals: no new organization logic, no new mover, no automatic undo, no rule changes, no LLM behavior, and no GUI work.
+
+### Stage 10.11: Resume Or Edit Saved Review Sessions
 
 Goal: load a saved reviewed-plan JSON file for continued review.
 
 Non-goals: no bypass of saved-plan validation.
 
-### Stage 10.11: UI Or Richer Review Interface
+### Stage 10.12: UI Or Richer Review Interface
 
 Goal: provide a safer review surface for candidates, groups, plans, and logs.
 

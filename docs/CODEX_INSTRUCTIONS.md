@@ -95,7 +95,8 @@ Answer these before editing:
 - Stage 10.7 rule-aware audit is report-only; it must not write rules, create movement-plan items, import `executor.py`, or move files.
 - Stage 10.8 organization-review export writes review JSON only; it must not create execution-ready plans, write operation logs, or apply rows.
 - Stage 10.9 organization-review apply requires exact confirmation before file access, converts only approved rows, and delegates all movement to `executor.py`.
-- Stage 10.10 and later review editing, subset selection, resume, filtering, sorting, and pagination remain future work.
+- Stage 10.10 verifies organization-review apply results against the filesystem and executor operation log, and hardens undo verification with temporary-directory tests. It must add no organization logic or mover, automatic undo, rule changes, LLM behavior, or GUI work.
+- Stage 10.11 and later review editing, subset selection, resume, filtering, sorting, and pagination remain future work.
 
 ## Testing And Git Hygiene
 
