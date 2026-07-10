@@ -1,6 +1,11 @@
 import argparse
 from pathlib import Path
 
+from organizer.application import (
+    create_review_session,
+    resume_review_session,
+    scan_root,
+)
 from organizer.duplicates import find_exact_duplicates
 from organizer.executor import apply_move_plan, undo_operation_log
 from organizer.grouping import build_organization_suggestions, find_project_groups
@@ -44,13 +49,11 @@ from organizer.review_session import (
     approve_items,
     approved_plan_items,
     build_review_view,
-    build_review_session_items,
     clamp_review_page,
     clear_review_filters,
     clear_review_sort,
     find_approved_move_conflicts,
     get_item,
-    load_reviewed_plan_items,
     load_reviewed_plan_move_items,
     preview_page_decision_change,
     reject_items,
@@ -66,7 +69,6 @@ from organizer.review_session import (
 )
 from organizer.review_state import (
     ReviewState,
-    apply_review_state_to_items,
     load_review_state,
     save_review_state,
     update_review_state_from_items,
@@ -381,27 +383,29 @@ def _handle_review_plans(
             "undo, report, LLM, or confirmation flags"
         )
 
-    metadata_items = scan_directory(args.folder, max_depth=args.max_depth)
-    items = build_review_session_items(metadata_items, args.folder)
-    state: ReviewState | None = None
-    if args.ignore_review_state:
+    try:
+        session = create_review_session(
+            args.folder,
+            max_depth=args.max_depth,
+            ignore_review_state=args.ignore_review_state,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+
+    state = session.review_state
+    if session.review_state_ignored:
         print("Review state ignored for this session.")
     else:
-        try:
-            state = load_review_state(args.folder)
-        except ValueError as error:
-            parser.error(str(error))
-        if state.decisions:
-            items = apply_review_state_to_items(items, state, args.folder)
+        if state is not None and state.decisions:
             print(f"Review state loaded: {len(state.decisions)} remembered decision(s).")
         else:
             print("No review state found; starting with new suggestions.")
 
     return _run_review_session(
-        items,
+        list(session.items),
         args.folder,
         state=state,
-        persist_review_state=True,
+        persist_review_state=session.persist_review_state,
         empty_message=(
             "No duplicate, organization, or review-candidate move candidates "
             "found for review."
@@ -452,17 +456,17 @@ def _handle_resume_reviewed_plan(
         )
 
     try:
-        items = load_reviewed_plan_items(args.resume_reviewed_plan, args.folder)
+        session = resume_review_session(args.folder, args.resume_reviewed_plan)
     except ValueError as error:
         parser.error(str(error))
 
     print("Saved decisions are authoritative; review state is not loaded.")
     return _run_review_session(
-        items,
+        list(session.items),
         args.folder,
-        state=None,
-        persist_review_state=False,
-        resumed_source_path=args.resume_reviewed_plan,
+        state=session.review_state,
+        persist_review_state=session.persist_review_state,
+        resumed_source_path=session.source_path,
     )
 
 
@@ -1514,12 +1518,13 @@ def _handle_report(
         client = None
 
     try:
-        report = build_scan_report(
+        scan_result = scan_root(
             args.folder,
             max_depth=args.max_depth,
             refine_groups=args.refine_groups,
             llm_client=client,
         )
+        report = scan_result.report
         report_path = write_report(report, args.folder, args.report_output)
     except ValueError as error:
         parser.error(str(error))
@@ -1580,12 +1585,13 @@ def _handle_html_report(
         )
         if html_report_path == json_report_path:
             raise ValueError("HTML report output must be different from JSON report output")
-        report = build_scan_report(
+        scan_result = scan_root(
             args.folder,
             max_depth=args.max_depth,
             refine_groups=args.refine_groups,
             llm_client=client,
         )
+        report = scan_result.report
         written_json_path = write_report(report, args.folder, json_report_path)
         written_html_path = write_html_report(
             report,

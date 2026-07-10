@@ -1,5 +1,15 @@
 # Release Notes
 
+## Stage 11.1 — Application Services and Dependency Hygiene
+
+Stage 11.1 adds UI-independent application services for scan-report construction, immutable review-session workflows, and deterministic listing/loading of scan reports and reviewed plans. These services delegate to existing report, review-session, review-state, safety, scanner, grouping, and Ollama owners; they create no second scanner, review engine, saver, or movement path.
+
+The CLI now uses the scan service for `--report` and `--html-report`, and the review service for `--review-plans` and `--resume-reviewed-plan`. The interactive command loop, confirmations, apply, undo, organization-review, verification, executor calls, output formats, schemas, and flags are unchanged.
+
+Mandatory `openai` and `python-dotenv` dependencies and their lockfile transitive packages are removed. Core packaging is explicitly restricted to `src/`, Python remains `>=3.13`, and no web dependencies are added. The unrelated historical OpenRouter assistant is preserved under `legacy/openrouter_code_assistant/` as unsupported, unpackaged legacy code.
+
+No web server, route, template, asset, preflight service, execution service, future artifact parser, or movement behavior is added. Stage 11.2 has not begun.
+
 ## Stage 11.0 — Local Web Architecture Contract and Threat Model
 
 Stage 11.0 defines the documentation contract for bootAI's future primary local web interface. It accepts FastAPI, Jinja2, HTMX, Bootstrap, minimal vanilla JavaScript, and Uvicorn; requires local assets, loopback-only single-worker serving, one immutable validated root, existing JSON persistence, WCAG 2.2 AA, and a UI-independent application-service layer.

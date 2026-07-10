@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.14 are implemented. Stage 11.0 now defines the architecture and threat model for the future local web interface; it adds no web runtime or production behavior. The tool can currently:
+Stages 1 through 10.14 and Stages 11.0 through 11.1 are implemented. Stage 11.0 defines the architecture and threat model for the future local web interface. Stage 11.1 adds UI-independent scan, review, and narrowly scoped artifact services, removes mandatory cloud dependencies, and preserves runtime safety and CLI behavior. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -38,20 +38,22 @@ Stages 1 through 10.14 are implemented. Stage 11.0 now defines the architecture 
 - Filter, sort, and paginate review-session rows without changing decisions or saved-plan contents.
 - Change decisions for the current displayed page only after an exact decision confirmation.
 - Track unsaved review decisions locally, require exact confirmation before discarding them, and present grouped help and clearer conflict summaries.
+- Coordinate scan-report construction and review-session creation or resume through UI-independent application services.
+- List and load validated scan reports and reviewed plans through a root-contained artifact boundary.
 
-Stage 10.14 polishes the existing review session with grouped help, specific command errors, concise session/save summaries, clearer conflict output, and exact `QUIT WITHOUT SAVING` protection for unsaved decision changes. Dirty state is session-local and does not change reviewed-plan JSON or movement semantics.
+Stage 11.1 migrates only report generation and review-session creation/resume into application services. The interactive CLI review loop and all apply, undo, verification, and movement paths retain their existing owners. The historical OpenRouter assistant is archived under `legacy/openrouter_code_assistant/` and excluded from bootAI packaging; the core package now has no mandatory third-party dependencies.
 
 ## Interface Direction
 
 The local web application is the intended primary interface for ordinary users. The accepted future stack is FastAPI, Jinja2, HTMX, Bootstrap, minimal vanilla JavaScript, and Uvicorn, with all assets bundled locally and the server restricted to one validated root on loopback.
 
-The web interface has not been implemented yet. The CLI remains available for development, scripting, diagnostics, manual fallback, and safety-critical testing. Static HTML remains a read-only report and audit-snapshot format. Native desktop development is optional and deferred until after Stage 11.
+The web interface and its dependencies have not been implemented yet; they begin no earlier than Stage 11.2. The CLI remains available for development, scripting, diagnostics, manual fallback, and safety-critical testing. Static HTML remains a read-only report and audit-snapshot format. Native desktop development is optional and deferred until after Stage 11.
 
 See the [local web architecture contract](docs/WEB_ARCHITECTURE.md) and [web threat model](docs/WEB_THREAT_MODEL.md) for the frozen Stage 11 requirements.
 
 ## Setup
 
-Use Python 3 and the standard library. No third-party dependencies are required for the current test suite.
+Use Python 3.13 or newer and the standard library. No third-party runtime dependencies are required for the current test suite.
 
 ```bash
 PYTHONPATH=src python3 -m unittest tests.test_scanner tests.test_safety tests.test_duplicates tests.test_planner tests.test_executor tests.test_review tests.test_grouping tests.test_llm_refinement tests.test_organization_apply tests.test_reports tests.test_review_session tests.test_review_session_resume tests.test_review_session_view tests.test_review_session_bulk tests.test_review_session_polish tests.test_review_state tests.test_html_report tests.test_scope tests.test_organization_rules tests.test_pattern_inference tests.test_rule_review tests.test_rule_audit tests.test_organization_review tests.test_organization_review_apply tests.test_organization_verify
@@ -179,3 +181,4 @@ PYTHONPATH=src python3 -m organizer.cli /path/to/folder --apply-refined-organiza
 - [Local web architecture contract](docs/WEB_ARCHITECTURE.md)
 - [Local web threat model](docs/WEB_THREAT_MODEL.md)
 - [Architecture decisions](docs/adr/0001-local-web-stack.md)
+- [Application-service decision](docs/adr/0003-application-service-layer.md)

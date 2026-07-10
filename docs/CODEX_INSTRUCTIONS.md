@@ -18,7 +18,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.14 and the Stage 11.0 documentation contract are complete. Current code supports scanning, duplicate detection, dry-run duplicate plans, approved duplicate moves with logs, review candidates, conservative deterministic grouping for document-like files, orphan-code review candidates, protected/generated/project-output exclusion from actionable plans, strong-anchor organization, organization rules and anchor-decision reporting, report-only existing organization pattern inference, confirmed organization-rule review, rule-aware organization audit, rule-aware organization review JSON export, confirmed approved organization-review apply, read-only post-apply verification, saved review-session resume and editing, temporary review filtering/sorting/pagination, confirmed current-page review decisions, session-local unsaved-decision protection and clearer review output, local Ollama refinement, documentation, approved organization moves through `executor.py`, manual testing guidance, release notes, read-only JSON and HTML reports, batch CLI review of duplicate, organization, and review-candidate plans, reviewed-plan conflict detection, persistent review decision memory, and confirmed apply for saved reviewed plans. Stage 11.0 adds no web runtime or behavior.
+Stages 1 through 10.14 and Stages 11.0 through 11.1 are complete. Current code supports the existing scan, review, report, apply, verification, and undo workflows plus UI-independent scan, review, and narrowly scoped artifact services. Stage 11.1 migrates only CLI report construction and review-session creation/resume, removes mandatory cloud dependencies, and archives the unrelated historical OpenRouter assistant outside the package. It adds no web runtime, movement path, schema, or CLI flag.
 
 ## Reuse Before Create
 
@@ -40,10 +40,15 @@ Stages 1 through 10.14 and the Stage 11.0 documentation contract are complete. C
 - `organization_apply_review.py` owns approved organization-review conversion and result summaries. It may call only `executor.apply_move_plan()` for movement and must not rescan or regenerate suggestions.
 - `llm_refinement.py` owns prompt, payload, and validation for LLM group refinement.
 - `reports.py` owns read-only report assembly and JSON report writing.
+- `reports.py` also owns public scan-report loading and validation for its existing format.
 - `html_report.py` owns read-only static HTML rendering from report dictionaries.
 - `review_session.py` owns batch review-session construction, decisions, reviewed-plan JSON writing, saved-plan validation, and conversion back to `MovePlanItem` values.
 - `review_state.py` owns persistent human review decision memory.
 - `safety.py` owns shared root-containment validation.
+- `application/scan_service.py` coordinates report construction and derives interface summaries without I/O or movement.
+- `application/review_service.py` coordinates immutable review sessions through `review_session.py` and `review_state.py`; it never imports the executor.
+- `application/artifact_service.py` lists and loads only scan reports and reviewed plans for the first web MVP. Future artifact kinds remain deferred.
+- `application/view_models.py` owns frozen interface-independent application results.
 - `executor.py` owns movement-specific source/destination/symlink preflight, moving, operation logs, and undo.
 
 ## Stage 11 Guardrails
@@ -66,6 +71,9 @@ Stages 1 through 10.14 and the Stage 11.0 documentation contract are complete. C
 - Do not begin native desktop development during Stage 11. A small packaged folder chooser in Stage 11.10 is not a desktop UI architecture.
 - Do not claim that moving files on the same filesystem saves or recovers storage.
 - Stage 11.0 adds documentation only: no production code, dependencies, schemas, CLI flags, templates, routes, assets, launchers, or packaging.
+- Stage 11.1 adds no server, web package, preflight service, execution service, web dependency, new CLI flag, future artifact parser, or movement change.
+- Core mandatory dependencies contain no cloud SDK or dotenv package. Cloud/OpenRouter references are permitted only in `legacy/openrouter_code_assistant/`, which is excluded from packaging and runtime.
+- `application/__init__.py` contains public exports only; services reuse `safety.py` and owner validators rather than implementing shared path validation.
 
 ## Do Not Skip Ahead
 

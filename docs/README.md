@@ -6,9 +6,9 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.14 are implemented. Stage 10.14 adds session-local unsaved-decision protection and clearer review output without changing reviewed-plan or movement semantics. Stage 11.0 freezes the architecture and threat model for a future local web application; it adds no server, route, dependency, web asset, or runtime behavior.
+Stages 1 through 10.14 and Stages 11.0 through 11.1 are implemented. Stage 11.0 freezes the architecture and threat model for a future local web application. Stage 11.1 adds UI-independent scan, review, and scan-report/reviewed-plan artifact services, removes mandatory cloud dependencies, and archives the unrelated historical OpenRouter assistant outside the package.
 
-The local web application is the intended primary interface for ordinary users. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only, and native desktop work is optional and deferred until after Stage 11.
+The local web application is the intended primary interface for ordinary users, but no web server, route, template, asset, or web dependency exists yet. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML remains read-only, and native desktop work is optional and deferred until after Stage 11.
 
 ## Quick Navigation
 

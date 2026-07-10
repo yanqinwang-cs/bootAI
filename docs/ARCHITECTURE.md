@@ -17,6 +17,10 @@ Filesystem
      -> pattern_inference.py
      -> reports.py
      -> html_report.py
+  -> application coordination
+     -> application/scan_service.py
+     -> application/review_service.py
+     -> application/artifact_service.py
   -> batch review
      -> review_session.py
   -> decision memory
@@ -52,16 +56,20 @@ Filesystem
 | `organization_verify.py` | read-only comparison of apply summaries, operation logs, and filesystem state |
 | `llm_refinement.py` | advisory LLM prompt, payload, validation, refined suggestions |
 | `ollama_client.py` | local Ollama client only |
-| `reports.py` | read-only report assembly and JSON report writing |
+| `reports.py` | read-only report assembly, JSON report writing, and authoritative scan-report loading/validation |
 | `html_report.py` | read-only static HTML rendering from report dictionaries |
 | `review_session.py` | batch review-session construction, decisions, reviewed-plan JSON writing, and saved-plan validation |
 | `review_state.py` | persistent human review decision memory |
+| `application/scan_service.py` | UI-independent scan/report coordination and summary projection |
+| `application/review_service.py` | immutable review-session coordination through existing review owners |
+| `application/artifact_service.py` | root-contained listing/loading of scan reports and reviewed plans only |
+| `application/view_models.py` | frozen, interface-independent application result types |
 | `executor.py` | movement-specific source/destination/symlink validation, approved move execution, operation logs, and undo |
 | `cli.py` | substantial current command-line and use-case orchestration |
 
 ## Stage 11 Local Web Direction
 
-Stage 11 will add a local web application as bootAI's primary consumer interface. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML reports remain read-only audit snapshots.
+Stage 11 will add a local web application as bootAI's primary consumer interface. Stage 11.1 establishes the shared application-service boundary but adds no web runtime. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML reports remain read-only audit snapshots.
 
 The required future dependency direction is:
 
@@ -77,7 +85,7 @@ Existing deterministic bootAI modules
 executor.py for explicitly approved movement and undo only
 ```
 
-The web layer must not reproduce scanner, duplicate, grouping, review, safety, movement, or undo logic. Route modules must never import `executor.py`; only the future execution application service may delegate validated and explicitly approved plans to existing executor functions. `cli.py` will migrate one use case at a time to the same application services rather than being rewritten in one large refactor.
+The web layer must not reproduce scanner, duplicate, grouping, review, safety, movement, or undo logic. Route modules must never import `executor.py`; only the future execution application service may delegate validated and explicitly approved plans to existing executor functions. Stage 11.1 migrates only CLI report construction and review-session creation/resume; the interactive command loop and every apply/undo path remain direct. Later use cases must continue to migrate incrementally rather than rewriting `cli.py`.
 
 Each web-server process is bound to one validated immutable root. Browser requests submit stable session-scoped IDs and allowed actions rather than source or destination paths. Existing JSON artifacts remain authoritative; temporary UI, job, security, and revision state may remain in memory, with no initial database.
 

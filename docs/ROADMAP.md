@@ -37,6 +37,7 @@
 | 10.13 | Confirmed bulk decisions for current page | `review_session.py`, `cli.py` | `approve-page`, `reject-page`, `undecide-page` | decision-only confirmation |
 | 10.14 | Review session quality-of-life polish | `review_session.py`, `cli.py` | existing interactive commands | session-local dirty-state protection |
 | 11.0 | Local web architecture contract and threat model | documentation only | none | no runtime behavior |
+| 11.1 | Application services and dependency hygiene | `application/`, `reports.py`, narrow CLI entry migration | none | no server or movement changes |
 
 ## Stage 11 Sequence
 
@@ -56,10 +57,13 @@ No production code, dependencies, schemas, CLI flags, routes, templates, assets,
 
 ### Stage 11.1 — Application Services and Dependency Hygiene
 
-- Introduce UI-independent services incrementally while preserving CLI behavior.
-- Inspect and isolate legacy cloud/OpenRouter remnants.
-- Remove inappropriate mandatory cloud dependencies and define optional web dependencies.
-- Add no server and make no movement changes.
+Completed:
+
+- introduced UI-independent scan, immutable review-session, and scan-report/reviewed-plan artifact services while preserving owner modules;
+- migrated only report construction and review-session creation/resume CLI entry paths;
+- removed mandatory cloud dependencies and archived the historical OpenRouter assistant outside the packaged source tree;
+- retained an empty core dependency set and deferred optional web dependencies to Stage 11.2;
+- added no server, web package, future artifact parser, preflight/execution service, CLI flag, or movement change.
 
 ### Stage 11.2 — Secure Local Web Shell and Launcher
 

@@ -1,8 +1,8 @@
 # Local Web Architecture Contract
 
-Status: accepted in Stage 11.0.
+Status: accepted in Stage 11.0; implemented through the Stage 11.1 service boundary.
 
-This document freezes the architecture that all Stage 11 web work must follow. Stage 11.0 is documentation only: it adds no server, routes, application services, dependencies, templates, static assets, CLI flags, or packaging behavior.
+This document freezes the architecture that all Stage 11 web work must follow. Stage 11.0 was documentation only. Stage 11.1 now provides shared application services and dependency hygiene, but still adds no server, routes, web dependencies, templates, static assets, CLI flags, or packaging behavior.
 
 The companion [web threat model](WEB_THREAT_MODEL.md) defines the mandatory security controls. The architecture decisions are also recorded in [ADR 0001](adr/0001-local-web-stack.md), [ADR 0002](adr/0002-web-security-boundary.md), and [ADR 0003](adr/0003-application-service-layer.md).
 
@@ -17,9 +17,9 @@ The interfaces have distinct roles:
 - Static HTML remains a permanent, read-only report and audit-snapshot format. It does not become an interactive web application.
 - A native desktop application is optional, demand-driven, and deferred until after core Stage 11 work.
 
-## Stage 11.0 Non-Goals
+## Stage 11.0 Record and Stage 11.1 Boundary
 
-Stage 11.0 does not add or modify:
+Stage 11.0 did not add or modify:
 
 - `src/organizer/web/` or `src/organizer/application/`;
 - FastAPI, Uvicorn, Jinja2, HTMX, or Bootstrap dependencies or files;
@@ -28,6 +28,8 @@ Stage 11.0 does not add or modify:
 - JSON schemas, reviewed-plan formats, report formats, or CLI flags;
 - databases, native UI code, launchers, browser-opening code, or packaging;
 - cloud APIs, telemetry, permanent removal, or Trash integration.
+
+Stage 11.1 adds `application/scan_service.py`, `review_service.py`, `artifact_service.py`, and `view_models.py`. It does not add `application/preflight_service.py`, `application/execution_service.py`, `src/organizer/web/`, or web dependencies. Artifact loading is deliberately limited to scan reports and reviewed plans; later execution and history artifacts remain deferred.
 
 ## Current Ownership That Must Be Preserved
 
@@ -85,9 +87,9 @@ web layer → terminal input()
 
 Web routes must never import `executor.py`. Only the future `execution_service.py` may delegate already validated and explicitly approved plans to existing executor functions.
 
-## Future Application-Service Layer
+## Application-Service Layer
 
-Stage 11.1 may introduce this package incrementally:
+Stage 11.1 introduces this package:
 
 ```text
 src/organizer/application/
@@ -95,12 +97,10 @@ src/organizer/application/
     scan_service.py
     review_service.py
     artifact_service.py
-    preflight_service.py
-    execution_service.py
     view_models.py
 ```
 
-This is an ownership map, not Stage 11.0 code.
+`preflight_service.py` and `execution_service.py` remain future ownership slots for Stages 11.7 and 11.8 or later. They do not exist in Stage 11.1.
 
 ### `scan_service.py`
 
@@ -116,17 +116,18 @@ This is an ownership map, not Stage 11.0 code.
 
 ### `artifact_service.py`
 
-- List and load existing bootAI JSON artifacts.
+- List and load only existing scan reports and reviewed plans for the first web MVP.
 - Treat every loaded artifact as untrusted input.
 - Resolve and validate artifact paths under the immutable process root.
+- Delegate format validation to `reports.py` and `review_session.py`; defer all later artifact formats to their roadmap stages.
 
-### `preflight_service.py`
+### Future `preflight_service.py`
 
 - Perform read-only final-plan and restore checks.
 - Detect missing or changed sources, existing destinations, conflicts, root escapes, symlink hazards, tampered artifacts, and stale revisions.
 - Never move or restore files.
 
-### `execution_service.py`
+### Future `execution_service.py`
 
 - Be the only application-service gateway to existing executor functions.
 - Accept only a validated, current, explicitly approved plan.
@@ -314,7 +315,7 @@ Web UI → same application service
 
 Preserve existing CLI behavior and tests during each extraction. CLI and web flows must not develop separate scan, review, preflight, execution, or restore implementations.
 
-The current `pyproject.toml` declares mandatory `openai` and `python-dotenv` dependencies even though current product documentation permits no cloud LLM API. Stage 11.0 records this inconsistency but does not modify dependencies. Stage 11.1 must inspect legacy cloud/OpenRouter remnants, isolate or remove inappropriate mandatory cloud dependencies, and define optional web dependencies before a server is added.
+Stage 11.1 removes the former mandatory `openai` and `python-dotenv` dependencies and their transitive lockfile packages. Core dependencies are empty and package discovery is restricted to `src/`. The historical OpenRouter assistant is preserved only under `legacy/openrouter_code_assistant/`, outside bootAI packaging and runtime. Optional FastAPI/Jinja2/Uvicorn dependencies remain deferred until Stage 11.2.
 
 ## Packaging Goal
 
@@ -344,7 +345,7 @@ Documentation only: stack, ownership, threat model, security controls, accessibi
 
 ### Stage 11.1 — Application Services and Dependency Hygiene
 
-Introduce UI-independent services incrementally, preserve CLI behavior, inspect legacy cloud/OpenRouter code, remove inappropriate mandatory cloud dependencies, and define optional web dependencies. No server and no movement changes.
+Completed: UI-independent scan, immutable review-session, and scan-report/reviewed-plan artifact services; narrow CLI entry migration; mandatory cloud dependency removal; and historical OpenRouter archival. Optional web dependencies remain deferred. No server and no movement changes.
 
 ### Stage 11.2 — Secure Local Web Shell and Launcher
 
