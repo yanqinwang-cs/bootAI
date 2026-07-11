@@ -79,7 +79,7 @@ Filesystem
 
 ## Stage 11 Local Web Direction
 
-Stage 11 adds a local web application as bootAI's primary consumer interface. Stage 11.5.1 adds web-only presenters over the same generation-bound immutable session: Home summarizes, Scans collects, Duplicates presents exact-copy findings, Organize presents placement suggestions, Needs attention presents ambiguous candidates, Settings displays configuration, and Advanced review exposes every technical row.
+Stage 11 adds a local web application as bootAI's primary consumer interface. Stage 11.5.2 keeps one generation-bound immutable session while adding strict module projections, per-module saved baselines, and web-owned guided queue state. Fresh web new/stale rows are conservatively normalized to `undecided`; CLI and resumed-plan semantics are unchanged.
 
 The required future dependency direction is:
 
@@ -100,6 +100,8 @@ The web layer must not reproduce scanner, duplicate, grouping, review, safety, m
 The holder exposes dirty state only when decisions differ from the last saved snapshot. A dirty session rejects a new scan with `409 Conflict`; a successful explicit save clears dirty state and records the root-relative collision-safe path. It never autosaves. Stage 11.6 will add reviewed-plan resume, revisions, and multi-tab stale-state rejection.
 
 Consumer presenters group rows by a safety-validated normalized source key and choose one primary card using duplicate → organization → attention precedence. Secondary rows remain visible inside that card and retain independent stable IDs, decisions, conflicts, and serialization. Consumer actions mutate only the primary row through the application service. Advanced review continues to expose all rows. No consumer presenter owns persistence, grouping, duplicate detection, or movement.
+
+Module saves select every authoritative row for one fixed category and reuse `review_session.py` serialization. `saved_decisions` remains the full per-row baseline; a module save advances only its rows, while full save advances all rows. Temporary handled/deferred queue IDs live only in the locked web holder and are invalidated by a new generation.
 
 Each web-server process is bound to one validated immutable root. Browser requests submit stable session-scoped IDs and allowed actions rather than source or destination paths. Existing JSON artifacts remain authoritative; temporary UI, job, security, and revision state may remain in memory, with no initial database.
 

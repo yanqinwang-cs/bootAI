@@ -211,6 +211,15 @@ class WebAppTests(unittest.IsolatedAsyncioTestCase):
             {"POST"},
         )
         self.assertEqual(methods_by_path["/review/save"], {"POST"})
+        for path in (
+            "/duplicates/save",
+            "/organize/save",
+            "/attention/save",
+            "/duplicates/revisit-skipped",
+            "/organize/revisit-skipped",
+            "/attention/revisit-skipped",
+        ):
+            self.assertEqual(methods_by_path[path], {"POST"})
 
         async with _client(self.app) as client:
             for path in ("/docs", "/redoc", "/openapi.json"):

@@ -17,6 +17,7 @@ from organizer.web.security import (
 from organizer.web.forms import FormDataError, read_urlencoded_form
 from organizer.web.consumer_presenter import (
     ConsumerSurface,
+    build_home_module_statuses,
     build_plan_summary,
     consumer_card_counts,
     parse_surface,
@@ -116,7 +117,15 @@ def create_home_router(templates: Jinja2Templates) -> APIRouter:
         explorer: ReviewExplorerStore = request.app.state.review_explorer
         try:
             explorer.start_scan(controller)
-        except UnsavedReviewChanges:
+        except UnsavedReviewChanges as error:
+            blocked_modules = tuple(
+                {
+                    "duplicates": "Duplicate copies",
+                    "organization": "Files to organize",
+                    "attention": "Needs attention",
+                }[module.value]
+                for module in error.modules
+            )
             if request.headers.get("hx-request", "").lower() == "true":
                 response = templates.TemplateResponse(
                     request=request,
@@ -124,23 +133,21 @@ def create_home_router(templates: Jinja2Templates) -> APIRouter:
                     context={
                         **_scan_context(request, surface=surface),
                         "scan_blocked_message": (
-                            "Unsaved review changes must be saved before "
-                            "another scan can start. bootAI did not discard them."
+                            "Save these choices before scanning again. "
+                            "bootAI did not discard them."
                         ),
+                        "scan_blocked_modules": blocked_modules,
                     },
                     status_code=409,
                 )
             else:
                 response = templates.TemplateResponse(
                     request=request,
-                    name="error.html",
+                    name="scan_blocked.html",
                     context={
                         "page_title": "Unsaved review changes",
                         "heading": "Unsaved review changes",
-                        "message": (
-                            "Save your choices before scanning again. "
-                            "bootAI did not discard any review decisions."
-                        ),
+                        "scan_blocked_modules": blocked_modules,
                     },
                     status_code=409,
                 )
@@ -198,9 +205,14 @@ def _scan_context(
     explorer = request.app.state.review_explorer.snapshot(snapshot)
     plan_summary = None
     card_counts = None
+    module_statuses = None
     if explorer.status == "completed" and explorer.session is not None:
         plan_summary = build_plan_summary(explorer.session)
         card_counts = consumer_card_counts(explorer.session)
+        module_statuses = build_home_module_statuses(
+            explorer.session,
+            explorer.module_queues,
+        )
     return {
         "locked_root": request.app.state.web_config.root,
         "selected_folder": folder_name(request.app.state.web_config.root),
@@ -224,6 +236,7 @@ def _scan_context(
         "explorer": explorer,
         "plan_summary": plan_summary,
         "card_counts": card_counts,
+        "module_statuses": module_statuses,
         "summary_surface": ConsumerSurface.HOME.value,
         "summary_page": None,
     }

@@ -44,7 +44,7 @@ class ApplicationReviewWebSessionTests(unittest.TestCase):
             assert current is not None
 
             self.assertIsNot(changed.session, original)
-            self.assertEqual(original.items[0].decision, "approved")
+            self.assertEqual(original.items[0].decision, "undecided")
             self.assertEqual(current.items[0].decision, "rejected")
             self.assertTrue(current.dirty)
 
@@ -114,7 +114,7 @@ class ApplicationReviewWebSessionTests(unittest.TestCase):
             )
             self.assertTrue(
                 all(
-                    item.decision == "approved"
+                    item.decision == "undecided"
                     for item in after.items
                     if item.id in off_page
                 )
@@ -159,7 +159,7 @@ class ApplicationReviewWebSessionTests(unittest.TestCase):
             session = store.snapshot(scan).session
             assert session is not None
             self.assertFalse(session.dirty)
-            self.assertTrue(all(item.decision == "approved" for item in session.items))
+            self.assertTrue(all(item.decision == "undecided" for item in session.items))
             with self.assertRaises(ReviewPreviewUnavailable):
                 store.confirm_page_decision(
                     scan,

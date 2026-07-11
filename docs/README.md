@@ -6,9 +6,9 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.14 and Stages 11.0 through 11.5.1 are implemented. Stage 11.5.1 replaces the technical table-first default with consumer Home, Duplicates, Organize, Scans, Settings, and linked Needs attention pages; the former table remains Advanced review.
+Stages 1 through 10.14 and Stages 11.0 through 11.5.2 are implemented. Guided Duplicates, Organize, and Needs attention queues now save independently while Advanced review retains the complete-session workflow.
 
-The consumer pages consolidate cards by normalized source with duplicate, organization, then attention precedence while preserving every underlying row and choice. Summaries remain separated by module; “Space used by extra copies” does not claim recovery. Internal navigation does not warn or discard server-held choices. There is no scheduling, tree, independent module plan, autosave, web apply, or restore.
+Fresh web sessions normalize new/stale suggestions to `undecided` and preserve remembered decisions. Module artifacts reuse the reviewed-plan schema, include every underlying module row, and never move files. Queue progress and skipped state are generation-bound memory only. There is no scheduling, tree, autosave, web apply, or restore.
 
 ## Quick Navigation
 

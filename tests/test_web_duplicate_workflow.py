@@ -22,7 +22,7 @@ class DuplicateWorkflowTests(ConsumerWebFixture, unittest.IsolatedAsyncioTestCas
         self.assertIn("does not reclaim storage", duplicate.text)
         self.assertIn("Also noticed", duplicate.text)
         self.assertIn("Backup or copy-looking file", duplicate.text)
-        self.assertIn("Current choice: Set aside for review", duplicate.text)
+        self.assertIn("Current choice: Skipped for now", duplicate.text)
         self.assertNotIn("beta backup copy.txt", attention.text)
         self.assertNotIn("EvoSim_project", duplicate.text)
 
@@ -42,8 +42,8 @@ class DuplicateWorkflowTests(ConsumerWebFixture, unittest.IsolatedAsyncioTestCas
 
         self.assertEqual(response.status_code, 303)
         self.assertEqual(self.decision("D1"), "rejected")
-        self.assertEqual(self.decision("R1"), "approved")
-        self.assertIn("This file will remain in its current folder", page.text)
+        self.assertEqual(self.decision("R1"), "undecided")
+        self.assertIn("This file will remain where it is", page.text)
         self.assertEqual(self.file_snapshot(), before_files)
         self.assertFalse(list(self.root.rglob("*operation_log*.json")))
 
@@ -66,8 +66,8 @@ class DuplicateWorkflowTests(ConsumerWebFixture, unittest.IsolatedAsyncioTestCas
 
         self.assertEqual(organization.status_code, 404)
         self.assertEqual(secondary.status_code, 404)
-        self.assertEqual(self.decision("O1"), "approved")
-        self.assertEqual(self.decision("R1"), "approved")
+        self.assertEqual(self.decision("O1"), "undecided")
+        self.assertEqual(self.decision("R1"), "undecided")
 
 
 if __name__ == "__main__":

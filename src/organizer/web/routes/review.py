@@ -26,7 +26,8 @@ from organizer.web.consumer_presenter import (
     ConsumerSurface,
     SURFACE_SPECS,
     build_consumer_page,
-    is_primary_item_for_surface,
+    is_current_guided_item,
+    module_for_surface,
     parse_surface,
     surface_url,
 )
@@ -148,6 +149,11 @@ def create_review_router(templates: Jinja2Templates) -> APIRouter:
             consumer_surface = (
                 consumer_action[0] if consumer_action is not None else None
             )
+            consumer_module = (
+                module_for_surface(consumer_surface)
+                if consumer_surface is not None
+                else None
+            )
             change = store.change_decision(
                 _scan_snapshot(request),
                 item_id,
@@ -159,14 +165,20 @@ def create_review_router(templates: Jinja2Templates) -> APIRouter:
                 ),
                 item_validator=(
                     (
-                        lambda session, candidate: is_primary_item_for_surface(
+                        lambda session, candidate, queue: is_current_guided_item(
                             session,
                             candidate,
                             consumer_surface,
+                            queue,
                         )
                     )
                     if consumer_surface is not None
                     else None
+                ),
+                queue_module=consumer_module,
+                defer=(
+                    consumer_module is not None
+                    and decision == "undecided"
                 ),
                 project=(
                     (
@@ -577,6 +589,8 @@ def _consumer_action_query(
         raise ValueError("invalid consumer action page") from error
     if page < 1:
         raise ValueError("invalid consumer action page")
+    if surface in SURFACE_SPECS and page != 1:
+        raise ValueError("guided consumer actions do not paginate")
     return surface, page
 
 

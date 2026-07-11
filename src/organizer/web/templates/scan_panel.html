@@ -2,6 +2,7 @@
 <section id="scan-panel" class="status-message failure-message" aria-labelledby="scan-heading" role="alert">
   <h2 id="scan-heading">Unsaved choices</h2>
   <p>{{ scan_blocked_message }}</p>
+  {% if scan_blocked_modules %}<ul>{% for module in scan_blocked_modules %}<li>{{ module }}</li>{% endfor %}</ul>{% endif %}
   <p><a class="btn btn-primary" href="/#your-choices">Return to your choices</a></p>
 </section>
 {% elif scan.status == "not_started" %}

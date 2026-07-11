@@ -1,5 +1,13 @@
 # Release Notes
 
+## Stage 11.5.2 — Guided Modular Review and Independent Module Plans
+
+Stage 11.5.2 adds guided Duplicates, Organize, and Needs attention queues over one authoritative review session. Progress is interaction-based, skipped rows remain `undecided` and can be returned through a protected in-memory queue action, and each module shows separate progress and persistence status.
+
+Fresh scan-generated web sessions now normalize new and stale suggestions to `undecided`; remembered approvals and rejections remain authoritative. This web-only safety policy prevents untouched findings from becoming approved in independently saved artifacts or review memory. CLI defaults and loaded reviewed-plan decisions are unchanged.
+
+Each module explicitly saves every row in its fixed category using the existing reviewed-plan schema and collision-safe files `duplicate_reviewed_plan.json`, `organization_reviewed_plan.json`, or `attention_reviewed_plan.json`. Module saves advance only their own saved baselines; Advanced review still saves the complete session. No apply, executor access, movement, tree, schema, dependency, or CLI change is introduced.
+
 ## Stage 11.5.1 — Consumer Information Architecture and UX Simplification
 
 Stage 11.5.1 replaces the technical table-first default with consumer Home, Duplicates, Organize, Scans, Settings, and linked Needs attention pages. The original filters, sorting, pagination, details, conflicts, bulk decisions, and saving remain at `/review/advanced`; `/review` redirects there compatibly.

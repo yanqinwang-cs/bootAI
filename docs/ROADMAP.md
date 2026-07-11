@@ -43,6 +43,7 @@
 | 11.4 | Read-only review explorer | report-to-review adapter, review routes and templates | none | latest completed scan only; no decision mutation |
 | 11.5 | Web review decisions and reviewed-plan saving | generation-bound review holder, decision/save routes and templates | none | explicit save only; no movement |
 | 11.5.1 | Consumer information architecture and UX simplification | consumer presenters, routes, cards, Advanced review | none | presentation only; no movement |
+| 11.5.2 | Guided modular review and independent module plans | application module services, guided queues, module artifacts | none | existing schema; no movement |
 
 ## Stage 11 Sequence
 
@@ -100,7 +101,7 @@ Completed: consumer Home, Duplicates, Organize, Scans, Settings, and Needs atten
 
 ### Stage 11.5.2 — Guided Modular Review and Independent Module Plans
 
-Future: independently saved duplicate, organization, and attention plans. Not part of 11.5.1.
+Completed: conservative fresh-web initialization, guided duplicate/organization/attention queues, temporary skipped-item handling, module-specific dirty baselines, and independently saved existing-format reviewed plans. Advanced full-session saving remains compatible. No movement or tree.
 
 ### Stage 11.5.3 — Static Planned-Change Tree
 

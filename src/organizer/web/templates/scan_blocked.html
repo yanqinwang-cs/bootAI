@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Unsaved choices · bootAI{% endblock %}
+
+{% block content %}
+<section class="error-panel" aria-labelledby="scan-blocked-heading">
+  <h1 id="scan-blocked-heading">Unsaved choices</h1>
+  <p>You have unsaved choices in:</p>
+  <ul>{% for module in scan_blocked_modules %}<li>{{ module }}</li>{% endfor %}</ul>
+  <p>Save those choices before scanning again. bootAI did not discard them.</p>
+  <p><a href="/">Return home</a></p>
+</section>
+{% endblock %}

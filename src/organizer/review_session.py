@@ -878,10 +878,16 @@ def save_reviewed_plan(
     root: Path,
     review_folder_name: str = "AI_Review",
     session_folder_name: str = "review_sessions",
+    *,
+    output_name: str | None = None,
 ) -> Path:
     resolved_root = root.resolve()
     log_dir = resolved_root / review_folder_name / session_folder_name
-    destination = _next_reviewed_plan_path(log_dir)
+    destination = (
+        _next_reviewed_plan_path(log_dir)
+        if output_name is None
+        else _next_named_reviewed_plan_path(log_dir, output_name)
+    )
     resolved_destination = _validate_new_output_path(destination, resolved_root)
     resolved_destination.parent.mkdir(parents=True, exist_ok=True)
     with resolved_destination.open("x", encoding="utf-8") as file:
@@ -1188,6 +1194,23 @@ def _next_resumed_reviewed_plan_path(source_path: Path) -> Path:
         if not os.path.lexists(candidate):
             return candidate
     raise ValueError(f"could not find unused reviewed plan path for {source_path}")
+
+
+def _next_named_reviewed_plan_path(log_dir: Path, output_name: str) -> Path:
+    name = Path(output_name)
+    if (
+        not output_name
+        or name.name != output_name
+        or name.suffix != ".json"
+        or name.stem in {"", ".", ".."}
+    ):
+        raise ValueError("reviewed plan output name must be a JSON filename")
+    candidate = log_dir / output_name
+    counter = 1
+    while os.path.lexists(candidate):
+        candidate = log_dir / f"{name.stem}_{counter}{name.suffix}"
+        counter += 1
+    return candidate
 
 
 def _load_reviewed_plan_json(path: Path) -> object:

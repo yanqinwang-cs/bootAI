@@ -52,7 +52,7 @@ class WebReviewDirtyStateTests(
             await client.aclose()
 
         self.assertEqual(blocked.status_code, 409)
-        self.assertIn("Save your choices", blocked.text)
+        self.assertIn("Save those choices", blocked.text)
         self.assertIn("did not discard", blocked.text)
         self.assertEqual(self.controller.snapshot().job_id, "generation-one")
         self.assertIn("Current: <strong>Keep here</strong>", page.text)

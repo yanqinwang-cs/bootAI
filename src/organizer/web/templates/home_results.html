@@ -1,28 +1,18 @@
 <section aria-labelledby="findings-heading">
-  {% if saved_feedback %}<div class="decision-feedback" role="status" aria-live="polite" tabindex="-1" data-decision-feedback>Choices saved. A reviewed plan has been saved. No files have moved.</div>{% endif %}
+  {% if saved_feedback %}<div class="decision-feedback" role="status" aria-live="polite" tabindex="-1" data-decision-feedback>Choices saved. A complete reviewed plan has been saved. No files have moved.</div>{% endif %}
   <h2 id="findings-heading">Latest findings</h2>
   <div class="consumer-result-grid">
+    {% for module in module_statuses %}
     <article class="result-card">
-      <h3>Duplicate copies</h3>
-      <p class="result-count">{{ card_counts.duplicate }} found</p>
-      <p>Space used by extra copies: {{ duplicate_space }}</p>
-      <a class="btn btn-outline-primary" href="/duplicates">Review duplicates</a>
+      <h3>{{ module.title }}</h3>
+      <p class="result-count">{{ module.waiting_count }} waiting</p>
+      <p>{{ module.approved_count }} choices ready</p>
+      <p>Progress: <strong>{{ module.progress_status }}</strong></p>
+      <p>Persistence: <strong>{{ module.persistence_status }}</strong></p>
+      {% if module.module.value == "duplicates" %}<p>Space used by extra copies: {{ duplicate_space }}</p>{% endif %}
+      <a class="btn btn-outline-primary" href="{{ module.route }}">{{ module.action_label }}</a>
     </article>
-    <article class="result-card">
-      <h3>Files ready to organize</h3>
-      <p class="result-count">{{ card_counts.organization }} found</p>
-      <a class="btn btn-outline-primary" href="/organize">Review organization</a>
-    </article>
-    <article class="result-card">
-      <h3>Needs attention</h3>
-      <p class="result-count">{{ card_counts.review_candidate }} files</p>
-      <a class="btn btn-outline-primary" href="/attention">Review files</a>
-    </article>
-    <article class="result-card">
-      <h3>Choices ready</h3>
-      <p>Duplicates, organization, and attention choices are shown separately below.</p>
-      <a class="btn btn-outline-primary" href="#your-choices">Review choices</a>
-    </article>
+    {% endfor %}
   </div>
+  <p><a href="/review/advanced">View technical table and save all choices</a></p>
 </section>
-{% include "plan_summary.html" %}

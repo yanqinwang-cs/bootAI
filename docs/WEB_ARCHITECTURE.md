@@ -1,6 +1,6 @@
 # Local Web Architecture Contract
 
-Status: accepted in Stage 11.0; implemented through the Stage 11.5.1 consumer information architecture.
+Status: accepted in Stage 11.0; implemented through the Stage 11.5.2 guided modular workflow.
 
 This document freezes the architecture that all Stage 11 web work must follow. Stages 11.2 through 11.5 establish the secure scan/review/save workflow; Stage 11.5.1 presents it through consumer responsibilities while retaining Advanced review.
 
@@ -41,7 +41,9 @@ User labels preserve existing values: Organize is `approved`, Keep here is `reje
 
 Stage 11.5.1 assigns consumer responsibilities: Home summarizes; Scans collects findings; Duplicates presents exact copies; Organize presents placement suggestions; Needs attention presents ambiguous candidates; Settings displays configuration; Advanced review exposes technical rows. Web-only presenters group cards by safety-validated normalized source, prefer duplicate then organization then attention, and show secondary reasons without merging rows or decisions. Primary actions change only the primary row.
 
-Navigation and presentation are GET-only. Existing mutation routes accept only strict enum surfaces mapped to fixed routes. Internal navigation retains server-held dirty choices without a `beforeunload` warning. Module-specific persistence remains deferred to 11.5.2 and the planned-change tree to 11.5.3.
+Navigation and presentation are GET-only. Mutations use strict enums or fixed routes. Internal navigation retains server-held dirty choices without a `beforeunload` warning. Module-specific persistence is implemented in 11.5.2; the planned-change tree remains deferred to 11.5.3.
+
+Stage 11.5.2 adds a strict application `ReviewModule` mapping and partial saved baselines over the same immutable session. Fresh web new/stale rows are normalized to `undecided`; remembered decisions are retained. Module artifacts use the existing reviewed-plan schema and fixed collision-safe names. Guided handled/deferred IDs are generation-bound memory only and never become another decision store.
 
 ## Current Ownership That Must Be Preserved
 
@@ -378,7 +380,7 @@ Completed: consumer navigation and cards, one-file-one-primary-surface presentat
 
 ### Stage 11.5.2 — Guided Modular Review and Independent Module Plans
 
-Future: independent module persistence and guided plan workflows.
+Completed: conservative fresh-web decisions, guided queues, temporary skip/revisit state, independent module dirty tracking, fixed module artifacts, and complete-session save compatibility. No movement.
 
 ### Stage 11.5.3 — Static Planned-Change Tree
 

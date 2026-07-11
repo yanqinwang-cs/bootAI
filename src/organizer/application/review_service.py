@@ -4,10 +4,13 @@ from dataclasses import replace
 from pathlib import Path
 
 from organizer.application.view_models import (
+    ModuleReviewSaveResult,
+    ModuleReviewSummary,
     ReviewApplicationSession,
     ReviewDecisionChangeResult,
-    ReviewSaveResult,
     ReviewItemMetadata,
+    ReviewModule,
+    ReviewSaveResult,
 )
 from organizer.application.view_models import ScanApplicationResult
 from organizer.models import ReviewedPlanItem
@@ -43,6 +46,10 @@ from organizer.review_session import (
     undecide_items,
 )
 from organizer.review_state import (
+    MEMORY_APPROVED,
+    MEMORY_NEW,
+    MEMORY_REJECTED,
+    MEMORY_STALE,
     ReviewState,
     apply_review_state_to_items,
     load_review_state,
@@ -51,6 +58,24 @@ from organizer.review_state import (
 )
 from organizer.safety import validate_under_root
 from organizer.scanner import scan_directory
+
+
+_MODULE_CATEGORIES = {
+    ReviewModule.DUPLICATES: "duplicate",
+    ReviewModule.ORGANIZATION: "organization",
+    ReviewModule.ATTENTION: "review_candidate",
+}
+_MODULE_OUTPUT_NAMES = {
+    ReviewModule.DUPLICATES: "duplicate_reviewed_plan.json",
+    ReviewModule.ORGANIZATION: "organization_reviewed_plan.json",
+    ReviewModule.ATTENTION: "attention_reviewed_plan.json",
+}
+_FRESH_WEB_DECISIONS = {
+    MEMORY_NEW: DECISION_UNDECIDED,
+    MEMORY_STALE: DECISION_UNDECIDED,
+    MEMORY_APPROVED: DECISION_APPROVED,
+    MEMORY_REJECTED: DECISION_REJECTED,
+}
 
 
 def create_review_session(
@@ -96,6 +121,91 @@ def create_review_session_from_scan_result(
         persist_review_state=True,
         review_state_ignored=False,
     )
+
+
+def create_fresh_web_review_session_from_scan_result(
+    result: ScanApplicationResult,
+) -> ReviewApplicationSession:
+    """Create a conservative fresh web session without changing legacy defaults."""
+    session = create_review_session_from_scan_result(result)
+    if session.source_path is not None:
+        raise ValueError("fresh web review session must not be resumed")
+    items = tuple(
+        replace(
+            item,
+            decision=_FRESH_WEB_DECISIONS.get(
+                item.memory_status,
+                DECISION_UNDECIDED,
+            ),
+        )
+        for item in session.items
+    )
+    return replace(
+        session,
+        items=items,
+        saved_decisions=review_decision_snapshot(list(items)),
+    )
+
+
+def review_module_category(module: ReviewModule) -> str:
+    return _MODULE_CATEGORIES[_validated_module(module)]
+
+
+def review_module_items(
+    session: ReviewApplicationSession,
+    module: ReviewModule,
+) -> tuple[ReviewedPlanItem, ...]:
+    category = review_module_category(module)
+    return tuple(
+        sorted(
+            (item for item in session.items if item.category == category),
+            key=lambda item: item.id,
+        )
+    )
+
+
+def summarize_review_module(
+    session: ReviewApplicationSession,
+    module: ReviewModule,
+) -> ModuleReviewSummary:
+    validated_module = _validated_module(module)
+    items = review_module_items(session, validated_module)
+    return ModuleReviewSummary(
+        module=validated_module,
+        row_count=len(items),
+        approved_count=sum(item.decision == DECISION_APPROVED for item in items),
+        rejected_count=sum(item.decision == DECISION_REJECTED for item in items),
+        undecided_count=sum(item.decision == DECISION_UNDECIDED for item in items),
+        conflict_count=len(find_approved_move_conflicts(list(items), session.root)),
+    )
+
+
+def review_module_is_dirty(
+    session: ReviewApplicationSession,
+    module: ReviewModule,
+) -> bool:
+    saved = dict(session.saved_decisions)
+    return any(
+        saved.get(item.id) != item.decision
+        for item in review_module_items(session, module)
+    )
+
+
+def dirty_review_modules(
+    session: ReviewApplicationSession,
+) -> tuple[ReviewModule, ...]:
+    return tuple(
+        module
+        for module in ReviewModule
+        if review_module_is_dirty(session, module)
+    )
+
+
+def review_module_saved_path(
+    session: ReviewApplicationSession,
+    module: ReviewModule,
+) -> Path | None:
+    return dict(session.module_saved_paths).get(_validated_module(module))
 
 
 def review_category_counts(session: ReviewApplicationSession) -> dict[str, int]:
@@ -335,6 +445,49 @@ def find_review_conflicts(
     return tuple(find_approved_move_conflicts(list(session.items), session.root))
 
 
+def save_review_module(
+    session: ReviewApplicationSession,
+    module: ReviewModule,
+) -> ModuleReviewSaveResult:
+    validated_module = _validated_module(module)
+    items = list(review_module_items(session, validated_module))
+    if not items:
+        raise ValueError("review module has no rows to save")
+    reviewed_plan_path = save_reviewed_plan(
+        items,
+        session.root,
+        output_name=_MODULE_OUTPUT_NAMES[validated_module],
+    )
+
+    state = session.review_state
+    review_state_path: Path | None = None
+    if session.persist_review_state:
+        if state is None:
+            state = load_review_state(session.root)
+        state = update_review_state_from_items(state, items, session.root)
+        review_state_path = save_review_state(state, session.root)
+
+    saved_decisions = dict(session.saved_decisions)
+    saved_decisions.update((item.id, item.decision) for item in items)
+    module_paths = dict(session.module_saved_paths)
+    module_paths[validated_module] = reviewed_plan_path
+    updated_session = replace(
+        session,
+        review_state=state,
+        saved_decisions=tuple(sorted(saved_decisions.items())),
+        module_saved_paths=tuple(
+            sorted(module_paths.items(), key=lambda pair: pair[0].value)
+        ),
+    )
+    return ModuleReviewSaveResult(
+        session=updated_session,
+        module=validated_module,
+        reviewed_plan_path=reviewed_plan_path,
+        review_state_path=review_state_path,
+        summary=summarize_review_module(updated_session, validated_module),
+    )
+
+
 def save_review_session(session: ReviewApplicationSession) -> ReviewSaveResult:
     items = list(session.items)
     if session.source_path is None:
@@ -390,3 +543,9 @@ def _new_session(
             sorted((item.id, item.decision) for item in item_tuple)
         ),
     )
+
+
+def _validated_module(module: ReviewModule) -> ReviewModule:
+    if not isinstance(module, ReviewModule):
+        raise ValueError("unsupported review module")
+    return module

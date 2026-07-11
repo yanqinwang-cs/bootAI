@@ -1,0 +1,32 @@
+<section class="module-tray{% if page.tray.dirty %} dirty{% endif %}" aria-labelledby="module-tray-heading">
+  <h2 id="module-tray-heading">{{ page.tray.title }}</h2>
+  <dl class="module-status-grid">
+    <div><dt>Persistence</dt><dd>{{ page.tray.persistence_status }}</dd></div>
+    <div><dt>Total findings</dt><dd>{{ page.tray.row_count }}</dd></div>
+    <div><dt>Chosen</dt><dd>{{ page.tray.approved_count }}</dd></div>
+    <div><dt>Left unchanged</dt><dd>{{ page.tray.rejected_count }}</dd></div>
+    <div><dt>Undecided</dt><dd>{{ page.tray.undecided_count }}</dd></div>
+    {% if page.tray.duplicate_space is not none %}<div><dt>Space used by selected extra copies</dt><dd>{{ page.tray.duplicate_space }}</dd></div>{% endif %}
+  </dl>
+  {% if page.tray.breakdowns %}
+  <h3>Choice summary</h3>
+  <ul>{% for item in page.tray.breakdowns %}<li>{{ item.label }}: {{ item.count }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if page.tray.approved_names %}
+  <details>
+    <summary>Chosen files</summary>
+    <ul>{% for name in page.tray.approved_names %}<li>{{ name }}</li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+  {% if page.tray.row_count %}
+  <form method="post" action="{{ save_action }}" hx-post="{{ save_action }}" hx-target="#consumer-workspace" hx-swap="outerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-primary" type="submit">Save {{ page.tray.title|lower }}</button>
+  </form>
+  {% endif %}
+  <p><strong>These are choices only. No files have moved.</strong></p>
+  {% if page.tray.saved_relative %}
+  <details class="technical-details"><summary>Technical details</summary><p>Saved file: <code>{{ page.tray.saved_relative }}</code></p></details>
+  {% endif %}
+  <p><a href="/review/advanced">View technical table</a></p>
+</section>

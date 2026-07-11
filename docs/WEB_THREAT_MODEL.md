@@ -1,6 +1,6 @@
 # Local Web Threat Model
 
-Status: mandatory Stage 11 security contract, accepted in Stage 11.0 and implemented through the Stage 11.5.1 consumer interface.
+Status: mandatory Stage 11 security contract, accepted in Stage 11.0 and implemented through the Stage 11.5.2 modular consumer workflow.
 
 This threat model applies to bootAI's single-user local web application. It is concrete to bootAI's root-bound scan, review, apply, verification, history, and restore workflows. It is not a claim that localhost is inherently trusted.
 
@@ -143,6 +143,8 @@ Through Stage 11.5.1 the GET surfaces are `/`, `/duplicates`, `/organize`, `/att
 
 Consumer mutations accept a strict surface enum mapped server-side to fixed routes; they never accept a return URL or path. Normalized-source consolidation is presentation-only. A consumer decision must match the current generation, primary category, and primary row for that surface before the existing stable-ID decision service runs.
 
+Stage 11.5.2 module saves use six fixed POST routes for save and skipped-item revisit. Module identity, selected rows, artifact names, and redirects are server-owned. A save selects every authoritative row in the fixed category; the browser supplies only CSRF. Fresh web new/stale rows begin `undecided`, preventing an untouched saved module from creating approved intent. Queue handled/deferred IDs remain inside the generation-bound holder and do not affect serialized decisions.
+
 After a successful POST, redirect or render a read-only result URL so refresh cannot repeat the mutation. Stage 11.5 uses server-side locks, the current scan generation, stable-ID lookup, and browser-session-bound one-use opaque tokens for current-page confirmation. Stage 11.6 adds explicit request revisions and multi-tab stale-state rejection; client-side button disabling is not a security control.
 
 ### Stable IDs and untrusted artifacts
@@ -227,4 +229,4 @@ The pure ASGI header middleware is outermost among user middleware so these head
 
 ## Verification Expectations
 
-Each implementation stage must add tests for the controls it introduces. Through 11.5.1 this includes strict consumer surfaces, fixed redirects, primary-row/category enforcement, presentation-only consolidation, internal-navigation state retention, no global leave warning, and all prior session, CSRF, Origin, Host, header, generation, save, and path controls. Stage 11.6 adds revision and multi-tab stale-state behavior.
+Each implementation stage must add tests for the controls it introduces. Through 11.5.2 this includes conservative initialization, strict module mapping, current-card enforcement, partial baselines, fixed server-selected artifacts, generation-bound skipped state, named dirty-module scan blocking, and all prior session, CSRF, Origin, Host, header, save, and path controls. Stage 11.6 adds revision and multi-tab stale-state behavior.

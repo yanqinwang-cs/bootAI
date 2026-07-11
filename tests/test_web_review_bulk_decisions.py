@@ -174,7 +174,7 @@ class WebReviewBulkDecisionTests(
             )
             idempotent = await client.post(
                 "/review/page-decision/preview?category=duplicate",
-                data={"csrf_token": csrf, "decision": "approved"},
+                data={"csrf_token": csrf, "decision": "undecided"},
                 headers=self.origin_headers(),
             )
         finally:
@@ -187,7 +187,7 @@ class WebReviewBulkDecisionTests(
 
     async def test_decision_filter_page_is_clamped_after_confirm(self) -> None:
         client = await self.authenticated_client()
-        query = "category=review_candidate&decision=approved&page=3&page_size=2"
+        query = "category=review_candidate&decision=undecided&page=3&page_size=2"
         try:
             csrf = await self.csrf(client, f"/review/advanced?{query}")
             preview = await client.post(
@@ -208,7 +208,7 @@ class WebReviewBulkDecisionTests(
             await client.aclose()
 
         self.assertEqual(confirmed.status_code, 303)
-        self.assertIn("decision=approved", confirmed.headers["location"])
+        self.assertIn("decision=undecided", confirmed.headers["location"])
         self.assertIn("page=2", confirmed.headers["location"])
 
     async def test_preview_is_rejected_after_scan_generation_changes(self) -> None:

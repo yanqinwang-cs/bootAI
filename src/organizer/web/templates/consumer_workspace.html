@@ -1,84 +1,59 @@
 <div id="consumer-workspace">
   {% if decision_feedback %}
-  <div class="decision-feedback" role="status" aria-live="polite" tabindex="-1" data-decision-feedback>
-    {{ decision_feedback }}
-  </div>
+  <div class="decision-feedback" role="status" aria-live="polite" tabindex="-1" data-decision-feedback>{{ decision_feedback }}</div>
   {% elif saved_feedback %}
   <div class="decision-feedback" role="status" aria-live="polite" tabindex="-1" data-decision-feedback>
-    Choices saved. A reviewed plan has been saved. No files have moved.
+    <strong>{{ page.tray.title }} saved.</strong>
+    Rows included: {{ save_summary.row_count if save_summary else page.tray.row_count }}. Chosen: {{ save_summary.approved_count if save_summary else page.tray.approved_count }}. Left unchanged: {{ save_summary.rejected_count if save_summary else page.tray.rejected_count }}. Undecided: {{ save_summary.undecided_count if save_summary else page.tray.undecided_count }}.
+    No files have moved.
   </div>
+  {% elif revisited_feedback %}
+  <div class="decision-feedback" role="status" aria-live="polite" tabindex="-1" data-decision-feedback>Skipped files returned to this queue. No choices changed.</div>
   {% endif %}
 
-  {% include "plan_summary.html" %}
-
-  <section aria-labelledby="card-list-heading">
-    <h2 id="card-list-heading">{{ page.matching_count }} {% if page.matching_count == 1 %}file{% else %}files{% endif %}</h2>
-    {% if page.cards %}
-    <div class="consumer-card-stack">
-      {% for card in page.cards %}
-      <article class="consumer-card decision-{{ card.decision }}" aria-labelledby="card-heading-{{ card.item_id }}">
-        <div class="consumer-card-header">
-          <h3 id="card-heading-{{ card.item_id }}">{{ card.filename }}</h3>
-          <span class="choice-badge">{{ card.decision_label }}</span>
-        </div>
-        <p>{{ card.reason }}</p>
-        {% if card.duplicate_reference %}<p>This is an exact copy of: <strong>{{ card.duplicate_reference }}</strong></p>{% endif %}
-        <dl class="consumer-card-facts">
-          <div><dt>Current folder</dt><dd>{{ card.current_location }}</dd></div>
-          <div><dt>Suggested folder</dt><dd>{{ card.suggested_location }}</dd></div>
-          <div><dt>{% if card.category == "duplicate" %}Space used by this extra copy{% else %}Size{% endif %}</dt><dd>{{ card.size }}</dd></div>
-        </dl>
-        {% if card.category == "duplicate" %}<p class="safety-note">Planning or moving this copy to Duplicate Review does not reclaim storage.</p>{% endif %}
-
-        {% if card.secondary_findings %}
-        <section class="secondary-findings" aria-labelledby="secondary-{{ card.item_id }}">
-          <h4 id="secondary-{{ card.item_id }}">Also noticed</h4>
-          <ul>{% for finding in card.secondary_findings %}<li><strong>{{ finding.module }}:</strong> {{ finding.reason }} Current choice: {{ finding.choice }}.</li>{% endfor %}</ul>
-          <p><a href="/review/advanced">Change secondary technical choices in Advanced review</a>.</p>
-        </section>
-        {% endif %}
-
-        <form class="consumer-decision-form"
-              method="post"
-              action="/review/items/{{ card.item_id }}/decision?surface={{ surface }}&amp;page={{ page.page }}"
-              hx-post="/review/items/{{ card.item_id }}/decision?surface={{ surface }}&amp;page={{ page.page }}"
-              hx-target="#consumer-workspace"
-              hx-swap="outerHTML">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <fieldset>
-            <legend>Choose for {{ card.filename }}</legend>
-            <div class="decision-actions">
-              {% for value, label in (("approved", spec.approved_label), ("rejected", spec.rejected_label), ("undecided", spec.undecided_label)) %}
-              <button class="btn {% if card.decision == value %}btn-primary{% else %}btn-outline-primary{% endif %}" type="submit" name="decision" value="{{ value }}" aria-pressed="{{ 'true' if card.decision == value else 'false' }}">{{ label }}{% if card.decision == value %}<span class="visually-hidden"> (current choice)</span>{% endif %}</button>
-              {% endfor %}
-            </div>
-          </fieldset>
-        </form>
-
-        <details class="technical-details">
-          <summary>More details</summary>
-          <dl>
-            <dt>Exact current path</dt><dd class="path-cell">{{ card.source_relative }}</dd>
-            <dt>Exact suggested path</dt><dd class="path-cell">{{ card.destination_relative }}</dd>
-            <dt>Modified</dt><dd>{{ card.modified_time }}</dd>
-            <dt>Internal category</dt><dd>{{ card.category }}</dd>
-            <dt>Stable ID</dt><dd>{{ card.item_id }}</dd>
-            <dt>Confidence</dt><dd>{{ card.confidence }}</dd>
-            <dt>Review memory</dt><dd>{{ card.memory_status|replace("_", " ")|title }}</dd>
-          </dl>
-        </details>
-      </article>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p class="empty-state" role="status">No files are waiting in this section.</p>
-    {% endif %}
+  <section class="guided-progress" aria-labelledby="guided-progress-heading">
+    <h2 id="guided-progress-heading">Progress</h2>
+    <p><strong>{{ page.progress_status }}</strong></p>
+    <p>{{ page.reviewed_count }} of {{ page.total_count }} reviewed. {{ page.waiting_count }} still waiting. {{ page.skipped_count }} skipped for now.</p>
+    {% if page.total_count %}<progress value="{{ page.reviewed_count }}" max="{{ page.total_count }}" aria-label="{{ page.reviewed_count }} of {{ page.total_count }} findings reviewed">{{ page.reviewed_count }} of {{ page.total_count }}</progress>{% endif %}
+    <p>Persistence: <strong>{{ page.tray.persistence_status }}</strong></p>
   </section>
 
-  {% if page.total_pages > 1 %}
-  <nav class="pagination-nav" aria-label="Consumer review pages">
-    <span>Page {{ page.page }} of {{ page.total_pages }}</span>
-    <div>{% if page.previous_url %}<a href="{{ page.previous_url }}">Previous</a>{% endif %}{% if page.next_url %}<a href="{{ page.next_url }}">Next</a>{% endif %}</div>
-  </nav>
+  {% if page.current_card %}
+  {% set card = page.current_card %}
+  <article class="consumer-card decision-{{ card.decision }}" aria-labelledby="card-heading-{{ card.item_id }}">
+    <div class="consumer-card-header"><h2 id="card-heading-{{ card.item_id }}">{{ card.filename }}</h2><span class="choice-badge">{{ card.decision_label }}</span></div>
+    <p>{{ card.reason }}</p>
+    {% if card.duplicate_reference %}<p>This is an exact copy of: <strong>{{ card.duplicate_reference }}</strong></p>{% endif %}
+    <dl class="consumer-card-facts">
+      <div><dt>Currently</dt><dd>{{ card.current_location }}</dd></div>
+      <div><dt>Suggested</dt><dd>{{ card.suggested_location }}</dd></div>
+      <div><dt>{% if card.category == "duplicate" %}Space used by this extra copy{% else %}Size{% endif %}</dt><dd>{{ card.size }}</dd></div>
+    </dl>
+    {% if card.category == "duplicate" %}<p class="safety-note">Setting aside this copy in Duplicate Review does not reclaim storage.</p>{% endif %}
+    {% if card.secondary_findings %}
+    <section class="secondary-findings" aria-labelledby="secondary-{{ card.item_id }}"><h3 id="secondary-{{ card.item_id }}">Also noticed</h3><ul>{% for finding in card.secondary_findings %}<li><strong>{{ finding.module }}:</strong> {{ finding.reason }} Current choice: {{ finding.choice }}.</li>{% endfor %}</ul><p>Secondary choices remain available in <a href="/review/advanced">Advanced review</a>.</p></section>
+    {% endif %}
+    <form class="consumer-decision-form" method="post" action="/review/items/{{ card.item_id }}/decision?surface={{ surface }}" hx-post="/review/items/{{ card.item_id }}/decision?surface={{ surface }}" hx-target="#consumer-workspace" hx-swap="outerHTML">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <fieldset><legend>Choose for {{ card.filename }}</legend><div class="decision-actions">
+        {% for value, label in (("approved", spec.approved_label), ("rejected", spec.rejected_label), ("undecided", spec.undecided_label)) %}
+        <button class="btn btn-outline-primary" type="submit" name="decision" value="{{ value }}">{{ label }} for {{ card.filename }}</button>
+        {% endfor %}
+      </div></fieldset>
+    </form>
+    <details class="technical-details"><summary>More details</summary><dl><dt>Exact current path</dt><dd>{{ card.source_relative }}</dd><dt>Exact suggested path</dt><dd>{{ card.destination_relative }}</dd><dt>Modified</dt><dd>{{ card.modified_time }}</dd><dt>Internal category</dt><dd>{{ card.category }}</dd><dt>Stable ID</dt><dd>{{ card.item_id }}</dd><dt>Confidence</dt><dd>{{ card.confidence }}</dd><dt>Review memory</dt><dd>{{ card.memory_status|replace("_", " ")|title }}</dd></dl></details>
+  </article>
+  {% else %}
+  <p class="empty-state" role="status">No untouched files remain in this guided queue.</p>
   {% endif %}
+
+  {% if page.skipped_count %}
+  <form method="post" action="{{ revisit_action }}" hx-post="{{ revisit_action }}" hx-target="#consumer-workspace" hx-swap="outerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-outline-primary" type="submit">Review skipped files</button>
+  </form>
+  {% endif %}
+
+  {% include "module_tray.html" %}
 </div>

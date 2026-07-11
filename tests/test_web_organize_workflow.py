@@ -15,8 +15,8 @@ class OrganizeWorkflowTests(ConsumerWebFixture, unittest.IsolatedAsyncioTestCase
 
         self.assertEqual(page.status_code, 200)
         self.assertIn("EvoSim_project_slides.pptx", page.text)
-        self.assertIn("EvoSim_project_slides_final.pptx", page.text)
-        self.assertIn("Add to organization plan", page.text)
+        self.assertNotIn("card-heading-O2", page.text)
+        self.assertIn("Add to organization choices", page.text)
         self.assertIn("Leave here", page.text)
         self.assertIn("Skip for now", page.text)
         self.assertNotIn("beta backup copy.txt", page.text)
@@ -37,11 +37,11 @@ class OrganizeWorkflowTests(ConsumerWebFixture, unittest.IsolatedAsyncioTestCase
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('id="consumer-workspace"', response.text)
-        self.assertIn("Skipped for now. No final choice has been made.", response.text)
+        self.assertIn("Skipped for now. You can return to it later.", response.text)
         self.assertIn("Organization", response.text)
-        self.assertIn("Skipped for now: 1", response.text)
+        self.assertIn("1 skipped for now", response.text)
         self.assertEqual(self.decision("O1"), "undecided")
-        self.assertEqual(self.decision("O2"), "approved")
+        self.assertEqual(self.decision("O2"), "undecided")
         self.assertTrue(response.headers["HX-Replace-Url"].startswith("/organize?"))
 
 

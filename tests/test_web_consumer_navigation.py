@@ -79,7 +79,7 @@ class ConsumerNavigationTests(ConsumerWebFixture, unittest.IsolatedAsyncioTestCa
         self.assertEqual(blank.status_code, 400)
         self.assertEqual(settings_path.status_code, 400)
         self.assertEqual(scans_path.status_code, 400)
-        self.assertEqual(self.decision("D1"), "approved")
+        self.assertEqual(self.decision("D1"), "undecided")
 
 
 if __name__ == "__main__":

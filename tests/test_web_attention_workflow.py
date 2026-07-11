@@ -36,8 +36,8 @@ class AttentionWorkflowTests(ConsumerWebFixture, unittest.IsolatedAsyncioTestCas
             await client.aclose()
 
         self.assertEqual(response.status_code, 303)
-        self.assertIn("Set aside for review. No file has moved.", page.text)
-        self.assertIn("This step is not available in the web app yet", page.text)
+        self.assertIn("Set aside for review. No file has moved yet.", page.text)
+        self.assertIn("These are choices only", page.text)
         self.assertNotIn(">Apply<", page.text)
         self.assertNotIn("Apply changes", page.text)
         self.assertEqual(self.decision("R2"), "approved")

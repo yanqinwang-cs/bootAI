@@ -1,5 +1,11 @@
 # Report Format
 
+## Stage 11.5.2 Module Reviewed Plans
+
+The web consumer modules write reviewed-plan subsets in the existing schema-version-1 `batch_review` format. No new schema or `plan_type` is introduced. Files are stored under `AI_Review/review_sessions/` as `duplicate_reviewed_plan.json`, `organization_reviewed_plan.json`, or `attention_reviewed_plan.json`, with `_1`, `_2`, and later collision-safe siblings.
+
+Each module artifact includes every authoritative row in its fixed category, including rejected and undecided rows, and excludes the other categories. Fresh web new/stale suggestions are normalized to `undecided`, so saving untouched findings does not approve them. These artifacts remain untrusted inputs and use the existing reviewed-plan loader and validator. They are review records, not operation logs, and saving them moves no files.
+
 Stage 9 reports are JSON files written by `python -m organizer.cli <folder> --report`.
 They are intended for manual review or external scheduler runs. A report contains
 facts and dry-run suggestions only.

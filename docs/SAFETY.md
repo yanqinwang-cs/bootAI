@@ -104,6 +104,10 @@
 - A consumer card action changes only its primary row. It must not silently change secondary module choices.
 - Consumer surfaces are strict enums mapped to fixed routes, never browser-provided return URLs or paths.
 - Internal navigation preserves server-held dirty choices and must not show a global leave-site warning. Dirty replacement scans remain blocked by `409`.
+- Fresh scan-generated web rows with new or stale memory state begin `undecided`; untouched findings must never become approved merely by saving a module.
+- Module saves include every row in the selected fixed category, advance only that module's saved baseline, and pass rows through existing review-state eligibility rules.
+- Guided handled/skipped state is generation-bound memory only. Skipped rows retain the existing `undecided` serialized value.
+- A replacement scan remains blocked while any module is dirty and must identify each affected module.
 
 The complete controls and threat mappings are in [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md).
 

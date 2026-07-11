@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 from organizer.models import ReviewedPlanItem
 from organizer.review_session import ReviewViewState
 from organizer.review_state import ReviewState
+
+
+class ReviewModule(StrEnum):
+    DUPLICATES = "duplicates"
+    ORGANIZATION = "organization"
+    ATTENTION = "attention"
 
 
 @dataclass(frozen=True)
@@ -38,6 +45,7 @@ class ReviewApplicationSession:
     persist_review_state: bool
     review_state_ignored: bool
     saved_decisions: tuple[tuple[str, str], ...]
+    module_saved_paths: tuple[tuple[ReviewModule, Path], ...] = ()
 
     @property
     def dirty(self) -> bool:
@@ -58,6 +66,25 @@ class ReviewSaveResult:
     session: ReviewApplicationSession
     reviewed_plan_path: Path
     review_state_path: Path | None
+
+
+@dataclass(frozen=True)
+class ModuleReviewSummary:
+    module: ReviewModule
+    row_count: int
+    approved_count: int
+    rejected_count: int
+    undecided_count: int
+    conflict_count: int
+
+
+@dataclass(frozen=True)
+class ModuleReviewSaveResult:
+    session: ReviewApplicationSession
+    module: ReviewModule
+    reviewed_plan_path: Path
+    review_state_path: Path | None
+    summary: ModuleReviewSummary
 
 
 @dataclass(frozen=True)

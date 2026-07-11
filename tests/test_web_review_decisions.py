@@ -39,7 +39,7 @@ class WebReviewDecisionTests(
             csrf = await self.csrf(client)
             response = await client.post(
                 "/review/items/D1/decision",
-                data={"csrf_token": csrf, "decision": "approved"},
+                data={"csrf_token": csrf, "decision": "undecided"},
                 headers=self.origin_headers(),
             )
             page = await client.get(response.headers["location"])
@@ -57,7 +57,7 @@ class WebReviewDecisionTests(
             csrf = await self.csrf(client, "/review/advanced?category=duplicate")
             response = await client.post(
                 "/review/items/D1/decision?category=duplicate&sort=source&direction=desc&page=1&page_size=25",
-                data={"csrf_token": csrf, "decision": "undecided"},
+                data={"csrf_token": csrf, "decision": "approved"},
                 headers=self.origin_headers(**{"HX-Request": "true"}),
             )
         finally:

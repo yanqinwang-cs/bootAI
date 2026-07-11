@@ -8,7 +8,7 @@ PYTHONPATH=src python -m organizer.cli <folder>
 
 ## Local Web Launcher
 
-Stages 11.2 through 11.5.1 use a separate module launcher; they do not add or change an `organizer.cli` flag:
+Stages 11.2 through 11.5.2 use a separate module launcher; they do not add or change an `organizer.cli` flag:
 
 ```bash
 PYTHONPATH=src python3 -m organizer.web --root "$HOME/Downloads"
@@ -18,7 +18,7 @@ PYTHONPATH=src python3 -m organizer.web --root "$HOME/Downloads" --port 8123
 
 Install the optional dependencies with `python3 -m pip install -e ".[web]"`. The launcher accepts only `--root`, `--no-browser`, and `--port`; there is no host option. It binds to `127.0.0.1`, normally selects a dynamic port, and opens a private single-use launch URL after `/healthz` is ready. `--no-browser` prints that URL instead. If `--root` is omitted, `~/Downloads` is accepted only when it exists and passes root validation.
 
-The current web application uses Home, Duplicates, Organize, Scans, Settings, linked Needs attention, and `/review/advanced`. Consumer labels still map to the existing decision values and saving still writes the complete reviewed plan. There is no scheduling, tree, independent module save, apply, restore, or CLI-interface change.
+The web application provides guided Duplicates, Organize, and Needs attention queues with independent existing-format saves. Fresh-web default normalization does not change CLI review defaults or saved-plan loading. There is no scheduling, tree, apply, restore, or CLI-interface change.
 
 ## Base
 

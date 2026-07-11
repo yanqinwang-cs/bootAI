@@ -8,15 +8,20 @@ from urllib.parse import urlencode
 from organizer.application.review_service import (
     get_review_item_metadata,
     get_review_source_key,
+    review_module_items,
+    review_module_is_dirty,
+    review_module_saved_path,
+    summarize_review_module,
     summarize_review_session,
 )
-from organizer.application.view_models import ReviewApplicationSession
+from organizer.application.view_models import ReviewApplicationSession, ReviewModule
 from organizer.models import ReviewedPlanItem
 from organizer.web.formatting import (
     format_bytes,
     format_local_timestamp,
     readable_folder,
 )
+from organizer.web.review_explorer import ModuleQueueSnapshot
 
 
 _PAGE_SIZE = 25
@@ -127,6 +132,54 @@ class ConsumerPage:
     next_url: str | None
 
 
+@dataclass(frozen=True)
+class TrayBreakdown:
+    label: str
+    count: int
+
+
+@dataclass(frozen=True)
+class ModuleTray:
+    module: ReviewModule
+    title: str
+    row_count: int
+    approved_count: int
+    rejected_count: int
+    undecided_count: int
+    approved_names: tuple[str, ...]
+    duplicate_space: str | None
+    breakdowns: tuple[TrayBreakdown, ...]
+    dirty: bool
+    persistence_status: str
+    saved_relative: str | None
+
+
+@dataclass(frozen=True)
+class GuidedModulePage:
+    spec: ConsumerSurfaceSpec
+    module: ReviewModule
+    current_card: ConsumerCard | None
+    selected_card: ConsumerCard | None
+    total_count: int
+    reviewed_count: int
+    waiting_count: int
+    skipped_count: int
+    progress_status: str
+    tray: ModuleTray
+
+
+@dataclass(frozen=True)
+class HomeModuleStatus:
+    module: ReviewModule
+    title: str
+    route: str
+    action_label: str
+    waiting_count: int
+    approved_count: int
+    progress_status: str
+    persistence_status: str
+
+
 SURFACE_SPECS = {
     ConsumerSurface.DUPLICATES: ConsumerSurfaceSpec(
         surface=ConsumerSurface.DUPLICATES,
@@ -137,7 +190,7 @@ SURFACE_SPECS = {
             "Review files that have exactly matching content. "
             "Planning a choice does not move or remove a file."
         ),
-        approved_label="Add to duplicate plan",
+        approved_label="Add to duplicate choices",
         rejected_label="Keep both",
     ),
     ConsumerSurface.ORGANIZE: ConsumerSurfaceSpec(
@@ -149,7 +202,7 @@ SURFACE_SPECS = {
             "Review suggested folders. Your choices remain plans until a "
             "later apply step."
         ),
-        approved_label="Add to organization plan",
+        approved_label="Add to organization choices",
         rejected_label="Leave here",
     ),
     ConsumerSurface.ATTENTION: ConsumerSurfaceSpec(
@@ -164,6 +217,22 @@ SURFACE_SPECS = {
         approved_label="Set aside for review",
         rejected_label="Leave here",
     ),
+}
+
+_SURFACE_MODULES = {
+    ConsumerSurface.DUPLICATES: ReviewModule.DUPLICATES,
+    ConsumerSurface.ORGANIZE: ReviewModule.ORGANIZATION,
+    ConsumerSurface.ATTENTION: ReviewModule.ATTENTION,
+}
+_MODULE_TITLES = {
+    ReviewModule.DUPLICATES: "Duplicate copies",
+    ReviewModule.ORGANIZATION: "Files to organize",
+    ReviewModule.ATTENTION: "Needs attention",
+}
+_MODULE_ACTIONS = {
+    ReviewModule.DUPLICATES: "Continue duplicates",
+    ReviewModule.ORGANIZATION: "Continue organizing",
+    ReviewModule.ATTENTION: "Review files",
 }
 
 
@@ -204,6 +273,100 @@ def surface_url(
     return f"{route}?{urlencode(query)}" if query else route
 
 
+def module_for_surface(surface: ConsumerSurface) -> ReviewModule:
+    try:
+        return _SURFACE_MODULES[surface]
+    except KeyError as error:
+        raise ValueError("surface has no review module") from error
+
+
+def build_guided_module_page(
+    session: ReviewApplicationSession,
+    surface: ConsumerSurface,
+    queue: ModuleQueueSnapshot,
+    *,
+    selected: str | None = None,
+) -> GuidedModulePage:
+    module = module_for_surface(surface)
+    if queue.module != module:
+        raise ValueError("guided queue does not match module")
+    cards = _all_primary_cards(session, surface)
+    card_ids = {card.item_id for card in cards}
+    handled = card_ids.intersection(queue.handled_ids)
+    deferred = card_ids.intersection(queue.deferred_ids)
+    current = next(
+        (card for card in cards if card.item_id not in handled),
+        None,
+    )
+    selected_card = None
+    if selected is not None:
+        normalized = selected.upper()
+        selected_card = next(
+            (card for card in cards if card.item_id == normalized),
+            None,
+        )
+        if selected_card is None or normalized not in handled:
+            raise ValueError("selected guided card is unavailable")
+    total = len(cards)
+    reviewed = len(handled)
+    return GuidedModulePage(
+        spec=SURFACE_SPECS[surface],
+        module=module,
+        current_card=current,
+        selected_card=selected_card,
+        total_count=total,
+        reviewed_count=reviewed,
+        waiting_count=total - reviewed,
+        skipped_count=len(deferred),
+        progress_status=(
+            "All findings reviewed" if total == reviewed else "In progress"
+        ),
+        tray=_build_module_tray(session, module),
+    )
+
+
+def build_home_module_statuses(
+    session: ReviewApplicationSession,
+    queues: tuple[ModuleQueueSnapshot, ...],
+) -> tuple[HomeModuleStatus, ...]:
+    queue_map = {queue.module: queue for queue in queues}
+    statuses: list[HomeModuleStatus] = []
+    for surface in (
+        ConsumerSurface.DUPLICATES,
+        ConsumerSurface.ORGANIZE,
+        ConsumerSurface.ATTENTION,
+    ):
+        module = module_for_surface(surface)
+        page = build_guided_module_page(
+            session,
+            surface,
+            queue_map.get(module, ModuleQueueSnapshot(module)),
+        )
+        statuses.append(
+            HomeModuleStatus(
+                module=module,
+                title=_MODULE_TITLES[module],
+                route=_SURFACE_ROUTES[surface],
+                action_label=_MODULE_ACTIONS[module],
+                waiting_count=page.waiting_count,
+                approved_count=page.tray.approved_count,
+                progress_status=page.progress_status,
+                persistence_status=page.tray.persistence_status,
+            )
+        )
+    return tuple(statuses)
+
+
+def is_current_guided_item(
+    session: ReviewApplicationSession,
+    item_id: str,
+    surface: ConsumerSurface,
+    queue: ModuleQueueSnapshot,
+) -> bool:
+    page = build_guided_module_page(session, surface, queue)
+    return page.current_card is not None and page.current_card.item_id == item_id.upper()
+
+
 def build_consumer_page(
     session: ReviewApplicationSession,
     surface: ConsumerSurface,
@@ -211,12 +374,7 @@ def build_consumer_page(
     page: int,
 ) -> ConsumerPage:
     spec = SURFACE_SPECS[surface]
-    all_cards = [
-        _build_card(session, items)
-        for _, items in _source_groups(session)
-        if _primary_item(items).category == spec.category
-    ]
-    all_cards.sort(key=lambda card: (card.source_key.casefold(), card.item_id))
+    all_cards = list(_all_primary_cards(session, surface))
     matching_count = len(all_cards)
     total_pages = max(1, (matching_count + _PAGE_SIZE - 1) // _PAGE_SIZE)
     if page < 1 or page > total_pages:
@@ -299,14 +457,13 @@ def build_plan_summary(
 def feedback_for_card(card: ConsumerCard) -> str:
     if card.decision == "approved":
         if card.category == "review_candidate":
-            return "Set aside for review. No file has moved."
-        return "Added to your plan. No file has moved yet."
+            return "Set aside for review. No file has moved yet."
+        if card.category == "duplicate":
+            return "Added to duplicate choices. No file has moved yet."
+        return "Added to organization choices. No file has moved yet."
     if card.decision == "rejected":
-        return (
-            "This file will remain in its current folder. "
-            "You can change this choice before applying."
-        )
-    return "Skipped for now. No final choice has been made."
+        return "This file will remain where it is."
+    return "Skipped for now. You can return to it later."
 
 
 def card_for_selected(
@@ -358,6 +515,101 @@ def _source_groups(
         (key, tuple(sorted(items, key=_item_priority)))
         for key, items in sorted(grouped.items(), key=lambda pair: pair[0].casefold())
     ]
+
+
+def _all_primary_cards(
+    session: ReviewApplicationSession,
+    surface: ConsumerSurface,
+) -> tuple[ConsumerCard, ...]:
+    spec = SURFACE_SPECS[surface]
+    cards = [
+        _build_card(session, items)
+        for _, items in _source_groups(session)
+        if _primary_item(items).category == spec.category
+    ]
+    return tuple(
+        sorted(cards, key=lambda card: (card.source_key.casefold(), card.item_id))
+    )
+
+
+def _build_module_tray(
+    session: ReviewApplicationSession,
+    module: ReviewModule,
+) -> ModuleTray:
+    items = review_module_items(session, module)
+    summary = summarize_review_module(session, module)
+    approved = tuple(item for item in items if item.decision == "approved")
+    duplicate_space = None
+    breakdowns: tuple[TrayBreakdown, ...] = ()
+    if module == ReviewModule.DUPLICATES:
+        total = sum(
+            metadata.size_bytes or 0
+            for item in approved
+            for metadata in (get_review_item_metadata(session, item.id),)
+        )
+        duplicate_space = format_bytes(total)
+    elif module == ReviewModule.ORGANIZATION:
+        counts: dict[str, int] = {}
+        for item in approved:
+            label = readable_folder(
+                item.plan_item.destination.parent,
+                session.root,
+                include_root=False,
+            )
+            counts[label] = counts.get(label, 0) + 1
+        breakdowns = tuple(
+            TrayBreakdown(label, count)
+            for label, count in sorted(counts.items(), key=lambda pair: pair[0].casefold())
+        )
+    else:
+        counts = {}
+        for item in approved:
+            label = _ATTENTION_REASONS.get(
+                item.review_category or "",
+                "Needs a closer look",
+            )
+            counts[label] = counts.get(label, 0) + 1
+        breakdowns = tuple(
+            TrayBreakdown(label, count)
+            for label, count in sorted(counts.items(), key=lambda pair: pair[0].casefold())
+        )
+
+    saved_path = review_module_saved_path(session, module)
+    saved_relative = _safe_relative(saved_path, session.root)
+    dirty = review_module_is_dirty(session, module)
+    if dirty:
+        persistence = "Unsaved changes"
+    elif saved_path is not None or session.saved_plan_path is not None:
+        persistence = "Choices saved"
+    else:
+        persistence = "Not saved yet"
+    return ModuleTray(
+        module=module,
+        title={
+            ReviewModule.DUPLICATES: "Duplicate choices",
+            ReviewModule.ORGANIZATION: "Organization choices",
+            ReviewModule.ATTENTION: "Attention choices",
+        }[module],
+        row_count=summary.row_count,
+        approved_count=summary.approved_count,
+        rejected_count=summary.rejected_count,
+        undecided_count=summary.undecided_count,
+        approved_names=tuple(item.plan_item.source.name for item in approved),
+        duplicate_space=duplicate_space,
+        breakdowns=breakdowns,
+        dirty=dirty,
+        persistence_status=persistence,
+        saved_relative=saved_relative,
+    )
+
+
+def _safe_relative(path: Path | None, root: Path) -> str | None:
+    if path is None:
+        return None
+    try:
+        return path.resolve().relative_to(root).as_posix()
+    except ValueError:
+        return None
 
 
 def _primary_item(items: tuple[ReviewedPlanItem, ...]) -> ReviewedPlanItem:
