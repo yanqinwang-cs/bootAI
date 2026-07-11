@@ -122,7 +122,7 @@ class WebReviewSaveTests(
                     data={"csrf_token": csrf},
                     headers=self.origin_headers(),
                 )
-            page = await client.get("/review")
+            page = await client.get("/review/advanced")
         finally:
             await client.aclose()
 

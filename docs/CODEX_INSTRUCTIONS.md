@@ -18,7 +18,7 @@ Codex must read this file before implementing future stages.
 
 ## Completed Stages
 
-Stages 1 through 10.14 and Stages 11.0 through 11.5 are complete. The first web MVP can scan, inspect, decide, and explicitly save a reviewed plan. Stage 11.5 adds no movement, apply, restore, resume, revision, multi-tab merge, schema, database, or existing-CLI change.
+Stages 1 through 10.14 and Stages 11.0 through 11.5.1 are complete. The default web interface is consumer-oriented; the complete technical table is `/review/advanced`.
 
 ## Reuse Before Create
 
@@ -91,6 +91,11 @@ Stages 1 through 10.14 and Stages 11.0 through 11.5 are complete. The first web 
 - Saving is explicit, includes all rows, uses the existing collision-safe reviewed-plan owner, and never moves files. No autosave or browser-selected output path is permitted.
 - A dirty review session blocks `POST /scan` with `409 Conflict`; it must not be discarded silently or attributed to a new scan generation.
 - Stage 11.6 remains responsible for reviewed-plan resume, request revisions, and multi-tab stale-state protection.
+- Stage 11.5.1 consumer cards consolidate by normalized source with duplicate → organization → attention precedence. Secondary rows remain independent; a card action changes only its primary row.
+- Consumer return surfaces are strict enums mapped to fixed server routes. Never accept a browser-provided return URL or path.
+- Use `Space used by extra copies` or `Potential duplicate space`; moving a duplicate copy does not recover storage.
+- Internal navigation must not use a global `beforeunload` warning. Dirty replacement scans remain blocked server-side.
+- Stage 11.5.2 owns independent module plans and Stage 11.5.3 owns the planned-change tree. Do not implement either early.
 - Do not weaken CSP or add inline scripts/handlers. The security headers must cover pages, redirects, static responses, Host failures, and handled errors.
 
 ## Do Not Skip Ahead
@@ -155,6 +160,7 @@ Answer these before editing:
 - Stage 11.3 adds read-only scanning; no decisions or movement.
 - Stage 11.4 adds read-only review exploration; no decision mutation.
 - Stage 11.5 adds review decisions and saving only; no movement, and it is the first product-evaluation checkpoint.
+- Stage 11.5.1 simplifies consumer information architecture only; it preserves all rows, decisions, schemas, and movement boundaries.
 - Stage 11.6 adds resume, revision, stale-state, and multi-tab protection; no movement.
 - Stage 11.7 adds final-plan preview and read-only execution preflight; no movement.
 - Stage 11.8 is the first stage permitted to add confirmed web apply, using existing reviewed-plan validation and `executor.py` only.

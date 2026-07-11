@@ -1,6 +1,6 @@
 # Local Web Threat Model
 
-Status: mandatory Stage 11 security contract, accepted in Stage 11.0 and implemented through the Stage 11.5 decision-and-save MVP.
+Status: mandatory Stage 11 security contract, accepted in Stage 11.0 and implemented through the Stage 11.5.1 consumer interface.
 
 This threat model applies to bootAI's single-user local web application. It is concrete to bootAI's root-bound scan, review, apply, verification, history, and restore workflows. It is not a claim that localhost is inherently trusted.
 
@@ -139,7 +139,9 @@ State-changing actions include decisions, current-page bulk decisions, reviewed-
 
 GET and HEAD are read-only. POST performs mutations. Apply, save, decision change, configuration change, and restore must never be triggered by GET.
 
-Through Stage 11.5 the production route set is `GET /healthz`, `GET /launch/{token}`, `GET /`, `POST /scan`, `GET /scan/status`, `GET /review`, `POST /review/items/{item_id}/decision`, `POST /review/page-decision/preview`, `POST /review/page-decision/confirm`, `POST /review/save`, `GET /review/items/{item_id}`, `GET /review/conflicts`, and mounted local static delivery. `/healthz` returns only `{"status":"ok"}` without authentication. The launch GET changes authentication state as the bootstrap exception. All review mutations are authenticated POSTs; GET remains read-only.
+Through Stage 11.5.1 the GET surfaces are `/`, `/duplicates`, `/organize`, `/attention`, `/scans`, `/settings`, `/review`, `/review/advanced`, review details/conflicts, health, launch, and local static delivery. Existing POST routes remain `/scan`, single-row decision, current-page preview/confirmation, and save. `/review` is a validated compatibility redirect. No consumer GET mutates state.
+
+Consumer mutations accept a strict surface enum mapped server-side to fixed routes; they never accept a return URL or path. Normalized-source consolidation is presentation-only. A consumer decision must match the current generation, primary category, and primary row for that surface before the existing stable-ID decision service runs.
 
 After a successful POST, redirect or render a read-only result URL so refresh cannot repeat the mutation. Stage 11.5 uses server-side locks, the current scan generation, stable-ID lookup, and browser-session-bound one-use opaque tokens for current-page confirmation. Stage 11.6 adds explicit request revisions and multi-tab stale-state rejection; client-side button disabling is not a security control.
 
@@ -225,4 +227,4 @@ The pure ASGI header middleware is outermost among user middleware so these head
 
 ## Verification Expectations
 
-Each implementation stage must add tests for the controls it introduces. Stages 11.2 through 11.5 cover root/config isolation, launch-token replay and concurrency, cookie attributes, CSRF and Origin enforcement, Host rejection, response headers, generic errors, route/method inventory, local assets, launcher binding, generation-safe scan jobs, report-only writes, no-rescan review navigation, stable-ID details, strict mutation forms, one-use page previews, dirty-scan blocking, explicit collision-safe save, root-relative paths, and blocked arbitrary path handling. Stage 11.6 tests must add revision and multi-tab stale-state behavior; later stages add execution-specific controls.
+Each implementation stage must add tests for the controls it introduces. Through 11.5.1 this includes strict consumer surfaces, fixed redirects, primary-row/category enforcement, presentation-only consolidation, internal-navigation state retention, no global leave warning, and all prior session, CSRF, Origin, Host, header, generation, save, and path controls. Stage 11.6 adds revision and multi-tab stale-state behavior.

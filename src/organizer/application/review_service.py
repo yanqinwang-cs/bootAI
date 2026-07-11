@@ -162,6 +162,18 @@ def get_review_item_metadata(
     )
 
 
+def get_review_source_key(
+    session: ReviewApplicationSession,
+    item_id: str,
+) -> str:
+    item = get_review_item(session, item_id)
+    resolved_source = validate_under_root(
+        item.plan_item.source.resolve(strict=False),
+        session.root,
+    )
+    return resolved_source.relative_to(session.root).as_posix()
+
+
 def update_review_filter(
     session: ReviewApplicationSession,
     field: str,

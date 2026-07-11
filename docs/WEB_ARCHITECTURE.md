@@ -1,8 +1,8 @@
 # Local Web Architecture Contract
 
-Status: accepted in Stage 11.0; implemented through the Stage 11.5 review-decision and reviewed-plan-saving MVP.
+Status: accepted in Stage 11.0; implemented through the Stage 11.5.1 consumer information architecture.
 
-This document freezes the architecture that all Stage 11 web work must follow. Stage 11.1 provides shared application services and dependency hygiene. Stages 11.2 through 11.5 add the isolated local server, browser bootstrap, security foundation, scan dashboard, generation-bound review explorer, decisions, and explicit reviewed-plan saving.
+This document freezes the architecture that all Stage 11 web work must follow. Stages 11.2 through 11.5 establish the secure scan/review/save workflow; Stage 11.5.1 presents it through consumer responsibilities while retaining Advanced review.
 
 The companion [web threat model](WEB_THREAT_MODEL.md) defines the mandatory security controls. The architecture decisions are also recorded in [ADR 0001](adr/0001-local-web-stack.md), [ADR 0002](adr/0002-web-security-boundary.md), and [ADR 0003](adr/0003-application-service-layer.md).
 
@@ -17,7 +17,7 @@ The interfaces have distinct roles:
 - Static HTML remains a permanent, read-only report and audit-snapshot format. It does not become an interactive web application.
 - A native desktop application is optional, demand-driven, and deferred until after core Stage 11 work.
 
-## Implemented Boundaries Through Stage 11.5
+## Implemented Boundaries Through Stage 11.5.1
 
 Stage 11.0 did not add or modify:
 
@@ -38,6 +38,10 @@ Stage 11.3 adds the explicit read-only scan dashboard and generation-safe in-pro
 Stage 11.5 adds a web-owned, locked holder for one immutable `ReviewApplicationSession` per completed scan generation. Single-row decisions replace that session through the application service. Current-page previews freeze exact stable IDs server-side and expose only a random one-use token bound to the browser session and scan generation. The three established exact phrases remain `APPROVE CURRENT PAGE`, `REJECT CURRENT PAGE`, and `UNDECIDE CURRENT PAGE`.
 
 User labels preserve existing values: Organize is `approved`, Keep here is `rejected`, and Review later is `undecided`. Saving is explicit and delegates to the existing application/owner path, includes every hidden and off-page row, uses collision-safe naming, and reports a root-relative path. No click autosaves. Dirty state blocks a new scan with `409 Conflict`; successful save clears it. Apply, restore, reviewed-plan resume, revision numbers, and multi-tab stale-state handling are not implemented.
+
+Stage 11.5.1 assigns consumer responsibilities: Home summarizes; Scans collects findings; Duplicates presents exact copies; Organize presents placement suggestions; Needs attention presents ambiguous candidates; Settings displays configuration; Advanced review exposes technical rows. Web-only presenters group cards by safety-validated normalized source, prefer duplicate then organization then attention, and show secondary reasons without merging rows or decisions. Primary actions change only the primary row.
+
+Navigation and presentation are GET-only. Existing mutation routes accept only strict enum surfaces mapped to fixed routes. Internal navigation retains server-held dirty choices without a `beforeunload` warning. Module-specific persistence remains deferred to 11.5.2 and the planned-change tree to 11.5.3.
 
 ## Current Ownership That Must Be Preserved
 
@@ -303,7 +307,8 @@ Accessibility is an implementation requirement, not a final packaging pass. Stag
 Moving a file to another folder on the same filesystem does not save storage space. The interface may report:
 
 - `Potential duplicate bytes`;
-- `Potential recoverable storage`;
+- `Space used by extra copies`;
+- `Potential duplicate space`;
 - `Duplicate candidates for review`.
 
 It must not report `Space saved` or `Storage recovered` unless an operation actually removes data from that filesystem or transfers it elsewhere. Stage 11 adds no permanent removal, Trash integration, automatic disposal, or disposal-safety claims.
@@ -366,6 +371,18 @@ Completed: browse the latest completed scan’s review rows, filter, sort, pagin
 ### Stage 11.5 — Review Decisions and Reviewed-Plan Saving
 
 Completed: Organize, Keep here, and Review later decisions; current-page exact-confirmed bulk decisions; dirty state; explicit save; collision-safe reviewed-plan artifacts; and scan blocking while unsaved decisions exist. No autosave or movement.
+
+### Stage 11.5.1 — Consumer Information Architecture and UX Simplification
+
+Completed: consumer navigation and cards, one-file-one-primary-surface presentation, secondary reasons, module-separated choices, human formatting, Advanced review, and removal of the false internal-navigation warning. No schema, decision, persistence, or movement change.
+
+### Stage 11.5.2 — Guided Modular Review and Independent Module Plans
+
+Future: independent module persistence and guided plan workflows.
+
+### Stage 11.5.3 — Static Planned-Change Tree
+
+Future: a static, read-only planned-change tree.
 
 ### Stage 11.6 — Resume, Stale-State, and Multi-Tab Protection
 

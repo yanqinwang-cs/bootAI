@@ -1,21 +1,10 @@
 "use strict";
 
-let bootaiFormSubmitting = false;
-
-document.addEventListener("submit", function () {
-  bootaiFormSubmitting = true;
-});
-
-document.addEventListener("htmx:afterRequest", function () {
-  bootaiFormSubmitting = false;
-});
-
-window.addEventListener("beforeunload", function (event) {
-  const dirtyReview = document.querySelector(
-    '[data-review-dirty="true"]'
+document.addEventListener("htmx:afterSwap", function (event) {
+  const feedback = event.detail.target.querySelector(
+    "[data-decision-feedback]"
   );
-  if (dirtyReview && !bootaiFormSubmitting) {
-    event.preventDefault();
-    event.returnValue = "";
+  if (feedback) {
+    feedback.focus();
   }
 });

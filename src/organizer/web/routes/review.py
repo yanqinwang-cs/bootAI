@@ -22,6 +22,15 @@ from organizer.application.review_service import (
 )
 from organizer.application.view_models import ReviewApplicationSession
 from organizer.web.forms import FormDataError, read_urlencoded_form
+from organizer.web.consumer_presenter import (
+    ConsumerSurface,
+    SURFACE_SPECS,
+    build_consumer_page,
+    is_primary_item_for_surface,
+    parse_surface,
+    surface_url,
+)
+from organizer.web.routes.consumer import render_consumer_page
 from organizer.web.review_explorer import (
     ReviewConfirmationRejected,
     ReviewExplorerSnapshot,
@@ -74,7 +83,22 @@ class ReviewRequestError(ValueError):
 def create_review_router(templates: Jinja2Templates) -> APIRouter:
     router = APIRouter()
 
-    @router.get("/review", name="review", include_in_schema=False)
+    @router.get("/review", include_in_schema=False)
+    async def review_compatibility(request: Request) -> Response:
+        if not is_authenticated(request.session):
+            return _session_error(request, templates)
+        try:
+            query = _view_query(request)
+        except ValueError:
+            return _review_error(
+                request,
+                templates,
+                "The review view parameters are invalid.",
+                400,
+            )
+        return RedirectResponse(_review_url(query), status_code=307)
+
+    @router.get("/review/advanced", name="review", include_in_schema=False)
     async def review(request: Request) -> Response:
         if not is_authenticated(request.session):
             return _session_error(request, templates)
@@ -105,7 +129,15 @@ def create_review_router(templates: Jinja2Templates) -> APIRouter:
                 request,
                 allowed_fields={"csrf_token", "decision"},
             )
-            query = _view_query(request)
+            consumer_action = _consumer_action_query(
+                request,
+                allowed={
+                    ConsumerSurface.DUPLICATES,
+                    ConsumerSurface.ORGANIZE,
+                    ConsumerSurface.ATTENTION,
+                },
+            )
+            query = None if consumer_action is not None else _view_query(request)
             decision = form.get("decision", "")
             if decision not in _DECISION_LABELS:
                 raise ReviewRequestError(
@@ -113,13 +145,46 @@ def create_review_router(templates: Jinja2Templates) -> APIRouter:
                     400,
                 )
             store = _review_store(request)
+            consumer_surface = (
+                consumer_action[0] if consumer_action is not None else None
+            )
             change = store.change_decision(
                 _scan_snapshot(request),
                 item_id,
                 decision,
-                project=lambda session: _view_session(session, query),
+                expected_category=(
+                    SURFACE_SPECS[consumer_surface].category
+                    if consumer_surface is not None
+                    else None
+                ),
+                item_validator=(
+                    (
+                        lambda session, candidate: is_primary_item_for_surface(
+                            session,
+                            candidate,
+                            consumer_surface,
+                        )
+                    )
+                    if consumer_surface is not None
+                    else None
+                ),
+                project=(
+                    (
+                        lambda session: _consumer_projection(
+                            session,
+                            consumer_surface,
+                            consumer_action[1],
+                        )
+                    )
+                    if query is None and consumer_surface is not None
+                    else lambda session: _view_session(session, query)
+                ),
             )
-            updated_query = _clamped_query(change.session, query)
+            updated_query = (
+                _clamped_query(change.session, query)
+                if query is not None
+                else None
+            )
         except ReviewItemNotFound:
             return _review_error(
                 request,
@@ -149,6 +214,27 @@ def create_review_router(templates: Jinja2Templates) -> APIRouter:
                 400,
             )
 
+        if consumer_action is not None:
+            surface, page = consumer_action
+            consumer_url = surface_url(
+                surface,
+                page=page,
+                selected=item_id.upper(),
+            )
+            if request.headers.get("hx-request", "").lower() == "true":
+                response = render_consumer_page(
+                    request,
+                    templates,
+                    surface,
+                    template_name="consumer_workspace.html",
+                    page_override=page,
+                    selected_override=item_id.upper(),
+                )
+                response.headers["HX-Replace-Url"] = consumer_url
+                return response
+            return RedirectResponse(consumer_url, status_code=303)
+
+        assert updated_query is not None
         review_url = _review_url(updated_query)
         if request.headers.get("hx-request", "").lower() == "true":
             response = _render_review(
@@ -282,12 +368,35 @@ def create_review_router(templates: Jinja2Templates) -> APIRouter:
                 request,
                 allowed_fields={"csrf_token"},
             )
-            query = _view_query(request)
+            consumer_action = _consumer_action_query(
+                request,
+                allowed={
+                    ConsumerSurface.HOME,
+                    ConsumerSurface.DUPLICATES,
+                    ConsumerSurface.ORGANIZE,
+                    ConsumerSurface.ATTENTION,
+                },
+            )
+            query = None if consumer_action is not None else _view_query(request)
             result = _review_store(request).save(
                 _scan_snapshot(request),
-                project=lambda session: _view_session(session, query),
+                project=(
+                    (
+                        lambda session: _consumer_projection(
+                            session,
+                            consumer_action[0],
+                            consumer_action[1],
+                        )
+                    )
+                    if query is None and consumer_action is not None
+                    else lambda session: _view_session(session, query)
+                ),
             )
-            updated_query = _clamped_query(result.session, query)
+            updated_query = (
+                _clamped_query(result.session, query)
+                if query is not None
+                else None
+            )
         except ReviewSessionUnavailable:
             return _review_error(
                 request,
@@ -310,6 +419,13 @@ def create_review_router(templates: Jinja2Templates) -> APIRouter:
                 "Your unsaved review changes are still available.",
                 500,
             )
+        if consumer_action is not None:
+            surface, page = consumer_action
+            return RedirectResponse(
+                surface_url(surface, page=page, saved=True),
+                status_code=303,
+            )
+        assert updated_query is not None
         return RedirectResponse(_review_url(updated_query), status_code=303)
 
     @router.get(
@@ -432,6 +548,46 @@ def _view_query(request: Request) -> dict[str, str]:
         if values:
             query[name] = values[0]
     return query
+
+
+def _consumer_action_query(
+    request: Request,
+    *,
+    allowed: set[ConsumerSurface],
+) -> tuple[ConsumerSurface, int] | None:
+    if "surface" not in request.query_params:
+        return None
+    if set(request.query_params) - {"surface", "page"}:
+        raise ValueError("unsupported consumer action query")
+    surface_values = request.query_params.getlist("surface")
+    page_values = request.query_params.getlist("page")
+    if len(surface_values) != 1 or len(page_values) > 1:
+        raise ValueError("duplicate consumer action query")
+    surface = parse_surface(
+        surface_values[0],
+        allowed=allowed,
+        default=ConsumerSurface.HOME,
+    )
+    if surface == ConsumerSurface.HOME and page_values:
+        raise ValueError("home actions do not accept a page")
+    page_text = page_values[0] if page_values else "1"
+    try:
+        page = int(page_text)
+    except ValueError as error:
+        raise ValueError("invalid consumer action page") from error
+    if page < 1:
+        raise ValueError("invalid consumer action page")
+    return surface, page
+
+
+def _consumer_projection(
+    session: ReviewApplicationSession,
+    surface: ConsumerSurface,
+    page: int,
+) -> ReviewApplicationSession:
+    if surface in SURFACE_SPECS:
+        build_consumer_page(session, surface, page=page)
+    return session
 
 
 def _view_session(
@@ -586,7 +742,7 @@ def _review_context(
 
 
 def _review_url(query: dict[str, str]) -> str:
-    return f"/review?{urlencode(query)}"
+    return f"/review/advanced?{urlencode(query)}"
 
 
 def _review_store(request: Request) -> ReviewExplorerStore:

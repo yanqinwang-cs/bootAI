@@ -70,12 +70,12 @@ class WebScanDashboardTests(unittest.IsolatedAsyncioTestCase):
                 headers={"Origin": "http://127.0.0.1", "HX-Request": "true"},
             )
             await asyncio.sleep(0.02)
-            status = await client.get("/scan/status")
+            status = await client.get("/scan/status?surface=scans")
 
         self.assertEqual(response.status_code, 202)
         self.assertEqual(status.status_code, 200)
         self.assertIn("Scan completed", status.text)
-        self.assertIn("Potential duplicate bytes", status.text)
+        self.assertIn("Space used by extra copies", status.text)
         self.assertIn("AI_Review/reports/scan.json", status.text)
         self.assertNotIn("Space saved", status.text)
         self.assertNotIn("Safe to delete", status.text)

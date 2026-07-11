@@ -12,19 +12,23 @@ from organizer.web.config import WebAppConfig
 from organizer.web.scan_jobs import ScanJobController, ScanJobSnapshot
 
 
-class WebReviewFixture:
+class ConsumerWebFixture:
     def setUp(self) -> None:
         self.directory = tempfile.TemporaryDirectory()
         self.root = Path(self.directory.name).resolve()
         (self.root / "alpha.txt").write_text("same", encoding="utf-8")
-        (self.root / "beta.txt").write_text("same", encoding="utf-8")
-        for index in range(1, 7):
-            (self.root / f"backup copy {index}.txt").write_text(
-                f"candidate {index}",
-                encoding="utf-8",
-            )
+        (self.root / "beta backup copy.txt").write_text("same", encoding="utf-8")
+        (self.root / "EvoSim_project_slides.pptx").write_text(
+            "notes",
+            encoding="utf-8",
+        )
+        (self.root / "EvoSim_project_slides_final.pptx").write_text(
+            "report",
+            encoding="utf-8",
+        )
+        (self.root / "empty.txt").write_text("", encoding="utf-8")
         self.result = scan_root(self.root)
-        self.token = "w" * 32
+        self.token = "c" * 32
         self.app = create_app(
             WebAppConfig(
                 self.root,
@@ -42,8 +46,9 @@ class WebReviewFixture:
         )
         self.controller._snapshot = ScanJobSnapshot(
             status="completed",
-            job_id="generation-one",
+            job_id="consumer-generation",
             result=self.result,
+            report_path=self.root / "AI_Review" / "reports" / "scan.json",
         )
         self.app.state.scan_jobs = self.controller
 
@@ -56,17 +61,13 @@ class WebReviewFixture:
             base_url="http://127.0.0.1",
             follow_redirects=False,
         )
-        launched = await client.get(f"/launch/{self.token}")
-        if launched.status_code != 303:
+        response = await client.get(f"/launch/{self.token}")
+        if response.status_code != 303:
             await client.aclose()
-            raise AssertionError("test browser could not authenticate")
+            raise AssertionError("consumer browser could not authenticate")
         return client
 
-    async def csrf(
-        self,
-        client: httpx.AsyncClient,
-        path: str = "/review/advanced",
-    ) -> str:
+    async def csrf(self, client: httpx.AsyncClient, path: str) -> str:
         response = await client.get(path)
         match = re.search(r'name="csrf_token" value="([^"]+)"', response.text)
         if match is None:
@@ -77,9 +78,20 @@ class WebReviewFixture:
     def origin_headers(**extra: str) -> dict[str, str]:
         return {"Origin": "http://127.0.0.1", **extra}
 
-    def artifact_paths(self) -> set[str]:
+    def session(self):
+        snapshot = self.app.state.review_explorer.snapshot(
+            self.app.state.scan_jobs.snapshot()
+        )
+        if snapshot.session is None:
+            raise AssertionError("consumer review session unavailable")
+        return snapshot.session
+
+    def decision(self, item_id: str) -> str:
+        return next(item.decision for item in self.session().items if item.id == item_id)
+
+    def file_snapshot(self) -> dict[str, bytes]:
         return {
-            path.relative_to(self.root).as_posix()
-            for path in self.root.rglob("*")
+            path.relative_to(self.root).as_posix(): path.read_bytes()
+            for path in self.root.iterdir()
             if path.is_file()
         }

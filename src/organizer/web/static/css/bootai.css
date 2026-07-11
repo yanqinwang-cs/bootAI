@@ -39,6 +39,149 @@ main {
   letter-spacing: 0.02em;
 }
 
+.site-header .nav-link.active {
+  border-bottom: 2px solid #ffffff;
+  font-weight: 700;
+}
+
+.consumer-shell {
+  max-width: 68rem;
+  margin: 0 auto;
+}
+
+.home-status,
+.consumer-result-grid,
+.module-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.home-status > div,
+.result-card,
+.module-choice-grid article,
+.consumer-card,
+.consumer-info-panel,
+.plan-summary,
+.decision-feedback {
+  padding: 1.25rem;
+  border: 1px solid var(--bootai-border);
+  border-radius: 0.75rem;
+  background: var(--bootai-surface);
+}
+
+.home-status dd,
+.result-count {
+  margin: 0.25rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.consumer-result-grid,
+.consumer-info-panel,
+.plan-summary {
+  margin: 1.5rem 0;
+}
+
+.consumer-card-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.consumer-card {
+  border-left-width: 0.4rem;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.consumer-card.decision-approved {
+  border-left-color: #246b45;
+}
+
+.consumer-card.decision-rejected {
+  border-left-color: #53606b;
+}
+
+.consumer-card.decision-undecided {
+  border-left-color: #9a6a00;
+}
+
+.consumer-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.choice-badge {
+  padding: 0.25rem 0.55rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.consumer-card-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+
+.consumer-card-facts > div {
+  padding: 0.75rem;
+  background: #f1f4f6;
+}
+
+.consumer-card-facts dd {
+  margin: 0.25rem 0 0;
+}
+
+.consumer-decision-form {
+  margin: 1rem 0;
+}
+
+.consumer-decision-form legend {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.secondary-findings {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-left: 0.3rem solid var(--bootai-accent);
+  background: #e8eef2;
+}
+
+.secondary-findings h4 {
+  font-size: 1rem;
+}
+
+.plan-summary.dirty {
+  border-color: #b54708;
+  border-width: 2px;
+}
+
+.technical-details {
+  margin-top: 1rem;
+}
+
+.technical-details summary {
+  color: var(--bootai-accent);
+  font-weight: 700;
+}
+
+.decision-feedback {
+  margin-bottom: 1rem;
+  border-color: #246b45;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .consumer-card {
+    transition: none;
+  }
+}
+
 .welcome-panel,
 .error-panel {
   max-width: 52rem;

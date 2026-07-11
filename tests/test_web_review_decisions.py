@@ -54,7 +54,7 @@ class WebReviewDecisionTests(
     async def test_htmx_returns_only_updated_workspace_and_preserves_view(self) -> None:
         client = await self.authenticated_client()
         try:
-            csrf = await self.csrf(client, "/review?category=duplicate")
+            csrf = await self.csrf(client, "/review/advanced?category=duplicate")
             response = await client.post(
                 "/review/items/D1/decision?category=duplicate&sort=source&direction=desc&page=1&page_size=25",
                 data={"csrf_token": csrf, "decision": "undecided"},

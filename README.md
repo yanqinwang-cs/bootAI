@@ -6,7 +6,7 @@ The project is safety-first: dry-run is default, real movement requires exact co
 
 ## Current Status
 
-Stages 1 through 10.14 and Stages 11.0 through 11.5 are implemented. Stage 11.5 completes the first local-web MVP: scan, inspect findings, make review decisions, and explicitly save a reviewed plan. It does not move, apply, restore, or remove files. The tool can currently:
+Stages 1 through 10.14 and Stages 11.0 through 11.5.1 are implemented. Stage 11.5.1 gives the local-web MVP a consumer-oriented Home, Duplicates, Organize, Scans, and Settings structure while preserving the complete technical table as Advanced review. It does not move, apply, restore, or remove files. The tool can currently:
 
 - Scan folders read-only.
 - Detect exact duplicates with SHA-256.
@@ -52,7 +52,7 @@ Stage 11.1 migrated report generation and review-session creation/resume into ap
 
 The local web application is the intended primary interface for ordinary users. Its implemented Stage 11.2 foundation uses FastAPI, Jinja2, HTMX, Bootstrap, minimal vanilla JavaScript, and Uvicorn, with all assets bundled locally and the server restricted to one validated root on IPv4 loopback.
 
-The current web application provides an explicit scan dashboard and a generation-bound review workspace. Review filters, sorting, pagination, details, conflicts, row decisions, confirmed current-page decisions, dirty status, and explicit saving operate on the latest completed scan. Saving writes the existing reviewed-plan format and never moves files. Unsaved decisions block a replacement scan; there is no autosave. Apply and restore remain unavailable in the web interface. Stage 11.6 remains future work for resume, revisions, and multi-tab stale-state protection. The CLI remains available for development, scripting, diagnostics, manual fallback, and safety-critical testing.
+The current web application presents consolidated consumer cards with one primary surface per normalized source: duplicates first, organization second, then needs attention. Secondary findings and their existing choices remain visible without merging the underlying rows. Module-separated choices, human-readable sizes/times, explicit saving, and Advanced review all use the same authoritative session. Internal navigation preserves dirty choices without a leave-site warning; replacement scans still fail with `409` while dirty. Stage 11.5.2 independent module plans, Stage 11.5.3 planned-change tree, and Stage 11.6 resume/revision work remain future.
 
 See the [local web architecture contract](docs/WEB_ARCHITECTURE.md) and [web threat model](docs/WEB_THREAT_MODEL.md) for the frozen Stage 11 requirements.
 

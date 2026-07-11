@@ -29,8 +29,12 @@
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <span class="brand">bootAI</span>
         <nav aria-label="Primary navigation">
-          <a class="nav-link d-inline-block text-white" href="/">Home</a>
-          <a class="nav-link d-inline-block text-white" href="/review">Review</a>
+          {% set current_path = request.url.path %}
+          <a class="nav-link d-inline-block text-white{% if current_path == '/' %} active{% endif %}" href="/"{% if current_path == '/' %} aria-current="page"{% endif %}>Home</a>
+          <a class="nav-link d-inline-block text-white{% if current_path == '/duplicates' %} active{% endif %}" href="/duplicates"{% if current_path == '/duplicates' %} aria-current="page"{% endif %}>Duplicates</a>
+          <a class="nav-link d-inline-block text-white{% if current_path == '/organize' %} active{% endif %}" href="/organize"{% if current_path == '/organize' %} aria-current="page"{% endif %}>Organize</a>
+          <a class="nav-link d-inline-block text-white{% if current_path == '/scans' %} active{% endif %}" href="/scans"{% if current_path == '/scans' %} aria-current="page"{% endif %}>Scans</a>
+          <a class="nav-link d-inline-block text-white{% if current_path == '/settings' %} active{% endif %}" href="/settings"{% if current_path == '/settings' %} aria-current="page"{% endif %}>Settings</a>
         </nav>
       </div>
     </div>

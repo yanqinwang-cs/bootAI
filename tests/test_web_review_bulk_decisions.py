@@ -14,7 +14,7 @@ class WebReviewBulkDecisionTests(
         client = await self.authenticated_client()
         query = "category=review_candidate&sort=source&direction=desc&page=2&page_size=2"
         try:
-            csrf = await self.csrf(client, f"/review?{query}")
+            csrf = await self.csrf(client, f"/review/advanced?{query}")
             response = await client.post(
                 f"/review/page-decision/preview?{query}",
                 data={"csrf_token": csrf, "decision": "rejected"},
@@ -189,7 +189,7 @@ class WebReviewBulkDecisionTests(
         client = await self.authenticated_client()
         query = "category=review_candidate&decision=approved&page=3&page_size=2"
         try:
-            csrf = await self.csrf(client, f"/review?{query}")
+            csrf = await self.csrf(client, f"/review/advanced?{query}")
             preview = await client.post(
                 f"/review/page-decision/preview?{query}",
                 data={"csrf_token": csrf, "decision": "rejected"},

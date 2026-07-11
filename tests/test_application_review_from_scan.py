@@ -7,6 +7,7 @@ from unittest import mock
 
 from organizer.application.review_service import (
     create_review_session_from_scan_result,
+    get_review_source_key,
     get_review_view,
     update_review_filter,
     update_review_page_size,
@@ -36,6 +37,7 @@ class ReviewFromScanTests(unittest.TestCase):
             )
             self.assertEqual(session.items[1].review_category, "backup_or_copy")
             self.assertTrue(session.persist_review_state)
+            self.assertEqual(get_review_source_key(session, "D1"), "b.txt")
 
             view = get_review_view(
                 update_review_page_size(

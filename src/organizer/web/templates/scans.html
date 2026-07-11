@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Scans · bootAI{% endblock %}
+
+{% block content %}
+<section class="consumer-shell" aria-labelledby="scans-heading">
+  <p class="eyebrow">Scans</p>
+  <h1 id="scans-heading">Scan this folder</h1>
+  <p>Selected folder: <strong>{{ selected_folder }}</strong></p>
+  {% include "scan_panel.html" %}
+  <section class="consumer-info-panel" aria-labelledby="schedule-heading">
+    <h2 id="schedule-heading">Automatic scans</h2>
+    <p>Not available in this version. Scheduled scanning will be added later.</p>
+  </section>
+</section>
+{% endblock %}

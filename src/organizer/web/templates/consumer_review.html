@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ spec.page_title }} · bootAI{% endblock %}
+
+{% block content %}
+<section class="consumer-shell" aria-labelledby="consumer-heading">
+  <p class="eyebrow">{{ spec.page_title }}</p>
+  <h1 id="consumer-heading">{{ spec.heading }}</h1>
+  <p class="lead">{{ spec.introduction }}</p>
+  {% if explorer.status == "completed" and explorer.session %}
+    {% include "consumer_workspace.html" %}
+  {% elif explorer.status == "scanning" %}
+  <div class="consumer-info-panel" role="status"><p>A scan is currently running. <a href="/scans">View scan status</a>.</p></div>
+  {% else %}
+  <div class="consumer-info-panel" role="status"><p>Run a scan before reviewing these files.</p><a class="btn btn-primary" href="/scans">Go to scans</a></div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -46,7 +46,8 @@ class WebAppTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(launched.headers["location"], "/")
         self.assertEqual(home.status_code, 200)
         self.assertEqual(replay.status_code, 403)
-        self.assertIn(str(self.root), home.text)
+        self.assertIn(self.root.name, home.text)
+        self.assertNotIn(str(self.root), home.text)
         self.assertNotIn(self.token, home.text)
 
     async def test_concurrent_launch_requests_authenticate_only_one_client(self) -> None:
@@ -174,7 +175,7 @@ class WebAppTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("https:", CONTENT_SECURITY_POLICY)
         self.assertNotIn("*", CONTENT_SECURITY_POLICY)
 
-    async def test_routes_are_read_only_and_documentation_is_disabled(self) -> None:
+    async def test_route_methods_and_documentation_are_locked(self) -> None:
         methods_by_path = {
             route.path: set(route.methods or set())
             for route in _application_routes(self.app.routes)
@@ -185,6 +186,18 @@ class WebAppTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(methods_by_path["/"], {"GET"})
         self.assertEqual(methods_by_path["/scan"], {"POST"})
         self.assertEqual(methods_by_path["/scan/status"], {"GET"})
+        for path in (
+            "/duplicates",
+            "/organize",
+            "/attention",
+            "/scans",
+            "/settings",
+            "/review",
+            "/review/advanced",
+            "/review/items/{item_id}",
+            "/review/conflicts",
+        ):
+            self.assertEqual(methods_by_path[path], {"GET"})
         self.assertEqual(
             methods_by_path["/review/items/{item_id}/decision"],
             {"POST"},
@@ -204,24 +217,23 @@ class WebAppTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual((await client.get(path)).status_code, 404)
             self.assertEqual((await client.post("/healthz")).status_code, 405)
 
-    async def test_welcome_page_is_accessible_and_has_no_future_controls(self) -> None:
+    async def test_home_is_accessible_and_has_no_future_controls(self) -> None:
         async with _client(self.app) as client:
             await client.get(f"/launch/{self.token}", follow_redirects=False)
-            response = await client.get("/?root=/tmp/attacker")
+            response = await client.get("/")
 
         html = response.text
         self.assertIn('<html lang="en">', html)
-        self.assertIn("<title>Welcome · bootAI</title>", html)
+        self.assertIn("<title>Home · bootAI</title>", html)
         self.assertEqual(html.count("<h1"), 1)
         self.assertIn("<main ", html)
         self.assertIn("Selected folder", html)
-        self.assertIn("No scan has run yet.", html)
-        self.assertIn("does not require an internet connection", html)
-        self.assertIn("No files have been moved", html)
-        self.assertIn(str(self.root), html)
-        self.assertNotIn("/tmp/attacker", html)
+        self.assertIn("Ready to scan", html)
+        self.assertIn("does not approve choices or move files", html)
+        self.assertIn(self.root.name, html)
+        self.assertNotIn(str(self.root), html)
         self.assertIn("<form", html)
-        self.assertIn("Scan folder", html)
+        self.assertIn("Scan now", html)
         self.assertNotIn("onclick=", html)
         self.assertNotIn("<script>", html)
         self.assertNotIn("https://", html)

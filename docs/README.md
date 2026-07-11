@@ -6,9 +6,9 @@ Deterministic Python is the source of truth for facts. LLM output is advisory on
 
 ## Current Status
 
-Stages 1 through 10.14 and Stages 11.0 through 11.5 are implemented. Stage 11.5 completes the first web MVP on the application-service boundary: scan, inspect, decide, and explicitly save a reviewed plan.
+Stages 1 through 10.14 and Stages 11.0 through 11.5.1 are implemented. Stage 11.5.1 replaces the technical table-first default with consumer Home, Duplicates, Organize, Scans, Settings, and linked Needs attention pages; the former table remains Advanced review.
 
-The local web application is the intended primary interface for ordinary users. Its authenticated, root-locked workspace runs on `127.0.0.1`, serves bundled assets, and supports Organize (`approved`), Keep here (`rejected`), and Review later (`undecided`) decisions. Current-page bulk changes require exact confirmation; saving is explicit and collision-safe, and unsaved decisions block rescanning. There is no autosave, web apply, or web restore. Stage 11.6 resume, revision, and multi-tab protection remain future work. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing.
+The consumer pages consolidate cards by normalized source with duplicate, organization, then attention precedence while preserving every underlying row and choice. Summaries remain separated by module; “Space used by extra copies” does not claim recovery. Internal navigation does not warn or discard server-held choices. There is no scheduling, tree, independent module plan, autosave, web apply, or restore.
 
 ## Quick Navigation
 

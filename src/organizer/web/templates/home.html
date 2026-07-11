@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}Welcome · bootAI{% endblock %}
+{% block title %}Home · bootAI{% endblock %}
 
 {% block content %}
-<section aria-labelledby="welcome-heading" class="welcome-panel">
-  <p class="eyebrow">Local file organization assistant</p>
-  <h1 id="welcome-heading">Welcome to bootAI</h1>
-  <p class="lead">bootAI is running locally and does not require an internet connection.</p>
+<section aria-labelledby="home-heading" class="consumer-shell">
+  <h1 id="home-heading">bootAI</h1>
+  <dl class="home-status">
+    <div><dt>Selected folder</dt><dd>{{ selected_folder }}</dd></div>
+    <div><dt>Last scan</dt><dd>{{ last_scan_time }}</dd></div>
+  </dl>
 
-  <div class="root-card" aria-labelledby="selected-folder-label">
-    <h2 id="selected-folder-label">Selected folder</h2>
-    <p class="locked-root">{{ locked_root }}</p>
-    <p class="root-note">This folder is locked for the lifetime of this process.</p>
-  </div>
+  {% include "scan_panel.html" %}
 
-  <div id="scan-panel">
-    {% include "scan_panel.html" %}
-  </div>
+  <section class="consumer-info-panel" aria-labelledby="automatic-scans-heading">
+    <h2 id="automatic-scans-heading">Automatic scans</h2>
+    <p>Not configured</p>
+    <a href="/scans">View scans</a>
+  </section>
 </section>
 {% endblock %}

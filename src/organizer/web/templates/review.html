@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Review findings · bootAI{% endblock %}
+{% block title %}Advanced review · bootAI{% endblock %}
 
 {% block content %}
 <section class="review-panel" aria-labelledby="review-heading">
-  <p class="eyebrow">Review findings</p>
+  <p class="eyebrow">Advanced review</p>
   <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
     <div>
-      <h1 id="review-heading">Review findings</h1>
-      <p class="lead mb-1">Inspect suggestions and choose what should happen later.</p>
+      <h1 id="review-heading">Technical review table</h1>
+      <p class="lead mb-1">Inspect every underlying review row and technical detail.</p>
       <p class="text-muted">Decisions and saving do not move files. Applying a saved plan remains CLI-only.</p>
     </div>
-    <a class="btn btn-outline-primary" href="/">Return to dashboard</a>
+    <a class="btn btn-outline-primary" href="/">Return home</a>
   </div>
 
   {% if explorer.warnings %}
@@ -33,7 +33,7 @@
     {% endfor %}
   </nav>
 
-  <form class="review-filters" method="get" action="/review">
+  <form class="review-filters" method="get" action="/review/advanced">
     <input type="hidden" name="category" value="{{ active_category }}">
     <div>
       <label for="decision-filter">Decision</label>

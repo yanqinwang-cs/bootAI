@@ -100,12 +100,16 @@
 - Reviewed-plan saving is explicit, collision-safe, includes hidden and off-page rows, and never moves files. There is no autosave or browser-selected output path.
 - Unsaved decisions block a replacement scan with `409 Conflict`; they are never silently discarded or assigned to a later generation.
 - Web apply and restore controls remain absent.
+- Consumer cards consolidate repeated source findings for presentation only. Duplicate findings take precedence, then organization, then needs attention; secondary rows, decisions, conflicts, and saved output remain intact.
+- A consumer card action changes only its primary row. It must not silently change secondary module choices.
+- Consumer surfaces are strict enums mapped to fixed routes, never browser-provided return URLs or paths.
+- Internal navigation preserves server-held dirty choices and must not show a global leave-site warning. Dirty replacement scans remain blocked by `409`.
 
 The complete controls and threat mappings are in [WEB_THREAT_MODEL](WEB_THREAT_MODEL.md).
 
 ## Storage-Recovery Claims
 
-Moving a file to another folder on the same filesystem does not save storage space. Interfaces may report `Potential duplicate bytes`, `Potential recoverable storage`, or `Duplicate candidates for review`.
+Moving a file to another folder on the same filesystem does not save storage space. The primary consumer interface uses `Space used by extra copies` or `Potential duplicate space`. Technical interfaces may report `Potential duplicate bytes` or `Duplicate candidates for review`.
 
 Do not report `Space saved` or `Storage recovered` unless an operation actually removes data from that filesystem or transfers it elsewhere. Stage 11 adds no permanent removal, Trash integration, or automatic disposal. The existing reversible-move, operation-history, and restore requirements remain in force.
 

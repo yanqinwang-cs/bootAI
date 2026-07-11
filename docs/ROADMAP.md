@@ -42,6 +42,7 @@
 | 11.3 | Read-only scan dashboard | `web/scan_jobs.py`, scan routes and templates | none | explicit scan/report only; no decisions or movement |
 | 11.4 | Read-only review explorer | report-to-review adapter, review routes and templates | none | latest completed scan only; no decision mutation |
 | 11.5 | Web review decisions and reviewed-plan saving | generation-bound review holder, decision/save routes and templates | none | explicit save only; no movement |
+| 11.5.1 | Consumer information architecture and UX simplification | consumer presenters, routes, cards, Advanced review | none | presentation only; no movement |
 
 ## Stage 11 Sequence
 
@@ -92,6 +93,18 @@ Completed: browse, filter, sort, and paginate the latest completed scan’s revi
 Completed: Organize (`approved`), Keep here (`rejected`), and Review later (`undecided`) single-row decisions; exact-confirmed current-page decisions; textual dirty state; explicit collision-safe save of every row; and dirty-session scan blocking. There is no autosave, apply, restore, resume, revision, multi-tab merge, or movement.
 
 This is the first completed product-evaluation checkpoint. A user can launch the development web interface, scan a folder, understand findings, inspect suggestions, make review decisions, and save a valid reviewed plan. Apply and undo remain CLI-only while the workflow is evaluated with target users.
+
+### Stage 11.5.1 — Consumer Information Architecture and UX Simplification
+
+Completed: consumer Home, Duplicates, Organize, Scans, Settings, and Needs attention pages; normalized-source card consolidation; module-separated choices; human-readable formatting; Advanced review compatibility; and removal of the false internal-navigation warning. All underlying rows and saved formats remain unchanged.
+
+### Stage 11.5.2 — Guided Modular Review and Independent Module Plans
+
+Future: independently saved duplicate, organization, and attention plans. Not part of 11.5.1.
+
+### Stage 11.5.3 — Static Planned-Change Tree
+
+Future: a read-only tree of planned changes. No tree is implemented in 11.5.1.
 
 ### Stage 11.6 — Resume, Stale-State, and Multi-Tab Protection
 

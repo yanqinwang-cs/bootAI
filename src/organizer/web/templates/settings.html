@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Settings · bootAI{% endblock %}
+
+{% block content %}
+<section class="consumer-shell" aria-labelledby="settings-heading">
+  <p class="eyebrow">Settings</p>
+  <h1 id="settings-heading">Settings</h1>
+  <dl class="detail-list settings-list">
+    <dt>Selected folder</dt><dd class="path-cell">{{ locked_root }}</dd>
+    <dt>Connection</dt><dd>Local only on this computer</dd>
+    <dt>Cloud services</dt><dd>Not used</dd>
+    <dt>Application version</dt><dd>{{ application_version }}</dd>
+  </dl>
+  <p>More settings will be added after the main workflow is finalized.</p>
+  <section class="consumer-info-panel" aria-labelledby="technical-links-heading">
+    <h2 id="technical-links-heading">Advanced technical links</h2>
+    <ul>
+      <li><a href="/review/advanced">View technical review table</a></li>
+      <li><a href="/review/conflicts">Inspect approved conflicts</a></li>
+    </ul>
+  </section>
+</section>
+{% endblock %}

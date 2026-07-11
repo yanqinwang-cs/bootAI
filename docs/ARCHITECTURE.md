@@ -79,7 +79,7 @@ Filesystem
 
 ## Stage 11 Local Web Direction
 
-Stage 11 adds a local web application as bootAI's primary consumer interface. Stage 11.1 established the shared application-service boundary; Stages 11.3 through 11.5 now provide explicit scanning, generation-bound exploration, immutable review decisions, and explicit reviewed-plan saving. The CLI remains supported for development, scripting, diagnostics, fallback, and safety testing. Static HTML reports remain read-only audit snapshots.
+Stage 11 adds a local web application as bootAI's primary consumer interface. Stage 11.5.1 adds web-only presenters over the same generation-bound immutable session: Home summarizes, Scans collects, Duplicates presents exact-copy findings, Organize presents placement suggestions, Needs attention presents ambiguous candidates, Settings displays configuration, and Advanced review exposes every technical row.
 
 The required future dependency direction is:
 
@@ -98,6 +98,8 @@ executor.py for explicitly approved movement and undo only
 The web layer must not reproduce scanner, duplicate, grouping, review, safety, movement, or undo logic. Route modules must never import `executor.py`; only the future execution application service may delegate validated and explicitly approved plans to existing executor functions. Stage 11.5 routes call the application review service through a locked, generation-bound web holder that atomically replaces immutable sessions. Single-row decisions use stable IDs; current-page previews freeze server-held IDs behind one-use opaque tokens; explicit save delegates to the existing saver and includes every row. Query state remains a projection. No route accepts source, destination, root, or output paths, and no apply or restore workflow exists.
 
 The holder exposes dirty state only when decisions differ from the last saved snapshot. A dirty session rejects a new scan with `409 Conflict`; a successful explicit save clears dirty state and records the root-relative collision-safe path. It never autosaves. Stage 11.6 will add reviewed-plan resume, revisions, and multi-tab stale-state rejection.
+
+Consumer presenters group rows by a safety-validated normalized source key and choose one primary card using duplicate → organization → attention precedence. Secondary rows remain visible inside that card and retain independent stable IDs, decisions, conflicts, and serialization. Consumer actions mutate only the primary row through the application service. Advanced review continues to expose all rows. No consumer presenter owns persistence, grouping, duplicate detection, or movement.
 
 Each web-server process is bound to one validated immutable root. Browser requests submit stable session-scoped IDs and allowed actions rather than source or destination paths. Existing JSON artifacts remain authoritative; temporary UI, job, security, and revision state may remain in memory, with no initial database.
 

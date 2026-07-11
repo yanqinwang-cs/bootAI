@@ -13,9 +13,9 @@ class WebReviewDirtyStateTests(
     async def test_view_navigation_and_inspection_do_not_mark_session_dirty(self) -> None:
         client = await self.authenticated_client()
         try:
-            clean = await client.get("/review")
+            clean = await client.get("/review/advanced")
             filtered = await client.get(
-                "/review?category=review_candidate&sort=source&direction=desc&page_size=2"
+                "/review/advanced?category=review_candidate&sort=source&direction=desc&page_size=2"
             )
             detail = await client.get("/review/items/D1")
             conflicts = await client.get("/review/conflicts")
@@ -47,12 +47,12 @@ class WebReviewDirtyStateTests(
                 data={"csrf_token": csrf},
                 headers=self.origin_headers(),
             )
-            page = await client.get("/review")
+            page = await client.get("/review/advanced")
         finally:
             await client.aclose()
 
         self.assertEqual(blocked.status_code, 409)
-        self.assertIn("Save the reviewed plan", blocked.text)
+        self.assertIn("Save your choices", blocked.text)
         self.assertIn("did not discard", blocked.text)
         self.assertEqual(self.controller.snapshot().job_id, "generation-one")
         self.assertIn("Current: <strong>Keep here</strong>", page.text)
@@ -77,7 +77,7 @@ class WebReviewDirtyStateTests(
                 data={"csrf_token": csrf},
                 headers=self.origin_headers(),
             )
-            review = await client.get("/review")
+            review = await client.get("/review/advanced")
         finally:
             await client.aclose()
 
@@ -95,7 +95,7 @@ class WebReviewDirtyStateTests(
             assert snapshot.session is not None
             self.assertFalse(snapshot.session.dirty)
 
-    async def test_dirty_marker_and_beforeunload_are_csp_compliant_advisory_only(self) -> None:
+    async def test_dirty_marker_and_internal_navigation_script_are_csp_compliant(self) -> None:
         client = await self.authenticated_client()
         try:
             csrf = await self.csrf(client)
@@ -104,7 +104,7 @@ class WebReviewDirtyStateTests(
                 data={"csrf_token": csrf, "decision": "rejected"},
                 headers=self.origin_headers(),
             )
-            page = await client.get("/review")
+            page = await client.get("/review/advanced")
             script = await client.get("/static/js/bootai.js")
         finally:
             await client.aclose()
@@ -113,7 +113,8 @@ class WebReviewDirtyStateTests(
         self.assertIn("Unsaved review changes", page.text)
         self.assertNotIn("onbeforeunload=", page.text)
         self.assertNotIn("<script>", page.text)
-        self.assertIn("beforeunload", script.text)
+        self.assertNotIn("beforeunload", script.text)
+        self.assertIn("htmx:afterSwap", script.text)
         self.assertNotIn("autosave", script.text.lower())
 
     async def test_mutation_errors_keep_security_headers_and_no_cors(self) -> None:

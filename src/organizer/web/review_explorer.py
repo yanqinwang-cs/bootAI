@@ -48,6 +48,7 @@ class UnsavedReviewChanges(RuntimeError):
 
 
 SessionProjection = Callable[[ReviewApplicationSession], ReviewApplicationSession]
+SessionItemValidator = Callable[[ReviewApplicationSession, str], bool]
 
 
 @dataclass(frozen=True)
@@ -111,13 +112,25 @@ class ReviewExplorerStore:
         item_id: str,
         decision: str,
         *,
+        expected_category: str | None = None,
+        item_validator: SessionItemValidator | None = None,
         project: SessionProjection,
     ) -> ReviewDecisionChangeResult:
         with self._lock:
             session = self._require_session_locked(scan)
             project(session)
             try:
-                get_review_item(session, item_id)
+                item = get_review_item(session, item_id)
+                if (
+                    expected_category is not None
+                    and item.category != expected_category
+                ):
+                    raise ValueError("review item is unavailable for this surface")
+                if item_validator is not None and not item_validator(
+                    session,
+                    item.id,
+                ):
+                    raise ValueError("review item is not primary on this surface")
                 result = change_review_decisions(session, (item_id,), decision)
             except ValueError as error:
                 raise ReviewItemNotFound(str(error)) from error

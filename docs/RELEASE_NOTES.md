@@ -1,5 +1,13 @@
 # Release Notes
 
+## Stage 11.5.1 — Consumer Information Architecture and UX Simplification
+
+Stage 11.5.1 replaces the technical table-first default with consumer Home, Duplicates, Organize, Scans, Settings, and linked Needs attention pages. The original filters, sorting, pagination, details, conflicts, bulk decisions, and saving remain at `/review/advanced`; `/review` redirects there compatibly.
+
+Cards consolidate rows by normalized source using duplicate → organization → attention precedence. Secondary findings and their existing choices remain visible in the primary card, while actions change only the primary row. Module summaries continue counting every authoritative underlying row. Human-readable sizes/times, safe `Space used by extra copies` language, fixed enum return surfaces, accessible feedback, and removal of the false `beforeunload` warning improve usability without changing schemas or decisions.
+
+No scheduling, independent module plan, tree, preview, apply, executor access, movement, restore, resume, revision, dependency, or CLI behavior is added. Stage 11.5.2 and 11.5.3 remain future work.
+
 ## Stage 11.5 — Web Review Decisions and Reviewed-Plan Saving
 
 Stage 11.5 completes the first web MVP: scan, inspect findings, set rows to Organize (`approved`), Keep here (`rejected`), or Review later (`undecided`), and explicitly save every row in the existing reviewed-plan format. Single-row changes use stable IDs. Current-page actions freeze the displayed IDs server-side and retain the established `APPROVE CURRENT PAGE`, `REJECT CURRENT PAGE`, or `UNDECIDE CURRENT PAGE` confirmation phrases before one-use confirmation.

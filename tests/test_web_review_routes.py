@@ -48,17 +48,17 @@ class WebReviewRouteTests(unittest.IsolatedAsyncioTestCase):
         before = sorted(path.relative_to(self.root).as_posix() for path in self.root.rglob("*"))
         async with _client(self.app) as client:
             await client.get(f"/launch/{self.token}")
-            review = await client.get("/review")
-            duplicate = await client.get("/review?category=duplicate")
+            review = await client.get("/review/advanced")
+            duplicate = await client.get("/review/advanced?category=duplicate")
             detail = await client.get("/review/items/D1")
             conflicts = await client.get("/review/conflicts")
-            invalid = await client.get("/review?sort=not-a-field")
+            invalid = await client.get("/review/advanced?sort=not-a-field")
             post = await client.post("/review")
         after = sorted(path.relative_to(self.root).as_posix() for path in self.root.rglob("*"))
 
         self.assertEqual(review.status_code, 200)
         self.assertIn('<html lang="en">', review.text)
-        self.assertIn("<title>Review findings · bootAI</title>", review.text)
+        self.assertIn("<title>Advanced review · bootAI</title>", review.text)
         self.assertIn('<main id="main-content"', review.text)
         self.assertIn('<caption>Review findings and decisions</caption>', review.text)
         self.assertIn('scope="col"', review.text)
@@ -90,7 +90,7 @@ class WebReviewRouteTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_review_requires_authentication_and_rejects_unknown_ids(self) -> None:
         async with _client(self.app) as client:
-            unauthenticated = await client.get("/review")
+            unauthenticated = await client.get("/review/advanced")
             await client.get(f"/launch/{self.token}")
             unknown = await client.get("/review/items=/tmp/secret")
 
